@@ -10,7 +10,8 @@ import { composeSnippet, nginxSnippet, siteApplied, viteCmd, publicConfiguration
 import { run } from '../lib/process.mjs';
 import { httpFailure } from '../lib/errors.mjs';
 const raw = await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8');
-const input = parseCentral(raw);
+// Keep test identity independent of the names chosen for the installation example.
+const input = { ...parseCentral(raw), PROJECT_SLUG: 'pwa-teste', LOCAL_DOMAIN: 'pwa-teste.localhost', DB_DATABASE: 'pwa_teste', DB_TEST_DATABASE: 'pwa_teste_test' };
 const config = changes => validate({ ...input, ...changes }, '/var/www/pwa-teste');
 test('HTTP failures show only controlled diagnostics and discard private output', () => {
   const output = httpFailure(JSON.stringify({ status: 'error', reason: 'html-contract', path: '/status', http_status: 200, curl_errno: 0, origin_index: 0, body: 'PRIVATE-BODY', cookies: 'PRIVATE-COOKIE' }));
@@ -151,7 +152,7 @@ test('PWA Nginx separates backend routes, mutable entrypoints and immutable asse
 });
 test('push defaults, private derivation and production test access are guarded', async () => {
   const defaults = config(); assert.equal(defaults.PUSH_ENABLED, 'false');
-  assert.throws(() => config({ PUSH_ENABLED: 'true' }));
+  assert.throws(() => config({ PUSH_ENABLED: 'true', VAPID_SUBJECT: '' }));
   assert.throws(() => config({ VAPID_PUBLIC_KEY: 'partial' }));
   assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'https://app.example.test', PUSH_TEST_AUTH_ENABLED: 'true' }));
   const c = config({ PUSH_ENABLED: 'true', VAPID_SUBJECT: 'mailto:push@example.test', VAPID_PUBLIC_KEY: 'PUBLIC-TEST', VAPID_PRIVATE_KEY: 'PRIVATE-TEST' });

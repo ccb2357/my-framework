@@ -1,10 +1,12 @@
 # Retomada
 
-## Objetivo e estado vigente — 2026-11-13
+## Objetivo e estado vigente — 2026-11-14
 
-Construir PWA Framework conforme README. Checkout de referência pwa-teste; manual usa meu-projeto como exemplo. **Sprint 5 encerrada com aceite local.** O responsável confirmou recebimento real no Chrome Android e na PWA instalada em segundo plano, clique abrindo a PWA, cancelamento por preferência desligada e revogação antes do worker. A suíte completa no PHP-FPM/MySQL passou: **33 testes, 254 assertions, 7.27s**. Sprint 4 mantém seu aceite local anterior.
+Construir PWA Framework conforme o escopo aprovado. O responsável dispensou o roteiro de dois clones e a validação ampliada da Sprint 6; o aceite atual é uma instalação do zero seguindo o manual. Não exigir novamente clones/comparações nem restaurar as seções removidas por ele. O manual foi simplificado, usa exemplos meu-projeto, DEV_PORT=5180 e PREVIEW_PORT=5181; configuração manual só em .env.foundation. Na instalação nova pwa-a, o responsável confirmou Hello/PWA, /status, /api/v1/status e /up funcionando. Isso confirma acesso inicial, backend e banco, sem atestar instalação/offline/push nesse novo ambiente.
 
-Próxima etapa: Sprint 6 — validação final de reexecução, isolamento entre clones, portabilidade e fluxos local/produção previstos no README. Não repetir instalação, geração de VAPID ou testes já aceitos sem mudança que justifique. O aceite registrado é do ambiente local testado; iPhone, outros navegadores, HTTPS público e VPS não foram homologados nesta conversa. Fundação completa ainda não declarada concluída.
+Saída real recebida: backend PHP-FPM/MySQL 35 passed/260 assertions, 4.51s; Pint 64 arquivos aprovado; frontend 16 testes em 4 arquivos aprovados. Bootstrap: 30 passed/1 failed por busca literal de formatação Markdown no teste. Correção reproduziu a mesma falha com CRLF e passou 31/31 no agente após ajustar o teste; falta repetir esse comando no ambiente do responsável. Bootstrap usa simulações explícitas do Engine/Compose/HTTP. Sprint 5 mantém o aceite local anterior de push/PWA; VPS/HTTPS público/iPhone não foram homologados.
+
+Próximo passo: aplicar a correção dos dois arquivos de testes e repetir somente o teste do bootstrap pelo guia; sem rebuild do executor ou reexecução de migrations. Não repetir as suítes já aprovadas sem mudança que justifique. Depois conferir o aceite local conforme o escopo atual do responsável; registrar pendências reais e fazer a limpeza final de README/SDD quando solicitada.
 
 ## Entregue
 
@@ -300,3 +302,19 @@ Verificações executadas pelo agente:
 - Playwright carregou a configuração e listou 26 casos incluindo projetos visuais. Execução real bloqueada antes de qualquer assert da aplicação: download Chromium recebeu ZIP inválido; Chromium do sistema abortou socket() com Operation not permitted/ptrace negado. Não classificar como testes de UI aprovados nem como defeito comprovado da aplicação. Não foram gerados/aprovados PNGs.
 
 Próximo passo do responsável: aplicar o pacote cumulativo preservando arquivos privados, executar a seção Validação final da fundação sem orientação paralela e registrar resultados/dúvidas. Pendentes: imagem/testes reais de navegador, referências visuais aprovadas, instalação/reexecução real de dois clones com comparação/HTTP, portabilidade Windows/Linux/espaços, HTTPS/VPS/backup/restauração/operação da fila e aparelhos não comprovados. Arquivos atuais da infraestrutura devem ser solicitados antes de análise/alteração concreta; nenhum serviço compartilhado foi alterado pelo agente. Corrigir o guia e repetir etapas que exigirem ajuda. Depois do aceite, limpar README/SDD conservando contratos e pendências reais.
+
+
+## Guia Android/ADB e liberação de portas — 2026-11-13
+
+Manual complementado a pedido do responsável: preparação Windows/Android, SDK oficial, autorização/diagnóstico do aparelho, túnel USB Vite com exemplo 5173 condicionado à porta publicada e alternativa 5176 do guia; prévia PWA continua 5177. Distinguidas DEV_PORT/PREVIEW_PORT e portas internas Docker. Encerramento por Ctrl+C, remoção individual de reverse, identificação/parada somente do contêiner desejado e consulta de PID no Windows. Adaptar portas para clones A/B; nenhum comando foi executado no Windows/Android/Docker do responsável. Conferidas referências oficiais Android/ADB, Chrome, Docker e Microsoft. Nenhuma mudança de código, serviço, dado ou aceite de Sprint 6; somente documentação.
+
+
+## Instalação nova e correção dos testes de documentação — 2026-11-14
+
+Recebido arquivo Markdown colado.md do responsável com comandos reais no projeto pwa-a: 35 testes PHP/MySQL/260 assertions aprovados em 4.51s, Pint 64 arquivos aprovado e Vitest 16 testes/4 arquivos aprovados. O bootstrap terminou com 30/31: orchestration.test.mjs:81 esperava encontrar literalmente a abertura de bloco cmd seguida por newline LF e docker run. Nenhuma falha de operação real da aplicação foi indicada por esse assert. O aviso Compose sobre volume node_modules preexistente não impediu os testes frontend; não foi alterada a infraestrutura por causa dele.
+
+Reproduzido o mesmo assert usando o manual atual com CRLF na fixture. Antes da correção: 30/31, mesma falha firstRun > 0. Depois: 31/31, 13.69s. A busca agora verifica a linha efetiva docker run do executor com --project e mantém os asserts de ordem: infraestrutura/aplicação antes do bootstrap, ausência de serviço executor no Compose, diagnóstico controlado e nenhuma instalação/env antes de infra pronta. Fixture CRLF preservada para regressão; demais fluxos mantêm LF. Não foi reduzido o assert para ocultar ausência do comando.
+
+Os contratos também passaram a definir sua identidade de teste separadamente de .env.foundation.example e exigir explicitamente VAPID_SUBJECT vazio no caso negativo. Isso permite o exemplo aprovado meu-projeto e o subject de exemplo mailto:mail@mail.com sem quebrar testes por nomes de fixture. A publicação de porta simulada acompanha DEV_PORT da fixture. Nenhuma alteração no bootstrap executável, configuração privada, dados, volumes, Compose real ou lógica de instalação.
+
+Entrega de correção contém somente scripts/bootstrap/tests/contracts.test.mjs, scripts/bootstrap/tests/orchestration.test.mjs e MEMORY.md, com caminhos relativos à raiz do projeto. Manual atual e configurações do responsável preservados. O resultado 31/31 é execução do agente com Engine/Compose/HTTP simulados; aguardar a nova saída real do responsável. Não anunciar os testes do bootstrap totalmente aprovados no ambiente dele até essa confirmação.

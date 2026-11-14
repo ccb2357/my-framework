@@ -11,11 +11,12 @@ const entry = fileURLToPath(new URL('../index.mjs', import.meta.url));
 const runtime = process.env.FOUNDATION_RUNTIME_PACKAGE || fileURLToPath(new URL('../executor/package.json', import.meta.url));
 const example = parseCentral(await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8'));
 // Deterministic Engine/Compose simulation; never connects to or mutates a real Docker Engine.
-async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4' } = {}) {
+async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4', guideCrlf = false } = {}) {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'foundation flow with spaces-'));
   const projects = tmp + '/projects', root = projects + '/product-a';
   await fs.mkdir(root + '/backend', { recursive: true }); await fs.mkdir(root + '/frontend'); await fs.mkdir(projects + '/infra'); await fs.mkdir(tmp + '/bin');
-  await fs.copyFile(new URL('../../../instalacao-pwa-framework.md', import.meta.url), root + '/instalacao-pwa-framework.md');
+  const guide = await fs.readFile(new URL('../../../instalacao-pwa-framework.md', import.meta.url), 'utf8');
+  await fs.writeFile(root + '/instalacao-pwa-framework.md', guideCrlf ? guide.replace(/\r?\n/g, '\r\n') : guide);
   await fs.writeFile(projects + '/infra/docker-compose.yml', '# fixture'); await fs.writeFile(root + '/backend/composer.lock', '{}');
   await fs.writeFile(root + '/frontend/package.json', JSON.stringify({ scripts: { dev: 'vite', build: 'vite build' } }));
   await fs.writeFile(root + '/frontend/package-lock.json', '{}');
@@ -28,7 +29,7 @@ async function fixture({ pending = false, production = false, desktop = false, h
   const labels = service => ({ 'com.docker.compose.service': service, 'com.docker.compose.project': 'shared-infra', 'com.docker.compose.project.config_files': composeHostRoot + '/infra/docker-compose.yml', 'com.docker.compose.project.working_dir': composeHostRoot + '/infra', 'com.docker.compose.oneoff': 'False' });
   const php = { Id: 'php-id', Config: { Labels: labels('php-fpm') }, State: { Running: true }, Mounts: [...mounts, ...(!pending ? [{ Type: 'volume', Name: c.vendorVolume, Destination: c.backend + '/vendor' }] : [])], NetworkSettings: { Networks: { infra_network: {} }, Ports: {} } };
   const nginx = { Id: 'nginx-id', Config: { Labels: labels('nginx') }, State: { Running: true }, Mounts: mounts, NetworkSettings: { Networks: { infra_network: {} }, Ports: {} } };
-  const config = { services: { 'php-fpm': { volumes: [{ type: 'volume', source: c.vendorVolume, target: c.backend + '/vendor' }] }, [c.nodeService]: { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/frontend', target: '/app' }, { type: 'volume', source: c.modulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: '5176', host_ip: '127.0.0.1' }] } }, volumes: { [c.vendorVolume]: { name: c.vendorVolume }, [c.modulesVolume]: { name: c.modulesVolume } } };
+  const config = { services: { 'php-fpm': { volumes: [{ type: 'volume', source: c.vendorVolume, target: c.backend + '/vendor' }] }, [c.nodeService]: { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/frontend', target: '/app' }, { type: 'volume', source: c.modulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.DEV_PORT), host_ip: '127.0.0.1' }] } }, volumes: { [c.vendorVolume]: { name: c.vendorVolume }, [c.modulesVolume]: { name: c.modulesVolume } } };
   const data = { php, nginx, config, site: pending ? '' : nginxSnippet(c), marker: '', installs: 0, syncs: 0, calls: [], httpFailure, npmMarker: '', npmInstalls: 0, npmFailure, builds: 0, buildFailure, pwaFailure, frontendNode };
   const dataFile = tmp + '/fake-engine.json'; await fs.writeFile(dataFile, JSON.stringify(data));
   const fake = `#!${process.execPath}
@@ -70,15 +71,16 @@ fs.writeFileSync(file,JSON.stringify(data));process.stdout.write(out);
   return { root, invoke, data: async () => JSON.parse(await fs.readFile(dataFile, 'utf8')), cleanup: () => fs.rm(tmp, { recursive: true, force: true }) };
 }
 test('preparation exits 2 before dependencies/env writes when effective infra is missing', async () => {
-  const f = await fixture({ pending: true });
+  const f = await fixture({ pending: true, guideCrlf: true });
   try {
     const result = await f.invoke(); assert.equal(result.code, 2); assert.equal((await f.data()).installs, 0);
     await assert.rejects(fs.access(f.root + '/backend/.env'));
     const guide = await fs.readFile(f.root + '/instalacao-pwa-framework.md', 'utf8');
     assert.match(guide, /product-a-node/); assert.match(guide, /product_a_vendor/);
     assert.match(guide, /server_name product-a.localhost/);
-    const firstRun = guide.indexOf('```cmd\ndocker run --rm');
-    assert.ok(firstRun > 0);
+    // Check the command and its ordering, regardless of Markdown fences or Windows CRLF.
+    const firstRun = guide.search(/^[ \t]*docker run --rm[^\r\n]*pwa-foundation-bootstrap:0\.1\.0[^\r\n]* --project \S+/m);
+    assert.notEqual(firstRun, -1, 'Guia deve conter o comando de bootstrap com --project.');
     assert.doesNotMatch(guide, /docker compose (?:run.*|build) pwa-foundation-bootstrap/);
     assert.doesNotMatch(guide, /services:\s+pwa-foundation-bootstrap:/);
     assert.match(guide, /docker build -t pwa-foundation-bootstrap:0\.1\.0/);
