@@ -188,54 +188,41 @@ vite.cmd build
 
 ## Android por USB: preparação e Vite
 
-Este procedimento abre o Vite no Chrome do Android pelo cabo USB, usando um túnel ADB, sem depender da comunicação pelo Wi-Fi. Use a porta publicada no **Windows**, não a porta interna do contêiner.
+Abra o projeto no Chrome do celular pelo cabo USB, sem depender do Wi-Fi.
 
-| Uso | Porta no Windows neste guia | Endereço no celular |
-| --- | --- | --- |
-| Vite: desenvolvimento/HMR | DEV_PORT, exemplo 5176 | http://localhost:5176 |
-| Vite: exemplo alternativo com DEV_PORT=5173 | 5173 | http://localhost:5173 |
-| Build/PWA: instalação, offline e push | PREVIEW_PORT, exemplo 5177 | http://localhost:5177 |
+### Preparação inicial — uma vez
 
-### Comando rápido para começar no celular
+**No Windows:**
 
-Com o Vite em execução (`vite.cmd dev`), Android conectado por USB e depuração autorizada, execute no CMD. **Se a porta publicada no Windows for 5173:**
+1. Baixe [SDK Platform-Tools for Windows](https://developer.android.com/tools/releases/platform-tools).
+2. Extraia para `C:\tools\platform-tools` e confira se existe `adb.exe` nessa pasta. Não precisa instalar Android Studio nem alterar o PATH.
+
+**No Android:**
+
+1. Ative as opções do desenvolvedor. Em Samsung: **Configurações → Sobre o telefone → Informações do software → Número de compilação**; toque sete vezes. O caminho pode variar conforme o aparelho.
+2. Ative **Depuração USB**, conecte um cabo de dados e desbloqueie a tela.
+3. Autorize **Permitir depuração USB?**. Autorize permanentemente somente um computador de confiança.
+
+### Abrir no celular
+
+1. Inicie `vite.cmd dev` na pasta frontend e mantenha o terminal aberto.
+2. Confira `DEV_PORT` no `.env.foundation`. **Use esse mesmo número no comando ADB e no endereço do celular.** Exemplo com `DEV_PORT=5180`, em outro CMD:
 
 ```cmd
-C:\tools\platform-tools\adb.exe reverse tcp:5173 tcp:5173
+C:\tools\platform-tools\adb.exe reverse tcp:5180 tcp:5180
 ```
 
-Depois abra [http://localhost:5173](http://localhost:5173) no Chrome do celular. O caminho completo dispensa entrar na pasta platform-tools. Esse encaminhamento não inicia o Vite nem publica uma porta Docker.
+3. Abra [http://localhost:5180](http://localhost:5180) no Chrome do celular. Se sua DEV_PORT for outra, substitua **5180 nos dois lados do comando e no endereço**.
 
-**Se manteve DEV_PORT=5176 conforme a etapa 3**, use este comando e abra [http://localhost:5176](http://localhost:5176):
+Esse acesso serve para desenvolvimento. Para instalar a PWA e testar offline/push, siga a próxima seção, usando `PREVIEW_PORT`.
 
-```cmd
-C:\tools\platform-tools\adb.exe reverse tcp:5176 tcp:5176
-```
-
-Substitua a porta dos dois lados por DEV_PORT do seu projeto. Para instalar/testar offline e push, use o build e PREVIEW_PORT, conforme a próxima seção.
-
-Se aparecer `no devices/emulators found`, confira o cabo/conexão e execute:
+Se o aparelho não for encontrado:
 
 ```cmd
 C:\tools\platform-tools\adb.exe devices -l
 ```
 
-O aparelho deve aparecer como `device`; se estiver `unauthorized`, desbloqueie e autorize a depuração. Com vários aparelhos, acrescente `-s SERIAL` logo após adb.exe, usando o identificador listado. Refaça o encaminhamento após reconectar o cabo ou reiniciar o ADB.
-
-### Preparação inicial — uma vez por computador e celular
-
-**No Windows:**
-
-1. Baixe [SDK Platform-Tools for Windows](https://developer.android.com/tools/releases/platform-tools).
-2. Extraia a pasta platform-tools para `C:\tools\platform-tools`.
-3. Confira se existe `C:\tools\platform-tools\adb.exe`. Não precisa instalar Android Studio nem alterar o PATH.
-
-**No Android:**
-
-1. Ative as opções do desenvolvedor. Em Samsung: **Configurações → Sobre o telefone → Informações do software → Número de compilação**; toque sete vezes e informe o PIN quando solicitado. O caminho pode variar conforme o aparelho.
-2. Em **Opções do desenvolvedor**, ative **Depuração USB**.
-3. Conecte um cabo USB que permita transferência de dados e mantenha a tela desbloqueada.
-4. Ao aparecer **Permitir depuração USB?**, autorize o computador. Marque a autorização permanente somente em computador de confiança.
+Ele deve aparecer como `device`. Se aparecer `unauthorized`, desbloqueie a tela e autorize. Refaça o comando `reverse` após reconectar o cabo ou reiniciar o ADB. Com vários aparelhos, use `-s SERIAL` após adb.exe para escolher o aparelho listado.
 
 ## Testar a PWA no Windows/Android por USB
 
@@ -311,18 +298,6 @@ netstat -ano -p tcp | findstr /C:":5173 "
 ```
 
 Confira **endereço local/estado de escuta/PID** e encerre apenas o processo de teste identificado pelo Gerenciador de Tarefas. Remover o túnel ADB não encerra o servidor; parar o servidor não remove o túnel. Preserve os demais serviços/volumes e encaminhamentos; não use parada global nem `down -v`.
-
-## Conferir atualização
-
-Preencha campos na Hello do build A. Altere um texto de demonstração no código e execute `vite.cmd build` para gerar B. Na aba A, clique em Verificar atualização; confirme Atualizar aplicativo e confira os campos preservados. Repita com outra aba preenchida: ela deve aguardar sua confirmação. Recusar a atualização mantém a aba atual. Sem armazenamento de sessão disponível, a atualização com campos alterados é bloqueada.
-
-O rascunho da Hello é temporário, por aba/projeto, e só é salvo ao confirmar a atualização; não salva registros no banco. Os assets anteriores são mantidos em dist/assets para abas antigas. A limpeza deles depende do plano de publicação; não apague durante este teste.
-
-## Conferir o design system
-
-Após atualizar o pacote, mantenha o Vite aberto e recarregue a Hello. Sem mudanças de dependências, não é necessário reconstruir o executor nem reinstalar npm.
-
-Confira no celular/desktop: grid e página auxiliar, fonte/ícones, formulário vazio/inválido/válido e retorno das transições. Com Tab/Enter/Espaço/Escape, confira foco, botões, campos e FAB. O status deve mostrar carregamento e nunca manter OK ao ficar offline.
 
 ## Push Notifications (opcional)
 
