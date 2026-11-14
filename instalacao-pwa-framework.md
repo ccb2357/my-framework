@@ -259,23 +259,9 @@ C:\tools\platform-tools\adb.exe reverse --remove tcp:5181
 
 ## Push Notifications (opcional)
 
-1. No `.env.foundation`, acrescente/confira os campos abaixo. O `VAPID_SUBJECT` é obrigatório com push habilitado por exigência da configuração VAPID. O e-mail serve apenas como contato técnico: não envia nem recebe alertas automáticos e não aparece nas notificações. Informe um e-mail válido ou substitua por uma URL HTTPS sua. Deixe as duas chaves vazias **somente na primeira configuração**; preserve as já existentes.
-
-```dotenv
-PUSH_ENABLED=true
-VAPID_SUBJECT=mailto:seu-email@seu-dominio.com
-VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-PUSH_TEST_AUTH_ENABLED=true
-```
-
-`PUSH_TEST_AUTH_ENABLED=true` é exclusivo de testes locais. Em produção, mantenha `false` e use a autenticação do produto. Para não usar push, mantenha `PUSH_ENABLED=false`.
-
-2. Execute novamente o bootstrap da etapa 5. Ele instala as dependências PHP, prepara as tabelas, gera/preserva VAPID e publica o build. Não exige novo serviço Compose nem reconstrução do executor. Mantenha `.env.foundation` privado e não apague VAPID/APP_KEY nas atualizações.
-
 **Nome exibido nas notificações:** configure `PROJECT_NAME="Nome do aplicativo"` e `PWA_SHORT_NAME="Nome curto"` no `.env.foundation` e repita o bootstrap da etapa 5 para atualizar o manifest e o build. O Android pode demorar para atualizar o nome da PWA já instalada. O sininho é o ícone pequeno da notificação, separado do nome.
 
-3. No CMD, crie o acesso de teste local:
+1. No CMD, crie o acesso de teste local:
 
 ```cmd
 cd /d C:\var\www\infra
@@ -287,9 +273,9 @@ docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan push:
 
 `teste-push@example.test` identifica apenas o usuário de teste no banco; pode manter esse exemplo. Não precisa ser igual ao e-mail do `VAPID_SUBJECT` e não recebe e-mails.
 
-4. Abra a Hello pelo build (Nginx ou prévia na PREVIEW_PORT/ADB). Se aparecer Atualizar aplicativo, aplique a atualização. Na seção Push Notifications, cole o código exibido no terminal e entre; ele vale 10 minutos e só pode ser usado uma vez. Clique **Ativar neste dispositivo** e permita notificações.
+2. Abra a Hello pelo build (Nginx ou prévia na PREVIEW_PORT/ADB). Se aparecer Atualizar aplicativo, aplique a atualização. Na seção Push Notifications, cole o código exibido no terminal e entre; ele vale 10 minutos e só pode ser usado uma vez. Clique **Ativar neste dispositivo** e permita notificações.
 
-5. Clique **Enviar teste para este dispositivo**. Depois, no CMD:
+3. Clique **Enviar teste para este dispositivo**. Depois, no CMD:
 
 ```cmd
 docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan push:work
@@ -297,7 +283,7 @@ docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan push:
 
 Confira a notificação e o clique de retorno ao app. Repita com o app fechado, mantendo navegador/SO autorizados. **Enfileirada** aguarda o worker; **aceita pelo provedor** ainda não comprova exibição. Se houver retentativa, aguarde e execute o worker novamente.
 
-6. Confira preferência global desligada, desativação/revogação do dispositivo e saída da conta. Imagens dependem do navegador. iPhone/iPad exige PWA instalada e aberta pela Tela de Início; fora de localhost, use HTTPS. O código de acesso não é salvo: conclua o login ou limpe o campo antes de atualizar a PWA.
+4. Confira preferência global desligada, desativação/revogação do dispositivo e saída da conta. Imagens dependem do navegador. iPhone/iPad exige PWA instalada e aberta pela Tela de Início; fora de localhost, use HTTPS. O código de acesso não é salvo: conclua o login ou limpe o campo antes de atualizar a PWA.
 
 Em VPS, agende o worker no Cron a cada minuto, adaptando os caminhos/serviço existentes:
 
