@@ -47,7 +47,7 @@ services:
               target: /app
             - meu_projeto_node_modules:/app/node_modules
         ports:
-            - "127.0.0.1:5176:5173"
+            - "127.0.0.1:5180:5173"
         networks:
             - infra_network
         profiles:
@@ -175,7 +175,7 @@ cd /d C:\var\www\meu-projeto\frontend
 vite.cmd dev
 ```
 
-Abra [http://localhost:5176](http://localhost:5176). Mantenha esse terminal aberto; encerre com Ctrl+C. Alterações em .vue/JS/CSS devem aparecer pelo HMR.
+Abra [http://localhost:5180](http://localhost:5180). Mantenha esse terminal aberto; encerre com Ctrl+C. Alterações em .vue/JS/CSS devem aparecer pelo HMR.
 
 Esse endereço usa HMR e não registra o service worker. Teste a PWA pelo domínio Nginx ou pela prévia abaixo. Push funciona somente no build.
 
@@ -186,7 +186,7 @@ cd /d C:\var\www\meu-projeto\frontend
 vite.cmd build
 ```
 
-## Android por USB: preparação e Vite
+## Android por USB
 
 Abra o projeto no Chrome do celular pelo cabo USB, sem depender do Wi-Fi.
 
@@ -199,105 +199,63 @@ Abra o projeto no Chrome do celular pelo cabo USB, sem depender do Wi-Fi.
 
 **No Android:**
 
-1. Ative as opções do desenvolvedor. Em Samsung: **Configurações → Sobre o telefone → Informações do software → Número de compilação**; toque sete vezes. O caminho pode variar conforme o aparelho.
+1. Ative as opções do desenvolvedor. Em Samsung: **Configurações → Sobre o telefone → Informações do software → Número de compilação**; toque sete vezes.
 2. Ative **Depuração USB**, conecte um cabo de dados e desbloqueie a tela.
 3. Autorize **Permitir depuração USB?**. Autorize permanentemente somente um computador de confiança.
 
-### Abrir no celular
+Os exemplos abaixo usam `DEV_PORT=5180`, `PREVIEW_PORT=5181` e o serviço `meu-projeto-node`. Se seus valores forem outros, substitua-os nos comandos e endereços.
 
-1. Inicie `vite.cmd dev` na pasta frontend e mantenha o terminal aberto.
-2. Confira `DEV_PORT` no `.env.foundation`. **Use esse mesmo número no comando ADB e no endereço do celular.** Exemplo com `DEV_PORT=5180`, em outro CMD:
+### Desenvolvimento — sem instalação da PWA
+
+`vite.cmd dev` usa a **DEV_PORT (5180)**. Nesse modo, o service worker fica desativado e **o botão de instalar a PWA não aparece**.
+
+1. Na pasta frontend, execute e mantenha o terminal aberto:
+
+```cmd
+vite.cmd dev
+```
+
+2. Em outro CMD:
 
 ```cmd
 C:\tools\platform-tools\adb.exe reverse tcp:5180 tcp:5180
 ```
 
-3. Abra [http://localhost:5180](http://localhost:5180) no Chrome do celular. Se sua DEV_PORT for outra, substitua **5180 nos dois lados do comando e no endereço**.
+3. Abra [http://localhost:5180](http://localhost:5180) no Chrome do celular para desenvolver com atualização automática das alterações.
 
-Esse acesso serve para desenvolvimento. Para instalar a PWA e testar offline/push, siga a próxima seção, usando `PREVIEW_PORT`.
+### Instalar a PWA e testar offline/push
 
-Se o aparelho não for encontrado:
+Use o **build na PREVIEW_PORT (5181)**. O bootstrap da etapa 5 já gera o build; se alterou o frontend depois, execute `vite.cmd build` na pasta frontend antes de continuar.
 
-```cmd
-C:\tools\platform-tools\adb.exe devices -l
-```
-
-Ele deve aparecer como `device`. Se aparecer `unauthorized`, desbloqueie a tela e autorize. Refaça o comando `reverse` após reconectar o cabo ou reiniciar o ADB. Com vários aparelhos, use `-s SERIAL` após adb.exe para escolher o aparelho listado.
-
-## Testar a PWA no Windows/Android por USB
-
-Após aplicar os arquivos, atualize dependências pelo bootstrap da etapa 5; alternativamente, com configuração pública já regenerada, execute na pasta infra:
+1. Na pasta infra, execute e mantenha o terminal aberto:
 
 ```cmd
-docker compose --profile dev run --rm --no-deps meu-projeto-node npm ci
-```
-
-Faça o build com `vite.cmd build` e confira os arquivos antes de abrir uma única prévia:
-
-```cmd
-docker compose --profile dev run --rm --no-deps meu-projeto-node npm run check:pwa
+cd /d C:\var\www\infra
 ```
 
 ```cmd
-docker compose --profile dev run --rm --no-deps meu-projeto-node ls -l /app/dist/index.html /app/dist/manifest.webmanifest /app/dist/sw.js
+docker compose --profile dev run --rm --no-deps -p 127.0.0.1:5181:4173 meu-projeto-node npm run preview
+```
+
+2. Em outro CMD:
+
+```cmd
+C:\tools\platform-tools\adb.exe reverse tcp:5181 tcp:5181
+```
+
+3. Abra [http://localhost:5181](http://localhost:5181) no Chrome do celular. Instale pelo botão **Instalar aplicativo** ou pelo menu do Chrome.
+
+### Encerrar
+
+Pressione **Ctrl+C** no terminal do Vite/prévia. Para remover o túnel USB, execute somente a linha da porta utilizada:
+
+```cmd
+C:\tools\platform-tools\adb.exe reverse --remove tcp:5180
 ```
 
 ```cmd
-docker compose --profile dev run --rm --no-deps -p 127.0.0.1:5177:4173 meu-projeto-node npm run preview
+C:\tools\platform-tools\adb.exe reverse --remove tcp:5181
 ```
-
-Abra primeiro http://localhost:5177 no Windows. Mantenha a prévia aberta. Para Android, conecte o cabo, autorize a depuração USB e, em outro CMD, use o caminho real do ADB:
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse tcp:5177 tcp:5177
-```
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse --list
-```
-
-Abra http://localhost:5177 no Chrome Android. A porta interna 4173 do log não é o endereço do aparelho. Se houver vários aparelhos, selecione com `-s`. Ctrl+C encerra a prévia.
-
-## Encerrar testes e liberar portas
-
-1. Encerre o Vite/prévia com **Ctrl+C** no terminal onde iniciou cada um.
-2. Remova somente os túneis utilizados. Execute a linha correspondente à porta; adapte para as portas do seu projeto:
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse --remove tcp:5173
-```
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse --remove tcp:5176
-```
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse --remove tcp:5177
-```
-
-Confira os túneis restantes:
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse --list
-```
-
-3. Se a porta continuar ocupada, liste os contêineres do serviço Node do projeto. Confira nome/porta e pare somente o Vite ou a prévia desejada, substituindo ID_DO_CONTAINER pelo ID listado:
-
-```cmd
-docker ps --filter "label=com.docker.compose.service=meu-projeto-node" --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}"
-```
-
-```cmd
-docker stop ID_DO_CONTAINER
-```
-
-Se não houver contêiner correspondente, identifique quem escuta na porta do Windows; substitua 5173 pela porta em uso:
-
-```cmd
-netstat -ano -p tcp | findstr /C:":5173 "
-```
-
-Confira **endereço local/estado de escuta/PID** e encerre apenas o processo de teste identificado pelo Gerenciador de Tarefas. Remover o túnel ADB não encerra o servidor; parar o servidor não remove o túnel. Preserve os demais serviços/volumes e encaminhamentos; não use parada global nem `down -v`.
 
 ## Push Notifications (opcional)
 
@@ -329,7 +287,7 @@ docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan push:
 
 `teste-push@example.test` identifica apenas o usuário de teste no banco; pode manter esse exemplo. Não precisa ser igual ao e-mail do `VAPID_SUBJECT` e não recebe e-mails.
 
-4. Abra a Hello pelo build (Nginx ou prévia 5177/ADB). Se aparecer Atualizar aplicativo, aplique a atualização. Na seção Push Notifications, cole o código exibido no terminal e entre; ele vale 10 minutos e só pode ser usado uma vez. Clique **Ativar neste dispositivo** e permita notificações.
+4. Abra a Hello pelo build (Nginx ou prévia na PREVIEW_PORT/ADB). Se aparecer Atualizar aplicativo, aplique a atualização. Na seção Push Notifications, cole o código exibido no terminal e entre; ele vale 10 minutos e só pode ser usado uma vez. Clique **Ativar neste dispositivo** e permita notificações.
 
 5. Clique **Enviar teste para este dispositivo**. Depois, no CMD:
 
