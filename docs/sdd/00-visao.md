@@ -1,9 +1,7 @@
 # Visão
 
-PWA Framework é uma fundação reutilizável para criar PWAs independentes. O primeiro checkout local fica em C:\var\www\pwa-teste; seu nome público inicial é PWA Framework, derivado do arquivo central. Não há produto de negócio definido.
+PWA Framework é uma base reutilizável para iniciar aplicações independentes com Vue 3, Framework7 Vue, Vite, Laravel, MySQL, PWA e Web Push. Cada novo projeto recebe o código pronto e configura seu próprio `.env.foundation`.
 
-Inclui bootstrap portátil e idempotente, configuração central por ambiente, Laravel/MySQL, Framework7 Vue, Hello com componentes interativos, design system, PWA, Web Push, testes e documentação de continuidade. Cada clone recebe a base pronta e executa o inicializador; não repete as sprints.
+Inclui bootstrap Docker, backend/status, Hello demonstrativa, design system, build/offline/atualização, push e testes. Autenticação de produção, regras de negócio, dados do formulário, sincronização offline de registros e integrações comerciais pertencem ao produto criado sobre a base.
 
-Não inclui login completo, regras de negócio, integrações bancárias, persistência de dados do formulário Hello, edição offline/sincronização de registros ou pagamentos. Web Push exige sessão Laravel/Sanctum e CSRF. Há acesso de teste opcional apenas local, sem autenticação de produção inventada.
-
-Critérios de construção concluída: Hello interativa e status real, backend/banco integrados, build/PWA e Web Push verificados, testes aplicáveis, bootstrap funcional, dois clones isolados e reexecução validados. Aparelhos reais e produção exigem evidências específicas. O [README](../../README.md) rege o escopo detalhado; andamento somente em [MEMORY](../../MEMORY.md).
+Instalação e operação: [guia da raiz](../../instalacao-pwa-framework.md). Versões: manifests/lockfiles e `foundation.json`. Aceite e limites comprovados: [MEMORY.md](../../MEMORY.md). Os documentos SDD descrevem os contratos atuais, sem histórico de construção.

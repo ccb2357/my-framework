@@ -1,168 +1,47 @@
 # Ambiente e inicialização
 
-O roteiro único de instalação, trechos Compose/Nginx, comandos de teste, operação diária e VPS está em [instalacao-pwa-framework.md](../../instalacao-pwa-framework.md), na raiz. Este documento mantém o contrato técnico do ambiente. Na instalação local desta entrega, configurar e aplicar todos os recursos da infraestrutura antes de executar o bootstrap; código 2 indica pendências a corrigir, não uma passagem obrigatória do roteiro.
-
-## Mapeamento observado em 2026-11-11
-
-Este registro descreve as evidências recebidas naquela data e pode ficar desatualizado. Ao iniciar ou retomar uma análise da infraestrutura, solicitar ao responsável os arquivos atuais necessários: Compose, Dockerfile PHP-FPM, configuração principal e sites ativos do Nginx e php.ini. Não manter cópias desses arquivos no projeto.
-
-| Elemento | Valor de referência |
-| --- | --- |
-| Projeto no Windows | C:\var\www\pwa-teste, confirmado pelo responsável |
-| Infra no Windows | C:\var\www\infra, inferido da estrutura irmã e caminho previamente informado; confirmado pelas labels enviadas |
-| Projeto interno | /var/www/pwa-teste |
-| Compose compartilhado | ../infra/docker-compose.yml relativo ao projeto |
-| Bind PHP/Nginx | ../:/var/www |
-| Rede | infra_network, bridge, name explícito |
-| PHP | Serviço php-fpm, container_name php-fpm, build ./dockerfile |
-| Imagem PHP declarada | php:8.2.35-fpm |
-| Composer | Copiado de composer:2 para /usr/local/bin/composer |
-| Extensões adicionadas | mysqli, pdo, pdo_mysql, zip, gd, intl |
-| Nginx | nginx:alpine, serviço nginx, portas 80/443 |
-| Configuração principal | infra/nginx/default.conf → /etc/nginx/nginx.conf, ro |
-| Sites ativos | infra/nginx/sites_local.conf → /etc/nginx/conf.d/sites_local.conf, ro |
-| Includes | http inclui /etc/nginx/conf.d/*.conf |
-| PHP ini | infra/php.ini → /usr/local/etc/php/conf.d/custom.ini no build |
-| Fuso PHP atual | America/Sao_Paulo; Laravel usa o central, padrão UTC |
-| Banco | mysql:8.0, serviço/host mysql, porta 3306, mysql_data |
-| Slug / domínio local | pwa-teste / pwa-teste.localhost |
-| Serviço Node | pwa-teste-node, node:22-alpine, /app, perfil dev |
-| Volumes exclusivos | pwa_teste_vendor e pwa_teste_node_modules, names estáveis |
-| Bancos a configurar | pwa_teste e pwa_teste_test |
-| Porta dev | 127.0.0.1:5176 → 5173 |
-| Porta preview | 127.0.0.1:5177 → 4173 |
-
-A infraestrutura compartilhada permanece externa ao projeto. O SDD documenta contratos e evidências históricas; os arquivos atuais fornecidos pelo responsável fundamentam cada nova análise. Configuração declarada não comprova contêiner ativo, imagem construída, disponibilidade de porta ou mount aplicado.
-
-Nos arquivos recebidos antes da integração da Sprint 1, não havia serviço/site/volume pwa-teste. Composer já está na imagem. O entrypoint está embutido no Dockerfile; não existe necessidade de pedir arquivo separado. Ele atualmente faz chown recursivo em /var/www e toca arquivo do uploader: preservar os demais aplicativos; o bootstrap deve ajustar permissões somente no projeto. Não reconstruir/recriar PHP-FPM sem necessidade: o serviço é compartilhado.
-
-Minhas Finanças e Clima declaram ambos 127.0.0.1:5173; não subir todo o perfil dev. Os novos serviços usam portas distintas, sujeitas à verificação real.
+O [guia de instalação](../../instalacao-pwa-framework.md) concentra os comandos e trechos Compose/Nginx. Host precisa de Docker/Compose; PHP/Composer e Node/npm executam em contêineres. PHP 8.2, MySQL 8 e Node 22.13+ na linha 22; dependências fixadas pelos lockfiles.
 
 ## Configuração central
 
+A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e `frontend/.foundation.public.json`; não criar `.env` frontend nem editar derivados. Preservar opções próprias do produto e APP_KEY/VAPID válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
 
-Versionar .env.foundation.example; cada máquina cria .env.foundation privado. Não copiar credenciais locais para VPS. Não solicitar senhas no chat.
-
-| Campos | Validação/derivação |
+| Campos | Contrato |
 | --- | --- |
-| PROJECT_SLUG | Obrigatório, minúsculas/hífens, igual à pasta; divergência interrompe sem renomear |
-| PROJECT_NAME | Nome público obrigatório |
-| APP_ENV | Obrigatório, somente local ou production; nunca inferir pelo sistema |
-| INFRA_COMPOSE_PATH | Relativo à raiz do projeto, resolver independentemente do terminal |
-| CONTAINER_PROJECTS_ROOT | Raiz permitida para --project; validar caminho real e contenção, inclusive symlinks |
-| DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE | Identidade dos recursos compartilhados; nomes de serviço não são container_name presumido |
-| NGINX_INTERNAL_URL | Target interno do proxy, padrão http://nginx |
-| LOCAL_DOMAIN | Padrão slug.localhost; validar hostname |
-| DEV_PORT, PREVIEW_PORT | Inteiros 1–65535, distintos e sem conflito real; 5173/4173 internos fixos |
-| PRODUCTION_URL | Obrigatória HTTPS em production; sem domínio inventado |
-| DB_HOST, DB_PORT | Host/porta existentes MySQL |
-| DB_DATABASE | Padrão slug com sublinhados |
-| DB_TEST_DATABASE | Vazio deriva banco principal + _test; obrigatoriamente distinto |
-| DB_USERNAME, DB_PASSWORD | Conta existente, exatamente informada, inclusive root; sem geração/grants |
-| APP_LOCALE | pt_BR padrão, mapear para frontend/manifest pt-BR |
-| APP_TIMEZONE, DISPLAY_TIMEZONE | UTC e America/Sao_Paulo padrão; validar identificadores IANA |
-| SESSION_LIFETIME | Inteiro positivo em minutos, padrão 120 |
-| PWA_SHORT_NAME, PWA_DESCRIPTION | Nome curto assume PROJECT_NAME; descrição pública |
-| PWA_THEME_COLOR, PWA_BACKGROUND_COLOR | Validar #RRGGBB; metadados públicos, não modificar tokens globais |
+| PROJECT_SLUG, PROJECT_NAME | Slug minúsculo com hífens, igual à pasta; nome público. Renomear identidade inicializada exige migração explícita. |
+| APP_ENV, PRODUCTION_URL | local/production explícito; produção exige origem HTTPS e --force para o bootstrap. |
+| INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT | Compose real e raiz interna permitida; validar caminhos/mounts e bloquear escapes por symlink. |
+| DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL | Recursos existentes; não presumir container_name. |
+| LOCAL_DOMAIN, DEV_PORT, PREVIEW_PORT | Domínio e portas disponíveis, distintas entre serviços/projetos. Dev: porta do host → 5173 interno; prévia: porta do host → 4173 interno. |
+| DB_HOST/PORT/USERNAME/PASSWORD | MySQL/conta existentes; não criar usuários/senhas/grants. |
+| DB_DATABASE, DB_TEST_DATABASE | Banco principal e testing distinto; padrões derivados do slug e sufixo _test. |
+| APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME | Localidade, fusos IANA e duração da sessão; padrões no exemplo. |
+| PWA_SHORT_NAME/DESCRIPTION/THEME_COLOR/BACKGROUND_COLOR | Identidade pública; cores #RRGGBB não substituem tokens CSS. |
+| PUSH_ENABLED, PUSH_TEST_AUTH_ENABLED | Opcionais; acesso de teste permitido somente local. |
+| VAPID_SUBJECT/PUBLIC_KEY/PRIVATE_KEY | Contato mailto:/HTTPS e par de chaves. Bootstrap gera o par ausente e preserva o válido; par parcial/inválido interrompe. |
 
-Derivar serviço slug-node, volumes slug_com_sublinhados_vendor/node_modules, cookie exclusivo, identificador manifest estável e caminhos internos pela raiz. APP_URL deriva do ambiente e debug é false em produção. Backend .env/.env.testing recebem só chaves gerenciadas; preservar outros valores e APP_KEY válida. Chave ausente é gerada uma única vez. .env.testing usa APP_ENV=testing e banco exclusivo.
+Derivar serviço `<slug>-node`, volumes `<slug_com_sublinhados>_vendor` e `<slug_com_sublinhados>_node_modules`, bancos e cookie próprios. Configuração pública usa whitelist; nunca incluir central completo, credenciais, APP_KEY ou VAPID privada em bundle/manifest/log/API.
 
-Lista pública permitida: nome/slug, localidade/fuso de exibição, identidade PWA, URL/origem pública necessária, base /api/v1, portas/proxy estritamente usados pelo Vite e identificador do build. Não expor credenciais, APP_KEY, socket ou arquivo central completo em VITE_, manifest, bundle, logs ou docs.
+## Infraestrutura e executor
 
+Reutilizar Compose/rede/PHP-FPM/Nginx/MySQL existentes. Antes de analisar ou alterar infraestrutura, solicitar os arquivos atuais necessários: Compose, Dockerfile PHP, Nginx principal/sites e php.ini, com segredos removidos. Não armazenar cópias em docs nem tratar histórico como configuração atual.
 
-## Implementação do executor
+Imagem `pwa-foundation-bootstrap:0.1.0`, construída de `scripts/bootstrap/Dockerfile`, executada por docker run --rm com bind dos projetos, socket Docker e rede existente. Sem serviço de bootstrap no Compose, atalhos foundation.cmd/sh, dockerd interno ou runtime no host. O executor usa suas próprias dependências em /opt/foundation.
 
-A imagem pwa-foundation-bootstrap:0.1.0 é construída com docker build e executada com docker run --rm; não cadastrar serviço de bootstrap no Compose. Montar a raiz real dos projetos e o socket do Engine, informar working_dir, FOUNDATION_PROJECTS_ROOT e rede existente. --rm remove o executor ao terminar, preservando imagem, binds e volumes nomeados do aplicativo. Comandos CMD/Linux e migração do serviço antigo estão no guia da raiz. Não criar foundation.cmd/foundation.sh.
+Descoberta por labels Compose e mounts reais; preservar projeto/diretório/arquivos Compose e mapear caminhos host↔contêiner, inclusive Docker Desktop. Compose dentro do executor é somente leitura/validação. PHP usa docker exec; instalações frontend e verificação real de portas usam contêineres temporários. Alterações na infraestrutura são aplicadas manualmente pelo responsável, sem substituir recursos de outros sites.
 
-[scripts/bootstrap/Dockerfile](../../scripts/bootstrap/Dockerfile) usa node:22-alpine e copia Docker CLI 28.5.1 e Compose 2.40.3 da imagem docker:28.5.1-cli. Não inclui nem inicia dockerd. O parser dotenv 16.6.1 é instalado pelo package-lock próprio em /opt/foundation, antes de existir node_modules do aplicativo.
+Bootstrap valida configuração/infra, gera blocos do guia, prepara env/chaves/permissões restritas ao projeto, instala pelos lockfiles quando necessário, confere conexão/plataforma, executa app:sync, compila e verifica backend/PWA pelo Nginx. Cria somente bancos ausentes quando autorizado pela conta; não executa fresh/reset/drop/seeders. Falha interrompe sem anunciar sucesso parcial.
 
-O entrypoint aceita --project absoluto e --force opcional, resolve realpath e impede escape por symlinks da raiz FOUNDATION_PROJECTS_ROOT (padrão /var/www). Executa scripts/bootstrap/index.mjs do alvo. Lógica em módulos ES; child_process com shell false e argumentos separados. Nenhum runtime é exigido no host além de Docker/Compose. O acesso ao Engine usa o socket montado; falha de permissão interrompe.
+Códigos: **0** backend/build/HTTP verificados; **1** erro; **2** integração manual pendente. `.foundation-state.json` registra identidade/fase/hashes sem segredos e não substitui verificações reais. Lock impede concorrência; interrompido abruptamente, conferir ausência de processo antes de remover o lock. Reexecução preserva dados/chaves/dependências inalteradas e personalizações.
 
-A configuração central só aceita APP_ENV local/production. Produção exige origem HTTPS sem caminho/credenciais e --force antes de instalar/configurar o backend. Argumentos não podem contradizer o central. .foundation-bootstrap.lock impede execuções concorrentes; se uma execução for encerrada abruptamente, conferir ausência de processo ativo antes de remover somente esse diretório de lock.
+## Acesso, build e fila
 
-### Identidade Compose e mapeamento de caminhos
+Nginx serve `frontend/dist`; /api, /sanctum, /up e /status seguem Laravel, sem fallback SPA. PHP externo/dotfiles bloqueados; HTML/manifest/worker sem cache imutável e assets com hash/cache longo. Vite dev tem HMR, proxy técnico e nenhum worker; prévia usa PREVIEW_PORT. ADB encaminha a porta do host ao Android; só o build oferece instalação/offline/push. Produção exige HTTPS público e certificado válido.
 
-O bootstrap descobre o PHP por labels e mount real, sem presumir container_name. Confere com.docker.compose.project, project.working_dir e project.config_files. O primeiro arquivo deve corresponder a INFRA_COMPOSE_PATH; arquivos adicionais são preservados em ordem. A raiz bind do PHP fornece o mapa explícito host↔contêiner; sem mapa inequívoco a execução para.
+Fila database no MySQL existente. `push:work` tem lock de 180s, janela de 50s e limite externo de 75s; retry_after 90s, job 45s e transporte 15s. Requer proc_open. Operar periodicamente no mecanismo existente/Cron; não iniciar workers externos concorrentes sem ajustar esses limites. Não exige Redis nem novo contêiner. Preservar VAPID/APP_KEY nas atualizações.
 
-Nesta infraestrutura: C:\var\www ↔ /var/www; Compose host C:\var\www\infra\docker-compose.yml ↔ /var/www/infra/docker-compose.yml; projeto Compose infra. Em Linux, o mesmo mecanismo usa a raiz real extraída de inspect. Não inferir que /var/www é bind source válido no daemon do Windows.
+## Testes
 
-Dentro do executor, Compose é usado **somente para leitura/validação** com --project-name, --project-directory, arquivos efetivos e perfil dev, além de config --no-path-resolution. Não executar compose up/run para criar a pilha de dentro do executor. Operações PHP usam docker exec com IDs descobertos; a verificação de portas usa um contêiner Node temporário com bindings solicitados diretamente ao Engine. Assim não há remapeamento incorreto de binds em mutações Compose. O atalho Windows roda Compose no host, preservando projeto, diretório e arquivos descobertos.
+PHPUnit/MySQL somente no ambiente testing e banco exclusivo conferido pelo TestingDatabaseGuard antes de RefreshDatabase: central local, conexão/servidor/porta/banco correspondentes, distintos do principal, sem URL/socket/read-write alternativos. Não executar suíte destrutiva em produção nem desligar MySQL compartilhado.
 
-Os blocos gerenciados em instalacao-pwa-framework.md contêm bind source host mapeado explicitamente. Não copiar esses caminhos Windows para a VPS: executar a preparação naquele ambiente para gerar os valores reais.
-
-Conflitos de portas declaradas em outros serviços/contêineres interrompem. Portas livres são reservadas temporariamente pelo Engine usando publicação real 127.0.0.1, sem confundir bind dentro do executor com disponibilidade no host. A reserva termina antes da aplicação manual; outro processo ainda pode ocupar a porta depois. Em falha, conferir escutas/reservas no Windows ou VPS, sem mudar portas silenciosamente.
-
-## Fases, preservação e saídas
-
-| Código | Significado |
-| --- | --- |
-| 0 | Etapa backend desta release inicializada e verificada; consultar completeFoundation no estado |
-| 1 | Erro de configuração/runtime/processo ou produção sem --force |
-| 2 | Infraestrutura a aplicar manualmente, ou bancos inacessíveis que exigem criação manual |
-
-Preparação: validar central, identidade, configuração Compose, serviços, rede, mounts e portas; atualizar os blocos Compose/Nginx de instalacao-pwa-framework.md sem credenciais e atualizar somente blocos documentais gerenciados. Configuração Nginx em disco é conferida e o HTTP final comprova que o site está efetivamente respondendo. Se faltarem recursos, parar antes de dependências/backend .env.
-
-Inicialização: PHP 8.2/extensões/Composer 2; sincronizar chaves gerenciadas nos .env; ajustar apenas storage, bootstrap/cache e permissões dos .env do projeto; instalar pelo composer.lock somente se necessário; validar plataforma; conectar e criar somente bancos ausentes com a conta existente; limpar configuração em processo separado, conferir a configuração Laravel efetiva e executar app:sync. Em local, gerar .env.testing separado; em produção, não gerar esse ambiente de testes.
-
-O marker de dependências é lido/escrito via PHP **dentro do volume vendor real**; o executor não confunde o diretório vazio do bind do host com o volume do PHP-FPM. Reexecução preserva APP_KEY válida e não reinstala dependências inalteradas. Chave existente inválida interrompe para correção explícita. Nunca migrar fresh/reset/drop, executar seeders ou alterar usuários/grants.
-
-A conferência efetiva bloqueia valores herdados ou conexão URL/socket/read-write que desviem do central, antes de migrations. Credenciais transitam em stdin, não em argumentos/logs públicos. APP_KEY e segredos não acompanham a release.
-
-.foundation-state.json guarda schema, identidade, hashes, fase, resultados seguros e próximo escopo; não contém credenciais. Estado anterior nunca substitui verificação de recursos reais. Alterar slug/pasta/bancos/volumes após inicializar exige plano explícito de migração. Atualizar somente saídas/blocos gerenciados; não restaurar Hello sobre produto personalizado.
-
-## Referências oficiais
-
-- Laravel: https://laravel.com/docs/12.x/installation
-- Sanctum: https://laravel.com/docs/12.x/sanctum
-- Artisan: https://laravel.com/docs/12.x/artisan
-- Compose config: https://docs.docker.com/reference/cli/docker/compose/config/
-- Projeto Compose: https://docs.docker.com/compose/how-tos/project-name/
-- Node child_process: https://nodejs.org/docs/latest-v22.x/api/child_process.html
-
-## Contrato dos testes
-
-A suíte completa PHP inclui o grupo mysql, com consulta real, diagnóstico saudável, app:sync duas vezes no banco testing e falha de conexão restrita ao processo. TestingDatabaseGuard exige APP_ENV=testing, central local e MySQL com servidor/porta e DB_TEST_DATABASE esperados, distinto do principal, sem URL/socket/read-write alternativos; valida antes de traits como RefreshDatabase. O grupo mysql pode ser excluído com --exclude-group=mysql para contratos determinísticos, mantendo o guard de isolamento. Não executar testes destrutivos em produção. Testes Node de Engine/Compose são simulações e não comprovam integração real com Docker ou VPS. Resultados e limites das verificações são registrados em MEMORY.md. Comandos operacionais ficam no guia da raiz.
-
-Os subprocessos dos testes de orquestração preservam FOUNDATION_RUNTIME_PACKAGE do executor, que aponta para /opt/foundation/package.json; o fallback executor/package.json local só é usado quando a variável não existe. A suíte não exige node_modules no bind do projeto quando executada pela imagem.
-
-## Frontend da Sprint 2
-
-Node 22 (>=22.13 <23), Vite 8.3.4, plugin-vue 6.0.11, Vue 3.5.45, framework7/framework7-vue 9.2.0, framework7-icons 5.0.5, lucide 1.72.0, IMask 7.6.1 e JustValidate 4.3.0. Engines/peers conferidos no registry dos pacotes. CSS exportado por framework7/css/bundle, sem sufixo .css nessa versão; ler exports da versão fixada. Sem dependência de biblioteca adicional de estilos.
-
-frontend/.foundation.public.json é gerado por ambiente e ignorado no Git. O Vite exige esse arquivo, gera título/locale e proxy API/Sanctum/up → Nginx com Host do domínio central. Servidor interno 5173, strictPort, host true, polling 300ms; publicação no host usa DEV_PORT (5176). frontend/vite.cmd resolve Compose/serviço/caminhos reais. Site Nginx serve frontend/dist e encaminha rotas técnicas para Laravel. Build verificado não prova instalação em aparelho.
-
-Estado pwa-ready significa backend, build e HTTP no Nginx verificados; instalação/offline/atualização em navegador são aceites separados. Comandos no guia da raiz. Fila push usa QUEUE_CONNECTION=database; o código 0 não comprova consumo da fila ou entrega ao aparelho.
-
-
-## Build e PWA
-
-Dependências fixadas: vite-plugin-pwa 2.0.0 (peer compatível com Vite 8), workbox-core/precaching/routing/strategies/window 7.4.1; Node 22. O plugin 1.2.0 não declara suporte ao Vite 8 e não foi utilizado. Fonte única src/sw.js, injectManifest e registro virtual:pwa-register; sem SW em dev. Não habilitar skipWaiting automático ou autoUpdate.
-
-Configuração pública inclui shortName/description/backgroundColor por whitelist. Vite exige configuração atual; bootstrap a regenera antes de conferir infraestrutura. Entrada index.html é absoluta, resolvida de import.meta.url; sem depender do cwd ou nome da pasta frontend. Identificador de build usa hash de fontes/estáticos/scripts/lock/configuração pública, sem credenciais ou horário variável.
-
-npm run build usa .dist-build, verifica HTML/manifest/ícones/SW/precache/entrada e publica em dist. Assets/fontes/ícones são copiados antes de offline/manifest/HTML/worker, arquivos substituídos por rename individual, worker por último. Mantém assets versionados anteriores; não é uma transação de todo o diretório ou rollback de banco. Falha de compilação/validação não troca HTML servido. Falha de I/O na publicação exige corrigir e repetir; não anunciar deploy atômico integral. Build não instala npm automaticamente.
-
-Ícones PNG 192/512 (manifest) e 180 (Apple) são provisórios, texto PWA e fundo azul; identidade final depende de aprovação. Não são automaticamente redesenhados pelo central. Manifest id/start_url/scope raiz, standalone, nome/cores/locale públicos. Produto em subdiretório exige nova integração; esta base publica na raiz de sua origem.
-
-Nginx: root frontend/dist; /api, /sanctum, /up e /status reescrevem internamente para backend/public/index.php, sem fallback SPA. PHP direto externo bloqueado; dotfiles negados. HTML/manifest/worker sem immutable; /assets com hashes e cache longo; arquivo de asset ausente retorna 404. verify-http.php confere backend/CSRF; verify-pwa.php valida build servido, manifest/SW/offline, cabeçalhos e 404 técnico sem HTML SPA. Produção usa URL HTTPS pública e certificado validado. Configurações reais devem ser enviadas pelo responsável antes da análise/aplicação compartilhada.
-
-Bootstrap retorna 2 se o site anterior não corresponder ao bloco PWA. Não aplica infraestrutura automaticamente. Após aplicação manual, instala npm pelo lock, compila e valida artefatos/HTTP; falha interrompe e não marca pwa-ready. Não cria usuário nem envia notificações; prepara VAPID e tabelas push conforme o central. Executor continua temporário por docker run --rm, sem rebuild da sua imagem para atualizar scripts montados.
-
-Prévia opcional: Vite preview em 4173 interno, publicação explícita PREVIEW_PORT (exemplo 5177), sem --service-ports. Proxy técnico usa o Nginx/Host configurados. USB ADB encaminha a porta do Windows; não comprova HTTP. Nginx sem Vite é obrigatório no aceite; prévia não substitui produção. HTTPS fora de localhost; instalação e suporte variam por navegador/aparelho.
-
-## Configuração e operação push
-
-PUSH_ENABLED=false e PUSH_TEST_AUTH_ENABLED=false por padrão. VAPID_SUBJECT é contato real mailto:/HTTPS; VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY pertencem ao aplicativo/ambiente. O bootstrap instala pelo composer.lock, valida/gera o par pelo PHP e grava somente essas linhas no central privado. Par válido é preservado; parcial, inválido ou incompatível com o subject interrompe. Campos são derivados ao .env/config/webpush.php e conferidos antes das migrations; chave privada nunca entra na configuração pública Vite/API/log. Não apagar/rotacionar VAPID nem APP_KEY durante atualização.
-
-.env.testing mantém push/test-auth desabilitados e VAPID vazias. Testes de integração ativam apenas configurações de processo e simulam a fila/transporte, no MySQL testing protegido. Produção rejeita PUSH_TEST_AUTH_ENABLED=true; rotas/CLI de acesso local também conferem APP_ENV=local. Nenhuma conta é semeada pelo bootstrap.
-
-Fila database reaproveita jobs/failed_jobs. push:work executa no PHP-FPM existente, fila push, lock de 180s, janela de 50s e limite externo de 75s via Symfony Process; retry_after padrão de 90s. Não executar workers concorrentes externos sem ajustar esses limites. Jobs têm timeout de 45s, transporte de 15s e três tentativas. Cron chama push:work periodicamente; Scheduler não consome jobs. Sem novo contêiner, Redis ou daemon obrigatório. O PHP precisa permitir processos locais (proc_open); ausência falha sem anunciar envio concluído. Comandos e teste real somente no guia da raiz.
-
-
-## Validação final
-
-Configuração manual exclusivamente em `.env.foundation`; Laravel/testing e configuração pública do frontend são derivados pelo bootstrap. O preparo frontend confere Node 22.13+ na linha 22 antes de instalar, conforme os engines das ferramentas fixadas.
-
-Vitest 5.1.0 testa lógica; ESLint 10.15.0/Vue e Stylelint 16.26.1 conferem JavaScript/Vue/CSS. Playwright 1.65.1 roda em serviço temporário opcional no Compose existente, com browsers Ubuntu e Node 22, dependências isoladas por tmpfs. Não compartilhar node_modules entre essa imagem e Alpine. Dockerfile em frontend/tests/e2e/Dockerfile; comandos e aceite em [Validação final da fundação](../../instalacao-pwa-framework.md#validação-final-da-fundação).
-
-`foundation:verify` só aceita ambiente local, banco principal correspondente ao central e bootstrap concluído. Referência privada `.foundation-acceptance.json`: hashes de configuração/chaves/arquivos e hashes/contagens das tabelas, sem valores de registros ou segredos. Captura transacional somente leitura; não altera dados. Compara reexecução de cada clone e colisões entre identificadores das referências de dois clones. Não substitui os checks reais do Engine, HTTP e banco. Guards de testing/produção bloqueiam a captura. Comparação exige ausência de atividade concorrente; mudanças intencionais exigem referência revisada.
+Vitest testa lógica; Pint/ESLint/Stylelint conferem código. Contratos/orquestração Node simulam Engine/Compose/HTTP e aceitam manual com LF/CRLF e exemplos agnósticos. Playwright e comparação visual estão disponíveis no código, mas não integram automaticamente o aceite local; API/PushManager simulados não comprovam envio real. Evidências em [MEMORY.md](../../MEMORY.md), comandos aplicáveis no guia.
