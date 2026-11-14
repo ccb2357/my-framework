@@ -43,7 +43,7 @@ services:
         working_dir: /app
         volumes:
             - type: bind
-              source: 'C:\var\www\meu-projeto\frontend'
+              source: C:/var/www/meu-projeto/frontend
               target: /app
             - meu_projeto_node_modules:/app/node_modules
         ports:
