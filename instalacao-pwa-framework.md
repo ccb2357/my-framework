@@ -24,10 +24,6 @@ cd /d C:\var\www\infra
 docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
 ```
 
-O executor roda temporariamente, fora do Compose. Se já houver um serviço `pwa-foundation-bootstrap` no Compose, remova somente esse bloco e salve; preserve os demais serviços, volumes e rede. Não crie atalhos de bootstrap.
-
-Para testar a migração sem reutilizar cache, acrescente `--no-cache` ao build acima. Não é necessário apagar a imagem antiga. Nas próximas execuções, reconstrua apenas se o Dockerfile, entrypoint ou dependências do executor mudarem.
-
 <!-- BEGIN FOUNDATION INSTALL INFRA -->
 
 ## 3. Preparar serviço Node, mount, volumes e site
