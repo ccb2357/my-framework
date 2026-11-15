@@ -36,3 +36,10 @@ frontend/.dist-build/
 # Referência privada do aceite local
 .foundation-acceptance.json
 .foundation-acceptance.json.tmp
+
+# Administrativo independente
+admin/.foundation.public.json
+admin/dist/
+admin/.dist-build/
+admin/test-results/
+admin/playwright-report/

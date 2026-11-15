@@ -4,7 +4,7 @@ O [guia de instalação](../../instalacao-pwa-framework.md) concentra os comando
 
 ## Configuração central
 
-A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e `frontend/.foundation.public.json`; não criar `.env` frontend nem editar derivados. Preservar opções próprias do produto e APP_KEY/VAPID válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
+A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e as configurações públicas `frontend/.foundation.public.json`/`admin/.foundation.public.json`; não criar `.env` frontend nem editar derivados. Preservar opções próprias do produto e APP_KEY/VAPID válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
 
 | Campos | Contrato |
 | --- | --- |
@@ -13,6 +13,8 @@ A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera 
 | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT | Compose real e raiz interna permitida; validar caminhos/mounts e bloquear escapes por symlink. |
 | DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL | Recursos existentes; não presumir container_name. |
 | LOCAL_DOMAIN, DEV_PORT, PREVIEW_PORT | Domínio e portas disponíveis, distintas entre serviços/projetos. Dev: porta do host → 5173 interno; prévia: porta do host → 4173 interno. |
+| ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL | Opcionais: vazios derivam admin.<host da PWA>. Hosts diferentes; produção HTTPS sem caminho/porta. |
+| ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT | Admin: 5182/5183 no exemplo. Quatro portas distintas entre PWA/admin; internamente 5173 dev/4173 preview. |
 | DB_HOST/PORT/USERNAME/PASSWORD | MySQL/conta existentes; não criar usuários/senhas/grants. |
 | DB_DATABASE, DB_TEST_DATABASE | Banco principal e testing distinto; padrões derivados do slug e sufixo _test. |
 | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME | Localidade, fusos IANA e duração da sessão; padrões no exemplo. |
@@ -45,3 +47,5 @@ Fila database no MySQL existente. `push:work` tem lock de 180s, janela de 50s e 
 PHPUnit/MySQL somente no ambiente testing e banco exclusivo conferido pelo TestingDatabaseGuard antes de RefreshDatabase: central local, conexão/servidor/porta/banco correspondentes, distintos do principal, sem URL/socket/read-write alternativos. Não executar suíte destrutiva em produção nem desligar MySQL compartilhado.
 
 Vitest testa lógica; Pint/ESLint/Stylelint conferem código. Contratos/orquestração Node simulam Engine/Compose/HTTP e aceitam manual com LF/CRLF e exemplos agnósticos. Playwright e comparação visual estão disponíveis no código, mas não integram automaticamente o aceite local; API/PushManager simulados não comprovam envio real. Evidências em [MEMORY.md](../../MEMORY.md), comandos aplicáveis no guia.
+
+Admin obrigatório: serviço `<slug>-admin-node`, volume `<base>_admin_node_modules`, bind de admin/ em /app e dist separado. Não recebe credenciais, VAPID ou configuração PWA no bundle. Configuração pública passa por whitelist também no Vite. Cada atalho vite.cmd preserva a identidade Compose e opera somente seu serviço. Build admin valida staging antes de publicar assets e index, preservando assets antigos. Código 0 exige HTML/identificação/assets e backend pelo host administrativo, cabeçalhos corretos e ausência dos recursos PWA. Isso não certifica login (ainda pendente), navegador, Docker/Windows ou HTTPS real. Não adicionar origens administrativas à sessão PWA nesta etapa.

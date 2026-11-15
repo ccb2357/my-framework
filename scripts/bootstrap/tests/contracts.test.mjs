@@ -6,12 +6,12 @@ import path from 'node:path';
 import { parseCentral, validate, args, contained } from '../lib/config.mjs';
 import { mapPath, mappedPaths, infraProblems, sameHost } from '../lib/docker.mjs';
 import { managedEnv, synchronizeEnvs, appKey, checkIdentity, identity, writeAtomic } from '../lib/files.mjs';
-import { composeSnippet, nginxSnippet, siteApplied, viteCmd, publicConfiguration } from '../lib/templates.mjs';
+import { composeSnippet, nginxSnippet, siteApplied, viteCmd, publicConfiguration, adminPublicConfiguration } from '../lib/templates.mjs';
 import { run } from '../lib/process.mjs';
 import { httpFailure } from '../lib/errors.mjs';
 const raw = await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8');
 // Keep test identity independent of the names chosen for the installation example.
-const input = { ...parseCentral(raw), PROJECT_SLUG: 'pwa-teste', LOCAL_DOMAIN: 'pwa-teste.localhost', DB_DATABASE: 'pwa_teste', DB_TEST_DATABASE: 'pwa_teste_test' };
+const input = { ...parseCentral(raw), PROJECT_SLUG: 'pwa-teste', LOCAL_DOMAIN: 'pwa-teste.localhost', DEV_PORT: '5176', PREVIEW_PORT: '5177', DB_DATABASE: 'pwa_teste', DB_TEST_DATABASE: 'pwa_teste_test' };
 const config = changes => validate({ ...input, ...changes }, '/var/www/pwa-teste');
 test('HTTP failures show only controlled diagnostics and discard private output', () => {
   const output = httpFailure(JSON.stringify({ status: 'error', reason: 'html-contract', path: '/status', http_status: 200, curl_errno: 0, origin_index: 0, body: 'PRIVATE-BODY', cookies: 'PRIVATE-COOKIE' }));
@@ -104,11 +104,11 @@ test('generated infrastructure is credential-free and restricted to the clone', 
   const snippets = composeSnippet(c, d) + nginxSnippet(c);
   assert.doesNotMatch(snippets, /UNIQUE-SECRET/);
   assert.match(snippets, /pwa_teste_vendor/); assert.match(snippets, /127\.0\.0\.1:5176:5173/);
-  assert.match(snippets, /C:\\\\var\\\\www\\\\pwa-teste\\\\frontend/);
+  assert.match(snippets, /C:\/var\/www\/pwa-teste\/frontend/);
 });
 test('Nginx validation checks actual config rather than marker alone', () => {
   const c = config(); assert.equal(siteApplied('# PWA FOUNDATION: pwa-teste', c), false);
-  assert.equal(siteApplied(nginxSnippet(c), c), true);
+  assert.equal(siteApplied(nginxSnippet(c) + nginxSnippet(c, true), c), true);
   assert.equal(siteApplied(nginxSnippet(c).replace('php-fpm:9000', 'wrong:9000'), c), false);
 });
 test('Windows shortcut preserves shared Compose identity and exit code', () => {
@@ -159,4 +159,36 @@ test('push defaults, private derivation and production test access are guarded',
   assert.doesNotMatch(JSON.stringify(publicConfiguration(c)), /PRIVATE-TEST|PUBLIC-TEST|VAPID/);
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'push-env-'));
   try { await synchronizeEnvs({ ...c, backend: temp }); const env = parseCentral(await fs.readFile(path.join(temp, '.env'), 'utf8')); assert.equal(env.QUEUE_CONNECTION, 'database'); assert.equal(env.VAPID_PRIVATE_KEY, 'PRIVATE-TEST'); const testing = parseCentral(await fs.readFile(path.join(temp, '.env.testing'), 'utf8')); assert.equal(testing.PUSH_ENABLED, 'false'); assert.equal(testing.VAPID_PRIVATE_KEY, ''); } finally { await fs.rm(temp, { recursive: true, force: true }); }
+});
+
+test('admin origins and four ports are distinct and production admin requires HTTPS', () => {
+  const c = config();
+  assert.equal(c.adminUrl, 'http://admin.pwa-teste.localhost');
+  assert.equal(c.adminNodeService, 'pwa-teste-admin-node');
+  assert.equal(c.adminModulesVolume, 'pwa_teste_admin_node_modules');
+  assert.throws(() => config({ ADMIN_DEV_PORT: input.DEV_PORT }));
+  assert.throws(() => config({ ADMIN_PREVIEW_PORT: '5182' }));
+  assert.throws(() => config({ ADMIN_LOCAL_DOMAIN: input.LOCAL_DOMAIN }));
+  assert.throws(() => config({ ADMIN_LOCAL_DOMAIN: 'bad;server' }));
+  for (const url of ['http://admin.example.com', 'https://example.com', 'https://admin.example.com/path', 'https://user:pass@admin.example.com']) {
+    assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com', ADMIN_PRODUCTION_URL: url }));
+  }
+  assert.equal(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' }).adminUrl, 'https://admin.example.com');
+});
+test('admin public config and Nginx exclude PWA resources and private credentials', () => {
+  const c = config({ DB_PASSWORD: 'PRIVATE-SECRET', VAPID_PUBLIC_KEY: 'PUBLIC-TEST', VAPID_PRIVATE_KEY: 'PRIVATE-TEST' });
+  const output = adminPublicConfiguration(c), site = nginxSnippet(c, true);
+  assert.doesNotMatch(JSON.stringify(output), /PRIVATE|VAPID|PWA_THEME|SESSION|DB_PASSWORD/);
+  assert.equal(output.app.appUrl, c.adminUrl);
+  assert.equal(output.vite.proxyHost, 'admin.pwa-teste.localhost');
+  assert.match(site, /root "\/var\/www\/pwa-teste\/admin\/dist"/);
+  assert.match(site, /location = \/sw.js \{ return 404; \}/);
+  assert.match(site, /location = \/manifest.webmanifest \{ return 404; \}/);
+  assert.doesNotMatch(site, /Service-Worker-Allowed|frontend\/dist/);
+  assert.match(site, /backend\/public\/index.php/);
+  assert.equal(siteApplied(nginxSnippet(c), c), false);
+  assert.equal(siteApplied(nginxSnippet(c) + site, c), true);
+  const shortcut = viteCmd(c, d, true);
+  assert.match(shortcut, /--service-ports pwa-teste-admin-node/);
+  assert.doesNotMatch(shortcut, /--service-ports pwa-teste-node /);
 });

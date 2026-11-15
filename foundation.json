@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "0.6.0-sprint.6",
-  "stage": "validation",
+  "foundationVersion": "0.7.0-admin.1",
+  "stage": "admin-structure",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -38,5 +38,17 @@
     "playwright": "1.65.1",
     "eslint": "10.15.0",
     "stylelint": "16.26.1"
+  },
+  "admin": {
+    "vue": "3.5.45",
+    "shadcn-vue": "componentes locais JavaScript / new-york",
+    "reka-ui": "2.11.0",
+    "tailwindcss": "4.3.5",
+    "@tailwindcss/vite": "4.3.5",
+    "vite": "8.3.4",
+    "pwa": false,
+    "shadcnCli": "2.9.0 (somente geração dos componentes entregues)",
+    "cn": "0.5.2",
+    "@vueuse/core": "15.0.0"
   }
 }

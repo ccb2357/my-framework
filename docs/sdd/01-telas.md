@@ -32,3 +32,7 @@ Dispositivos aparecem em cards, com identificação e botão de remoção confir
 `/status` é HTML técnico independente do Vite; `/api/v1/status` fornece o mesmo diagnóstico em JSON e `/up` verifica a aplicação. Contratos em [05-api.md](05-api.md).
 
 Toda tela segue [02-design-system.md](02-design-system.md). Novas telas de negócio precisam de aprovação visual; referências aprovadas ficam em `docs/telas/`. Não criar outro aplicativo de demonstração.
+
+## Hello Dashboard administrativa
+
+Rota `/` do domínio `admin.<domínio>`, arquivo `admin/src/pages/HelloDashboard.vue`. Página pública de verificação da instalação, ainda sem login. Usa somente Vue/shadcn-vue/Tailwind: cabeçalho, cards, badge de diagnóstico real e botão de nova consulta. Loading/falha/offline descartam o OK anterior. Sem dados comerciais simulados. Não carrega Framework7 nem recursos PWA. Autenticação administrativa e área protegida serão entregues conforme o plano da raiz.

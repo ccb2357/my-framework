@@ -13,7 +13,16 @@ Prepare o arquivo de configuração central **manualmente**:
    - Se `.env.foundation` já existir, mantenha o arquivo atual; não o substitua pelo exemplo.
    - Abra `.env.foundation` no VSCode ou em outro editor de texto, confira os campos e salve as alterações.
 
-Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e a configuração pública do frontend, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
+Os exemplos deste guia usam:
+
+| Interface | Domínio local | Dev | Prévia |
+| --- | --- | --- | --- |
+| PWA | meu-projeto.localhost | 5180 | 5181 |
+| Admin | admin.meu-projeto.localhost | 5182 | 5183 |
+
+No central, ajuste `PROJECT_SLUG` ao nome da pasta e `LOCAL_DOMAIN` ao domínio da PWA. Deixe `ADMIN_LOCAL_DOMAIN` vazio para derivar `admin.<LOCAL_DOMAIN>`. Confira as quatro portas; cada uma deve estar livre. Em produção, informe `PRODUCTION_URL`; `ADMIN_PRODUCTION_URL` vazio deriva `https://admin.<host da PWA>`. Prepare HTTPS para os dois domínios.
+
+Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas da PWA e do admin, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
 
 ## 2. Construir a imagem do executor
 
@@ -26,13 +35,13 @@ docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
 
 <!-- BEGIN FOUNDATION INSTALL INFRA -->
 
-## 3. Preparar serviço Node, mount, volumes e site
+## 3. Preparar serviços Node, mount, volumes e sites
 
 O executor usa docker run --rm (etapas 2 e 5); não cadastrar serviço de bootstrap no Compose.
 
 Antes de executar o bootstrap, aplique **todos os quatro itens** abaixo para o ambiente **local** e o projeto **meu-projeto**. Não duplique entradas que já estejam corretas. Os trechos abaixo refletem a configuração central e o mapeamento deste ambiente; confira-os antes de aplicar. O restante do guia usa exemplos, que devem ser adaptados ao projeto.
 
-### 3.1 Serviço Node no Compose existente
+### 3.1 Serviços Node no Compose existente
 
 Arquivo de destino: `C:\var\www\infra\docker-compose.yml`. Acrescentar o serviço ao `services` existente, sem duplicar essa chave. Inicie o Vite somente após executar o bootstrap e instalar as dependências, conforme a etapa 7.
 
@@ -48,6 +57,20 @@ services:
             - meu_projeto_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5180:5173"
+        networks:
+            - infra_network
+        profiles:
+            - dev
+    meu-projeto-admin-node:
+        image: node:22-alpine
+        working_dir: /app
+        volumes:
+            - type: bind
+              source: C:/var/www/meu-projeto/admin
+              target: /app
+            - meu_projeto_admin_node_modules:/app/node_modules
+        ports:
+            - "127.0.0.1:5182:5173"
         networks:
             - infra_network
         profiles:
@@ -72,13 +95,16 @@ volumes:
         name: meu_projeto_vendor
     meu_projeto_node_modules:
         name: meu_projeto_node_modules
+    meu_projeto_admin_node_modules:
+        name: meu_projeto_admin_node_modules
 ```
 
-### 3.4 Site Nginx
+### 3.4 Sites Nginx
 
-No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. O root é `frontend/dist`; somente as rotas técnicas são encaminhadas ao Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
+No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. A PWA usa `frontend/dist` e o admin usa `admin/dist`; ambos encaminham rotas técnicas ao mesmo Laravel. O admin não possui PWA. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
 
 ```nginx
+# PWA FOUNDATION: meu-projeto
 server {
     listen 80;
     server_name meu-projeto.localhost;
@@ -89,6 +115,35 @@ server {
 
     location = /sw.js { try_files $uri =404; add_header Cache-Control "no-cache" always; add_header Service-Worker-Allowed "/"; }
     location = /manifest.webmanifest { types { application/manifest+json webmanifest; } try_files $uri =404; add_header Cache-Control "no-cache" always; }
+    location = /index.html { try_files $uri =404; add_header Cache-Control "no-cache" always; }
+    location /assets/ { try_files $uri =404; add_header Cache-Control "public, max-age=31536000, immutable"; }
+    location ~ /\. { deny all; }
+    location ~ ^/(api|sanctum|up|status)(/|$) { rewrite ^ /index.php last; }
+    location = /index.php {
+        internal;
+        include fastcgi_params;
+        fastcgi_pass php-fpm:9000;
+        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        
+        add_header Cache-Control "no-store" always;
+    }
+    location ~* \.php(/|$) { return 404; }
+    location / { try_files $uri $uri/ /index.html; }
+}
+
+# ADMIN FOUNDATION: meu-projeto
+server {
+    listen 80;
+    server_name admin.meu-projeto.localhost;
+    root "/var/www/meu-projeto/admin/dist";
+    index index.html;
+    charset utf-8;
+    add_header Cache-Control "no-cache" always;
+
+    location = /sw.js { return 404; }
+    location = /manifest.webmanifest { return 404; }
+    location = /offline.html { return 404; }
     location = /index.html { try_files $uri =404; add_header Cache-Control "no-cache" always; }
     location /assets/ { try_files $uri =404; add_header Cache-Control "public, max-age=31536000, immutable"; }
     location ~ /\. { deny all; }
@@ -138,7 +193,7 @@ Não execute `down -v` nem inicie todo o perfil dev. O bootstrap instala depend�
 
 ## 5. Executar o bootstrap
 
-Agora o serviço Node, os volumes, o mount PHP-FPM e o site Nginx devem estar configurados e aplicados. Execute:
+Agora os dois serviços Node, os volumes, o mount PHP-FPM e os dois sites Nginx devem estar configurados e aplicados. Execute:
 
 ```cmd
 docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount "type=bind,source=C:\var\www,target=/var/www" --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network pwa-foundation-bootstrap:0.1.0 --project /var/www/meu-projeto
@@ -156,12 +211,15 @@ O código esperado ao concluir esta etapa é **0**. Se retornar **2**, ainda exi
 
 ## 6. Conferir o resultado
 
-O bootstrap verifica as dependências, a configuração, os bancos, as migrations e a comunicação com o backend. Código **0** confirma backend, build PWA e arquivos/cabeçalhos HTTP no Nginx. Confira:
+O bootstrap verifica as dependências, a configuração, os bancos, as migrations e a comunicação com o backend. Código **0** confirma backend, builds PWA/admin e arquivos/cabeçalhos HTTP no Nginx. Confira:
 
 - [Hello/PWA](http://meu-projeto.localhost/)
+- [Hello Dashboard administrativa](http://admin.meu-projeto.localhost/)
 - [Status do backend e banco](http://meu-projeto.localhost/status)
 - [Mesmo diagnóstico em JSON](http://meu-projeto.localhost/api/v1/status)
 - [Verificação básica do Laravel](http://meu-projeto.localhost/up)
+
+**Nesta etapa o admin tem uma página de instalação pública; ainda não tem login.** A PWA e o admin devem mostrar backend/banco OK.
 
 Com o Vite parado, abra a Hello pelo domínio do projeto. Teste instalação pelo botão/menu, offline após o primeiro carregamento e retorno da conexão. API/banco não podem manter OK offline. Código 0 não comprova instalação, funcionamento em aparelho ou recebimento push.
 
@@ -185,6 +243,17 @@ Para refazer o build e publicar em dist:
 cd /d C:\var\www\meu-projeto\frontend
 vite.cmd build
 ```
+
+### Desenvolvimento do admin
+
+No CMD:
+
+```cmd
+cd /d C:\var\www\meu-projeto\admin
+vite.cmd dev
+```
+
+Abra [http://localhost:5182](http://localhost:5182), conforme `ADMIN_DEV_PORT`. Para publicar alterações, encerre com Ctrl+C e execute `vite.cmd build` nessa pasta; abra novamente o domínio administrativo. O admin não oferece instalação PWA.
 
 ## Android por USB
 
@@ -345,6 +414,12 @@ Testes do frontend, na pasta infra:
 
 ```cmd
 docker compose --profile dev run --rm --no-deps meu-projeto-node npm test
+```
+
+Testes e build do admin:
+
+```cmd
+docker compose --profile dev run --rm --no-deps meu-projeto-admin-node npm run check
 ```
 
 Esperado: todos os testes passando e nenhuma falha de formatação.

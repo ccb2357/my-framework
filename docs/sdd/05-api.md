@@ -34,3 +34,7 @@ Acesso de teste: GET test-session informa disponibilidade; POST recebe code de 6
 Limites nomeados independentes: API autenticada 60/min, login 5/min por IP, logout 10/min, cadastro 20/min e envio de teste 3/min. API autenticada usa ID web/fallback IP; leitura não consome a cota de envio/cadastro e logout não consome login.
 
 `PushNotificationService` aceita title até 100, body até 240, url até 512 caracteres e image opcional. URL/imagem: caminho seguro da mesma origem, sem API/CSRF/status/dotfiles/PHP; imagem pública PNG/JPEG/WebP, sem conteúdo privado. Produto autoriza destinatário/destino. Exibição da imagem depende do navegador/SO; aceite do provedor não comprova recebimento/leitura.
+
+## Admin
+
+Nesta etapa o admin consulta somente o diagnóstico público `GET /api/v1/status`, na própria origem, pelo mesmo Laravel. Não há login, API administrativa privada ou gerenciamento de usuários implementados. Guard/provider e sessões separados serão acrescentados no ciclo de autenticação; o login local de push não é autenticação administrativa.

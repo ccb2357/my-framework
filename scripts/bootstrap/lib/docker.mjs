@@ -71,17 +71,18 @@ export function sameHost(a, b) {
 }
 export function infraProblems(c, d) {
   const problems = [], services = d.config.services || {}, volumes = d.config.volumes || {};
-  const node = services[c.nodeService];
-  if (!node) problems.push(`Adicionar serviço ${c.nodeService}.`);
-  else {
-    if (node.image !== 'node:22-alpine' || node.working_dir !== '/app') problems.push('Corrigir imagem/working_dir do serviço Node.');
-    if (!node.profiles?.includes('dev')) problems.push('Associar serviço Node ao perfil dev.');
-    if (!Object.hasOwn(node.networks || {}, c.DOCKER_NETWORK)) problems.push('Associar Node à rede compartilhada.');
-    if (!node.volumes?.some(v => v.type === 'bind' && v.target === '/app' && sameHost(resolveBind(v.source, d), d.mapping.toHost(c.frontend)))) problems.push('Corrigir bind mount frontend → /app.');
-    if (!node.volumes?.some(v => v.type === 'volume' && v.source === c.modulesVolume && v.target === '/app/node_modules')) problems.push('Corrigir volume exclusivo node_modules.');
-    if (!node.ports?.some(p => +p.target === 5173 && +p.published === c.DEV_PORT && p.host_ip === '127.0.0.1')) problems.push('Corrigir publicação local da porta dev.');
+  const frontends = [{ directory: c.frontend, service: c.nodeService, volume: c.modulesVolume, port: c.DEV_PORT }, { directory: c.admin, service: c.adminNodeService, volume: c.adminModulesVolume, port: c.ADMIN_DEV_PORT }];
+  for (const f of frontends) {
+    const node = services[f.service];
+    if (!node) { problems.push(`Adicionar serviço ${f.service}.`); continue; }
+    if (node.image !== 'node:22-alpine' || node.working_dir !== '/app') problems.push(`Corrigir imagem/working_dir de ${f.service}.`);
+    if (!node.profiles?.includes('dev')) problems.push(`Associar ${f.service} ao perfil dev.`);
+    if (!Object.hasOwn(node.networks || {}, c.DOCKER_NETWORK)) problems.push(`Associar ${f.service} à rede compartilhada.`);
+    if (!node.volumes?.some(v => v.type === 'bind' && v.target === '/app' && sameHost(resolveBind(v.source, d), d.mapping.toHost(f.directory)))) problems.push(`Corrigir bind mount de ${f.service} → /app.`);
+    if (!node.volumes?.some(v => v.type === 'volume' && v.source === f.volume && v.target === '/app/node_modules')) problems.push(`Corrigir node_modules exclusivo de ${f.service}.`);
+    if (!node.ports?.some(p => +p.target === 5173 && +p.published === f.port && p.host_ip === '127.0.0.1')) problems.push(`Corrigir publicação local da porta dev de ${f.service}.`);
   }
-  for (const name of [c.vendorVolume, c.modulesVolume]) if (volumes[name]?.name !== name) problems.push(`Declarar volume ${name} com name explícito.`);
+  for (const name of [c.vendorVolume, c.modulesVolume, c.adminModulesVolume]) if (volumes[name]?.name !== name) problems.push(`Declarar volume ${name} com name explícito.`);
   if (!services[c.PHP_SERVICE]?.volumes?.some(v => v.type === 'volume' && v.source === c.vendorVolume && v.target === path.join(c.backend, 'vendor'))) problems.push('Adicionar vendor ao PHP-FPM no Compose.');
   if (!d.php.Mounts?.some(m => m.Type === 'volume' && m.Name === c.vendorVolume && m.Destination === path.join(c.backend, 'vendor'))) problems.push('Aplicar mount vendor no contêiner PHP-FPM (recriação manual).');
   const projectHost = d.mapping.toHost(c.root);
@@ -94,9 +95,10 @@ export function infraProblems(c, d) {
   }
   // A resource with the desired name must not already belong to another product/stack.
   for (const [name, service] of Object.entries(services)) {
-    if (name === c.nodeService) continue;
-    if (service.volumes?.some(v => v.source === c.modulesVolume || (name !== c.PHP_SERVICE && (v.source === c.vendorVolume || v.target === path.join(c.backend, 'vendor'))))) problems.push(`Recurso do projeto conflita com serviço ${name}; revisar manualmente.`);
-    if (service.ports?.some(p => [c.DEV_PORT, c.PREVIEW_PORT].includes(+p.published))) problems.push(`Porta configurada em outro serviço: ${name}.`);
+    const own = frontends.find(f => f.service === name);
+    if (service.volumes?.some(v => (v.source === c.modulesVolume && name !== c.nodeService) || (v.source === c.adminModulesVolume && name !== c.adminNodeService) || (name !== c.PHP_SERVICE && (v.source === c.vendorVolume || v.target === path.join(c.backend, 'vendor'))))) problems.push(`Recurso do projeto conflita com serviço ${name}; revisar manualmente.`);
+    const allowedPorts = own ? [own.port] : [];
+    if (service.ports?.some(p => [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(+p.published) && !allowedPorts.includes(+p.published))) problems.push(`Porta configurada em outro serviço: ${name}.`);
   }
   requireThat(projectHost, 'Mapeamento do projeto ausente.');
   return problems;
@@ -107,9 +109,10 @@ export async function phpExec(c, d, argv, input, label = 'PHP') {
 export async function checkPorts(c, d) {
   const running = await containers(['--filter', 'status=running']);
   const free = [];
-  for (const port of [c.DEV_PORT, c.PREVIEW_PORT]) {
+  for (const port of [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT]) {
+    const service = [c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(port) ? c.adminNodeService : c.nodeService;
     const owners = running.filter(x => Object.values(x.NetworkSettings?.Ports || {}).flat().some(p => p && +p.HostPort === port));
-    requireThat(owners.every(x => labels(x)['com.docker.compose.project'] === d.project && labels(x)['com.docker.compose.service'] === c.nodeService), `Porta ${port} ocupada por outro contêiner.`);
+    requireThat(owners.every(x => labels(x)['com.docker.compose.project'] === d.project && labels(x)['com.docker.compose.service'] === service), `Porta ${port} ocupada por outro contêiner.`);
     if (!owners.length) free.push(port);
   }
   if (free.length) {

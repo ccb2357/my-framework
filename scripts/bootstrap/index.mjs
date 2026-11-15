@@ -4,7 +4,7 @@ import { args, load, schema, parseCentral } from './lib/config.mjs';
 import { FoundationError, requireThat, httpFailure } from './lib/errors.mjs';
 import { docker, jsonOutput } from './lib/process.mjs';
 import { discover, infraProblems, phpExec, checkPorts } from './lib/docker.mjs';
-import { installFrontend, buildFrontend } from './lib/frontend.mjs';
+import { installFrontend, buildFrontend, installAdmin, buildAdmin } from './lib/frontend.mjs';
 import { generate, siteApplied } from './lib/templates.mjs';
 import { identity, checkIdentity, hash, readOptional, writeAtomic, synchronizeEnvs } from './lib/files.mjs';
 let lock, stateFile, state;
@@ -18,7 +18,7 @@ try {
   const saved = await readOptional(stateFile, '{}');
   try { state = JSON.parse(saved); } catch { throw new FoundationError('Estado local inválido. Preserve-o para diagnóstico; não reinicialize identidade automaticamente.'); }
   checkIdentity(state, c);
-  state = { ...state, schema, identity: identity(c), release: '0.6.0-sprint.6', completeFoundation: false, startedAt: new Date().toISOString() };
+  state = { ...state, schema, identity: identity(c), release: '0.7.0-admin.1', completeFoundation: false, startedAt: new Date().toISOString() };
   console.log(`Preparação de ${c.PROJECT_SLUG} (${c.APP_ENV}).`);
   const d = await discover(c);
   if (state.composeProject) requireThat(state.composeProject === d.project, 'Identidade da infraestrutura Compose mudou; revisar explicitamente.');
@@ -86,9 +86,20 @@ try {
   const pwaEvidence = jsonOutput(verifyPwa, 'HTTP PWA');
   const reasons = ['http', 'html', 'cache', 'manifest', 'worker', 'offline', 'asset-path', 'asset-cache', 'api-route'];
   requireThat(verifyPwa.code === 0 && pwaEvidence.status === 'ok', 'PWA HTTP: ' + (reasons.includes(pwaEvidence.reason) ? pwaEvidence.reason : 'verificação falhou') + '. Confira build/Nginx no guia.');
-  state.phase = 'pwa-ready'; state.lastExitCode = 0; state.phpVersion = version; state.composerLock = hash(lockfile); state.frontendBuild = build.buildId; state.verifiedAt = new Date().toISOString(); state.checks = { ...evidence.checks, pwa: pwaEvidence.checks };
-  state.pending = ['Entrega/clique push em navegador/aparelho real', 'Operação da fila na infraestrutura efetiva', 'Validações finais (Sprint 6)']; await save();
-  console.log(`Backend e build PWA verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
+  state.phase = 'admin-install'; await save();
+  state.adminLock = await installAdmin(c, d);
+  state.phase = 'admin-build'; await save();
+  const adminBuild = await buildAdmin(c, d);
+  const verifyAdmin = await docker(['exec', '-i', '--workdir', c.backend, d.php.Id, 'php', path.join(c.root, 'scripts/bootstrap/php/verify-admin.php')], {
+    input: JSON.stringify({ url: c.adminUrl, target: c.NGINX_INTERNAL_URL, environment: c.APP_ENV, buildId: adminBuild.buildId, files: adminBuild.files }), label: 'HTTP admin', allowFailure: true,
+  });
+  const adminEvidence = jsonOutput(verifyAdmin, 'HTTP admin');
+  requireThat(verifyAdmin.code === 0 && adminEvidence.status === 'ok', 'Admin HTTP: confira build e bloco Nginx administrativo no guia.');
+  state.adminBuild = adminBuild.buildId;
+  state.phase = 'interfaces-ready'; state.lastExitCode = 0; state.phpVersion = version; state.composerLock = hash(lockfile); state.frontendBuild = build.buildId; state.verifiedAt = new Date().toISOString(); state.checks = { ...evidence.checks, pwa: pwaEvidence.checks, admin: adminEvidence.checks };
+  state.pending = ['Validar instalação das duas interfaces no ambiente real', 'Autenticações de clientes/admin e recuperação de senha: próximas sprints']; await save();
+  console.log(`Backend, PWA e admin verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
+  console.log(`Admin: ${c.adminUrl}. Autenticação administrativa será entregue na Sprint 3.`);
   console.log('Código 0 não atesta instalação, offline ou atualização em aparelhos. Recebimento push e aceite final exigem validação própria.');
 } catch (error) {
   if (state) { state.phase = error.code === 2 ? 'manual-pending' : 'failed'; state.lastExitCode = error.code === 2 ? 2 : 1; await save().catch(() => {}); }

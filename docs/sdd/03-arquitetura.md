@@ -1,14 +1,15 @@
 # Arquitetura
 
-Frontend em `frontend/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-pwa-framework.md).
+PWA em `frontend/`, admin independente em `admin/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-pwa-framework.md).
 
 ## Organização
 
 | Área | Responsabilidade |
 | --- | --- |
-| `frontend/src/main.js`, `App.vue`, `routes.js` | Inicialização Vue/Framework7, componentes, estilos e roteamento oficial F7. JavaScript/script setup; sem roteador ou aplicação paralela. |
+| `frontend/src/main.js`, `App.vue`, `routes.js` | Inicialização Vue/Framework7, componentes, estilos e roteamento oficial F7. JavaScript/script setup; sem roteador paralelo dentro da PWA. |
 | `src/pages/`, `components/` | Páginas e composições reutilizáveis; APIs Core quando necessárias ao componente oficial. |
 | `src/services/`, `forms/`, `css/` | HTTP/CSRF/erros, máscaras/validação e tokens/layout compartilhados. Destruir instâncias/listeners sem duplicação. |
+| `admin/` | Vue/shadcn-vue/Tailwind; componentes locais JavaScript, configuração pública própria, Vite/lockfile/volume/build isolados. Hello Dashboard pública nesta etapa; sem PWA. |
 | `backend/app/` | Diagnóstico, comandos, APIs/sessão, serviços e jobs push. Regras de negócio são acrescentadas pelo produto. |
 | `scripts/bootstrap/` | Executor Node/Docker; configuração, descoberta do Engine, arquivos derivados e verificações PHP/HTTP. |
 
@@ -35,3 +36,9 @@ Endpoint/chaves e payload são criptografados por APP_KEY; hash único do endpoi
 Somente 404/410 removem inscrição. Rede/DNS/429/5xx permitem retentativa; configuração/401/403 falham preservando inscrições. Sem endpoints/chaves/payload em logs. Revogação impede novos envios, sem recolher os já enviados. Produto define retenção dos registros.
 
 O mesmo worker trata push/clique/mudança de inscrição. Destino seguro na mesma origem; clique foca/abre o app sem descartar formulário alterado. Logout integrado deve revogar o vínculo de sessão e cancelar a inscrição local, preservando ownership e outros dispositivos. Diagnóstico CLI com transporte simulado não comprova entrega externa.
+
+## Fronteira PWA/admin
+
+Dois projetos Vite, dois serviços Node, dois volumes node_modules e dois dist. Dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e frontend/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir os dois sites.
+
+Autenticação atual permanece a sessão de teste push existente. O admin ainda não é uma área protegida. O plano aprovado acrescentará clientes com cadastro imediato e um administrador criado por comando, com guards/providers, cookies/sessões e recuperação separados. Não ampliar SESSION_DOMAIN para compartilhar cookies. Nenhuma compra, assinatura ou envio push administrativo integra este ciclo.

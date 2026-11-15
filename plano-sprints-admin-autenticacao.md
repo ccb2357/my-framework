@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Ampliar o PWA Framework com uma interface administrativa e autenticações independentes para clientes e administradores, mantendo a base reutilizável. Este documento é um plano aprovado; a implementação ainda não começou.
+Ampliar o PWA Framework com uma interface administrativa e autenticações independentes para clientes e administradores, mantendo a base reutilizável. As entregas e verificações estão registradas em MEMORY.md.
 
 ## Decisões de arquitetura
 
@@ -13,7 +13,7 @@ Ampliar o PWA Framework com uma interface administrativa e autenticações indep
 - Administrativo sempre incluído na fundação, sem opção para desabilitá-lo.
 - Manifest, service worker, instalação e offline exclusivos da PWA. Push existente permanece opcional, sem ferramenta de envio no admin.
 - Contas de clientes e administradores separadas, com sessões/cookies, autenticação e permissões independentes no Laravel.
-- Clientes podem criar suas próprias contas. Primeiro administrador criado por comando, sem cadastro público; demais pelo painel.
+- Clientes podem criar suas próprias contas e acessar imediatamente, sem confirmação de e-mail. Haverá somente um administrador, criado por comando, sem cadastro público.
 - Recuperação de senha por e-mail para ambas as interfaces.
 - Configuração manual centralizada em `.env.foundation`, incluindo domínios, portas e envio de e-mail. Derivados internos gerados pelo bootstrap.
 - Reutilizar a infraestrutura compartilhada. Preparar dois blocos Nginx, sem criar outra pilha; aplicação manual das alterações pelo responsável.
@@ -32,7 +32,7 @@ Ampliar o PWA Framework com uma interface administrativa e autenticações indep
 ## Sprint 2 — Autenticação dos clientes
 
 - Implementar cadastro público, login e logout na PWA com componentes Framework7.
-- Preparar uma página inicial simples após autenticar.
+- Preparar uma página inicial simples após autenticar; cadastro libera acesso sem confirmação de e-mail.
 - Implementar validação, sessão, CSRF e limitação de tentativas.
 - Preservar a Hello demonstrativa e os recursos existentes da PWA.
 
@@ -57,20 +57,19 @@ Ampliar o PWA Framework com uma interface administrativa e autenticações indep
 
 **Aceite:** cada conta recupera sua senha pelo endereço correto; um fluxo não redefine a senha do outro.
 
-## Sprint 5 — Administradores e permissões
+## Sprint 5 — Isolamento e proteção dos acessos
 
-- Criar gerenciamento de administradores no painel.
-- Implementar perfis de acesso e permissões administrativas.
-- Reservar ao administrador principal o gerenciamento desses acessos.
-- Proteger ações no Laravel e refletir as permissões na interface.
-- Impedir a remoção ou desativação do último administrador com controle total.
+- Verificar separação de guard/provider, sessões, cookies, tokens e rotas entre os dois acessos.
+- Impedir que cadastro/login/recuperação do cliente concedam acesso administrativo.
+- Testar CSRF, autorização e limites de tentativas, inclusive chamadas diretas à API.
+- Preservar o módulo push e a compatibilidade da PWA.
 
-**Aceite:** administradores com permissões diferentes conseguem executar somente as ações autorizadas, inclusive ao chamar a API diretamente.
+**Aceite:** cada sessão acessa somente sua área; sair ou recuperar senha de uma não autentica nem encerra a outra.
 
 ## Sprint 6 — Instalação completa e fechamento
 
 - Validar uma instalação do zero seguindo o manual.
-- Conferir bootstrap, dois domínios, builds, autenticações, recuperação e permissões.
+- Conferir bootstrap, dois domínios, builds, autenticações, recuperação e isolamento.
 - Executar os testes e verificar regressões da PWA existente.
 - Conferir o uso básico do admin no celular, priorizando desktop.
 - Atualizar README, SDD e manual com o funcionamento final.

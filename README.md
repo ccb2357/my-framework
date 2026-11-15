@@ -1,9 +1,11 @@
 # PWA Framework
 
-Base reutilizável para construir PWAs com **Framework7 Vue, Laravel, MySQL e Web Push**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
+Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, Laravel, MySQL e Web Push**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
 
 [![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![Framework7 9](https://img.shields.io/badge/Framework7-9-EF2D5E?style=for-the-badge&logo=framework7&logoColor=white)](https://framework7.io/vue/)
+[![shadcn-vue](https://img.shields.io/badge/shadcn--vue-Admin-111111?style=for-the-badge)](https://www.shadcn-vue.com/)
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Laravel 12](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com/docs/12.x)
 [![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
 [![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
@@ -15,7 +17,9 @@ Base reutilizável para construir PWAs com **Framework7 Vue, Laravel, MySQL e We
 
 ## Recursos
 
-- **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations e publica o build.
+- **Admin independente:** Vue/shadcn-vue/Tailwind em `admin/`, subdomínio e build próprios; sem misturar componentes ou estilos com a PWA.
+
+- **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations e publica os builds PWA/admin.
 - **Configuração única:** `.env.foundation` define identidade, ambiente, infraestrutura, bancos, sessão e PWA/push. Arquivos internos são gerados automaticamente.
 - **Interface nativa:** Vue/Framework7, grid responsivo, Nunito local, ícones, máscaras, validação e design system compartilhado.
 - **Hello demonstrativa:** componentes oficiais, FAB com três ações, quatro transições, formulário e status real de backend/banco.
@@ -23,7 +27,7 @@ Base reutilizável para construir PWAs com **Framework7 Vue, Laravel, MySQL e We
 - **Web Push:** múltiplos dispositivos, preferência da conta, fila, revogação, retentativas e clique seguro, com VAPID por aplicativo/ambiente.
 - **API e testes:** Laravel/Sanctum, sessão/CSRF, diagnósticos HTTP/JSON, isolamento do banco testing e testes automatizados.
 
-Autenticação completa de produção, telas, permissões e regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
+Autenticações de clientes/admin e recuperação de senha seguem o [plano de implementação](plano-sprints-admin-autenticacao.md); ainda não estão disponíveis. Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
 
 ## Stack
 
@@ -33,12 +37,13 @@ Autenticação completa de produção, telas, permissões e regras de negócio p
 | Estilos e ícones | CSS/grid Framework7 · tokens próprios · Nunito local · Framework7 Icons 5.0.5 · Lucide 1.72.0 |
 | Formulários | IMask 7.6.1 · JustValidate 4.3.0; validação também obrigatória no backend |
 | Build e PWA | Vite 8.3.4 · plugin-vue 6.0.11 · vite-plugin-pwa 2.0.0 · Workbox 7.4.1/injectManifest |
+| Administrativo | Vue 3.5.45 · shadcn-vue/JavaScript · Reka UI 2.11.0 · Tailwind 4.3.5 · Vite 8.3.4 |
 | Backend | PHP 8.2 · Laravel 12.70.0 · Sanctum 4.4.0 · Composer 2 |
 | Push | Laravel Notifications/Jobs · WebPush Channel 13.0.1 · Minishlink Web Push 11.0.0 · fila database |
 | Infraestrutura | Docker/Compose · Node 22.13+ na linha 22 · Nginx · PHP-FPM · MySQL 8 · HTTPS/Certbot conforme infraestrutura |
 | Qualidade | PHPUnit/Pint · Vitest 5.1.0 · Playwright 1.65.1 · ESLint 10.15.0/Vue · Stylelint 16.26.1 |
 
-Manifests, lockfiles e [foundation.json](foundation.json) identificam as versões efetivas. Conferir engines, exports e peerDependencies antes de atualizar. Branch principal: `master`. Não acrescentar React, TypeScript, Vue Router ou outra biblioteca de estilos à base.
+Manifests, lockfiles e [foundation.json](foundation.json) identificam as versões efetivas. Conferir engines, exports e peerDependencies antes de atualizar. Branch principal: `master`. Não acrescentar React ou TypeScript. Framework7 e seu roteador pertencem à PWA; shadcn-vue/Tailwind somente ao admin.
 
 ## Começar um projeto
 
@@ -55,13 +60,13 @@ Cada aplicação recebe código pronto; não recrie Laravel/Vite. Preserve os ar
 
 | Grupo | Campos principais |
 | --- | --- |
-| Identidade e ambiente | PROJECT_SLUG, PROJECT_NAME, APP_ENV, LOCAL_DOMAIN, PRODUCTION_URL |
+| Identidade e ambiente | PROJECT_SLUG, PROJECT_NAME, APP_ENV, LOCAL_DOMAIN, PRODUCTION_URL, ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL |
 | Infraestrutura | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT, DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL |
-| Acesso e dados | DEV_PORT, PREVIEW_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
+| Acesso e dados | DEV_PORT, PREVIEW_PORT, ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
 | Regionalização e sessão | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME |
 | PWA e push | PWA_SHORT_NAME/DESCRIPTION/THEME_COLOR/BACKGROUND_COLOR, PUSH_ENABLED, PUSH_TEST_AUTH_ENABLED, VAPID_SUBJECT/PUBLIC_KEY/PRIVATE_KEY |
 
-O bootstrap deriva os `.env` Laravel/testing e `frontend/.foundation.public.json`; não criar `.env` no frontend nem repetir valores nos derivados. Somente campos públicos permitidos chegam ao navegador. APP_KEY e VAPID válidas são preservadas; push é opcional e desabilitado por padrão.
+O bootstrap deriva os `.env` Laravel/testing e configurações públicas próprias de `frontend/` e `admin/`; não criar `.env` no frontend nem repetir valores nos derivados. Somente campos públicos permitidos chegam ao navegador. APP_KEY e VAPID válidas são preservadas; push é opcional e desabilitado por padrão.
 
 Serviço Node, volumes, bancos, cookie e manifest têm identidade própria por projeto. Portas do host devem estar livres e não podem conflitar entre aplicativos. Credenciais são da conta MySQL existente; o bootstrap não cria usuários, senhas ou grants.
 
@@ -73,6 +78,7 @@ Serviço Node, volumes, bancos, cookie e manifest têm identidade própria por p
 | Build | `frontend/vite.cmd build`: publica `frontend/dist` após validar artefatos; não instala npm automaticamente. |
 | Prévia | Build na PREVIEW_PORT do host → 4173 interno; instalação/offline/push em localhost, inclusive Android por USB/ADB. |
 | Produção | Nginx serve dist e encaminha API/Laravel ao PHP-FPM, na mesma origem HTTPS. Node só para build; sem servidor Node permanente. |
+| Admin | `admin/vite.cmd dev` ou `build`: serviço e dist próprios; subdomínio administrativo, sem PWA. |
 | Backend | `app:sync`: limpa caches e aplica migrations pendentes, com propagação de falhas; --force obrigatório em produção. |
 
 Comandos completos de CMD/Linux, integração Docker, Android/ADB, fila e testes ficam no [manual](instalacao-pwa-framework.md). Frontend e API usam proxy técnico no Vite/prévia; Nginx encaminha `/api`, `/sanctum`, `/up` e `/status` ao Laravel, sem responder HTML da SPA para essas rotas.
@@ -116,6 +122,7 @@ Endpoints/chaves/payload privados não entram nos logs; destinos e transporte s�
 | `frontend/src/services/`, `forms/` | HTTP/CSRF/push, máscaras, conversões e validação |
 | `frontend/src/css/`, `public/` | Tokens/estilos, fonte local, ícones e estáticos |
 | `frontend/src/sw.js`, `dist/` | Fonte do worker e saída gerada do build |
+| `admin/src/`, `components.json` | Hello Dashboard e componentes shadcn-vue/JavaScript; Tailwind e build próprios, sem PWA |
 | `backend/` | Laravel, APIs, sessão, modelos, migrations, serviços e fila |
 | `docs/sdd/`, `docs/telas/` | Contratos técnicos e referências visuais aprovadas |
 | `AGENTS.md`, `RULES.md`, `MEMORY.md` | Orientação, regras obrigatórias e registros específicos do projeto |
@@ -123,15 +130,15 @@ Endpoints/chaves/payload privados não entram nos logs; destinos e transporte s�
 ## Convenções de desenvolvimento
 
 - Consultar [AGENTS.md](AGENTS.md), [RULES.md](RULES.md) e o SDD pertinente antes de alterar. Ao menor sinal de dúvida, consultar a documentação oficial e o código da versão fixada.
-- Usar controles Framework7 Vue; API Core quando necessária, integrada ao ciclo Vue/F7. Criar composições por uso real, com props/eventos/slots, sem biblioteca antecipada. Componentes em PascalCase; `hello.vue` mantém seu nome.
-- Toda tela segue [o design system](docs/sdd/02-design-system.md): CSS/grid Framework7, Nunito local, tokens/estilos compartilhados e ícones oficiais/Lucide. Importar CSS pelos exports do pacote (`framework7/css/bundle`), sem copiar para public. Não alterar DOM gerenciado pelo Vue quando bindings resolvem.
+- Na PWA, usar controles Framework7 Vue; API Core quando necessária, integrada ao ciclo Vue/F7. Criar composições por uso real, com props/eventos/slots, sem biblioteca antecipada. Componentes em PascalCase; `hello.vue` mantém seu nome.
+- Toda tela segue [o design system](docs/sdd/02-design-system.md). Na PWA: CSS/grid Framework7, Nunito local, tokens/estilos compartilhados e ícones oficiais/Lucide. Importar CSS pelos exports do pacote (`framework7/css/bundle`), sem copiar para public. Não alterar DOM gerenciado pelo Vue quando bindings resolvem.
 - Novas telas: consultar referências → propor/aprovar layout → implementar → atualizar o SDD. Aprovação de tela não autoriza mudança visual global. Referências reais/versionadas ficam em docs/telas; não inventar aprovação ou depender de links privados de conversa.
 - Navegação nativa, avanço/retorno e redução de movimento preservados. Hello demonstra accordion, autocomplete, botões, calendar em sheet, checkbox, dialog, FAB, 20 Lucide, notification, sheet, Smart Select, toast e cover-v/dive/fade/parallax.
 - Compartilhar máscaras/validadores; sincronizar Vue e destruir instâncias/listeners. Manter rótulos/erros associados, teclado, foco, estados loading/disabled e mensagens. **Inputs/selects/textareas sem outline retangular**; botões/links mantêm foco visível. Avaliar acessibilidade/WCAG 2.2 AA em navegador real.
 - HTTP centralizado, datas civis YYYY-MM-DD e instantes ISO 8601 com fuso. Definir contratos/paginação antes de endpoints de negócio; não repetir gravações automaticamente após expiração da sessão. Autorização e validação Laravel permanecem obrigatórias.
 - Testes proporcionais ao risco: regras/contratos/jornadas próprias, sem reproduzir internals de bibliotecas. Nunca executar testes destrutivos em produção ou no banco principal; TestingDatabaseGuard exige banco testing isolado.
 - Antes de analisar infraestrutura, pedir Compose, Dockerfile PHP, Nginx e php.ini atuais necessários, com segredos removidos. Não arquivar cópias da infra nem usar configuração histórica como prova. Preservar outros sites/volumes; não subir toda a pilha nem executar down -v.
-- Atualizar o documento responsável quando seu contrato mudar. MEMORY.md começa vazio para registros do produto: decisões relevantes, evidências, pendências e próximo passo; sem histórico de conversa ou comandos duplicados.
+- Atualizar o documento responsável quando seu contrato mudar. MEMORY.md registra somente o estado relevante: decisões relevantes, evidências, pendências e próximo passo; sem histórico de conversa ou comandos duplicados.
 
 ## Documentação
 

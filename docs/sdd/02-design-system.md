@@ -1,6 +1,6 @@
 # Design system
 
-Usar a aparência nativa do Framework7 Vue; a Hello é a referência de composição. Controles oficiais diretamente, sem biblioteca de estilos adicional ou wrappers equivalentes. Novas variações globais exigem aprovação e atualização deste contrato.
+**PWA (`frontend/`):** usar a aparência nativa do Framework7 Vue; a Hello é a referência de composição. Controles oficiais diretamente, sem biblioteca de estilos adicional ou wrappers equivalentes. Novas variações globais exigem aprovação e atualização deste contrato.
 
 ## Estilos e layout
 
@@ -30,3 +30,7 @@ Não criar tokens sem uso real nem estilos locais repetidos. Temas e redução d
 Push usa cards e ações empilhadas, sem truncar nomes. Chips informativos em lista vertical, sem ação/tabulação; até quatro estados com cores nativas blue/green/red/gray. Estilo compartilhado em app.css. Notificação do sistema é desenhada pelo navegador/SO.
 
 A página `offline.html` é a exceção técnica mínima em HTML, com fonte local e link nativo. Contraste, teclado e aparência exigem navegador real; DOM simulado não certifica acessibilidade. Imagens de regressão visual só se tornam referências após aprovação humana.
+
+## Administrativo
+
+`admin/` usa shadcn-vue (componentes locais em src/components/ui), Reka UI e Tailwind 4 com Preflight. Importação somente em admin/src/main.js → style.css; aliases e gerador JavaScript em components.json/jsconfig.json. Tema neutral/new-york com variáveis CSS próprias, fonte de sistema e layout desktop com adaptação básica. Botões têm foco visível, estados disabled/loading e status com texto. Incorporar componentes oficiais conforme uso real. Nunca importar tokens, CSS ou componentes entre as duas interfaces. Regras visuais Framework7 acima pertencem exclusivamente à PWA.

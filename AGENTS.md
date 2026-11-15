@@ -1,10 +1,10 @@
 # PWA Framework — instruções de trabalho
 
-Construir uma fundação reutilizável; o checkout de referência é pwa-teste. Ler [RULES.md](RULES.md), [MEMORY.md](MEMORY.md) e os documentos pertinentes em [docs/sdd/](docs/sdd/), antes de alterar código. O [README.md](README.md) contém o contrato aprovado e plano de construção.
+Construir uma fundação reutilizável; o checkout de referência é pwa-framework. Ler [RULES.md](RULES.md), [MEMORY.md](MEMORY.md) e os documentos pertinentes em [docs/sdd/](docs/sdd/), antes de alterar código. O [README.md](README.md) contém o contrato aprovado e plano de construção.
 
 **REGRA OBRIGATÓRIA — NÃO ADIVINHAR O FUNCIONAMENTO DA STACK. Ao menor sinal de dúvida sobre qualquer ferramenta, SEMPRE consultar sua documentação oficial antes de escrever código ou responder.**
 
-Stack: Framework7 Vue 9.2.0, Vue 3.5.45, JavaScript com script setup, Vite 8.3.4, Laravel 12.70.0/PHP 8.2, MySQL 8 e Docker compartilhado. Sem React, TypeScript ou Vue Router. Branch master.
+Stack: Framework7 Vue 9.2.0, Vue 3.5.45, JavaScript com script setup, Vite 8.3.4, Laravel 12.70.0/PHP 8.2, MySQL 8 e Docker compartilhado. Sem React ou TypeScript. A PWA usa o roteador Framework7; o admin tem entrada independente. Branch master.
 
 Toda tela e todo componente devem seguir o design system em [02-design-system.md](docs/sdd/02-design-system.md). Usar controles oficiais e criar componentes próprios somente por necessidade real. Hello nativa está autorizada; novas telas de negócio e mudanças visuais globais exigem aprovação.
 
@@ -14,7 +14,7 @@ Executor temporário por docker run --rm, imagem construída com docker build; s
 
 Atualizar a especificação responsável e MEMORY.md em cada entrega relevante. SDD descreve o sistema, MEMORY registra estado/evidências e próximo passo. Distinguir entregue, instalado e validado. Não declarar funcionamento no Windows ou VPS sem evidência real.
 
-Frontend: grid/CSS Framework7 + tokens compartilhados; main.js/App.vue/rotas F7, sem biblioteca extra de estilos. O bootstrap gera frontend/.foundation.public.json com whitelist e instala npm pelo lockfile no volume node_modules. Não ler o central privado no Vite. PWA/worker injectManifest e Web Push integrado, sem login completo antecipado.
+PWA em frontend/: grid/CSS Framework7 + tokens compartilhados; main.js/App.vue/rotas F7, sem Tailwind nem estilos do admin. O bootstrap gera frontend/.foundation.public.json com whitelist e instala npm pelo lockfile no volume node_modules. Não ler o central privado no Vite. PWA/worker injectManifest e Web Push integrado, Autenticações de produção seguem o plano aprovado.
 
 Consistência: usar classes app-content/app-heading/app-note/app-actions e tokens existentes antes de criar CSS local. Conferir label/input, nomes acessíveis, foco visível, disabled/loading, mensagens e teclado (inclusive FAB). Não substituir controles oficiais por wrappers. Aceite visual e de teclado depende de navegador real; registrar separadamente simulações.
 
@@ -25,4 +25,6 @@ PWA: usar somente src/sw.js e virtual:pwa-register. Não cachear API/sessão/CSR
 Push: envio somente pelo PushNotificationService, sessão/CSRF/ownership/rate limit obrigatórios; nunca transferir endpoints entre contas. VAPID privada preservada; permissão só por clique e SW único. Preferência/inscrição são revalidadas pelos jobs. Acesso de teste só local e explícito, sem senha fixa ou envio automático; produção não expõe esse acesso. Guia concentra VAPID/fila/testes. Não confundir fila/aceite do provedor com recebimento real.
 
 
-Validação final: seguir a seção própria do guia, com dois clones limpos, reexecução, testes e evidências reais. Ferramentas fixadas em manifests/lockfiles; navegador de testes temporário usa imagem Playwright compatível e node_modules independente do Alpine. Não aprovar referências visuais automaticamente nem confundir mocks/DOM com navegador, Engine, aparelho ou produção. Baselines `.foundation-acceptance.json` são privados. Limpeza final de README/SDD depende do aceite operacional e preserva os contratos.
+Admin obrigatório em admin/: Vue + shadcn-vue + Tailwind, JavaScript, componentes locais oficiais em src/components/ui e build/dependências próprios. NUNCA misturar Framework7 e shadcn-vue na mesma tela ou bundle. Não importar CSS/componentes entre admin/ e frontend/. Admin não tem manifest, worker, offline ou push. O mesmo Laravel/MySQL atende ambos por blocos Nginx separados. Na Sprint 1 somente Hello Dashboard pública de instalação; autenticações nas etapas seguintes. Um administrador por comando, sem cadastro público, e clientes com cadastro público sem confirmação de e-mail. Recuperação de senha para ambos por e-mail nas etapas previstas.
+
+Validação: instalação do zero pelo guia e testes correspondentes. Não confundir mocks/DOM com navegador, Engine, aparelho ou produção. Registrar separadamente código entregue e instalação real.
