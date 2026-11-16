@@ -1,6 +1,6 @@
 # API e sessão
 
-Base `/api/v1`. APIs de negócio e autenticação completa são responsabilidade do produto.
+Base `/api/v1`. APIs de negócio são responsabilidade do produto. Autenticação de clientes está incluída; admin e recuperação seguem o plano.
 
 | Método/rota | Contrato |
 | --- | --- |
@@ -38,3 +38,18 @@ Limites nomeados independentes: API autenticada 60/min, login 5/min por IP, logo
 ## Admin
 
 Nesta etapa o admin consulta somente o diagnóstico público `GET /api/v1/status`, na própria origem, pelo mesmo Laravel. Não há login, API administrativa privada ou gerenciamento de usuários implementados. Guard/provider e sessões separados serão acrescentados no ciclo de autenticação; o login local de push não é autenticação administrativa.
+
+## Autenticação de clientes
+
+Prefixo `/api/v1/auth`, somente no host da PWA. Cookies host-only, sessão web e CSRF nas mutações; origens precisam estar na configuração Sanctum derivada. Respostas `no-store, private`; sucesso contém somente `user: {id, name, email}`.
+
+| Método/rota | Contrato | Limite |
+| --- | --- | --- |
+| POST register | name, email, password, password_confirmation; 201 e sessão imediata. | 5/min/IP |
+| POST login | email, password; 200 e sessão. | 20/min/IP e 5/min/e-mail+IP |
+| GET me | 200 com usuário; 401 sem sessão de cliente. | 60/min/usuário |
+| POST logout | 204; invalida sessão e revoga vínculo push atual. | 10/min/usuário |
+
+E-mail é normalizado para minúsculas/sem espaços externos, até 254 caracteres; nome até 120. Senha de cadastro: mínimo 8 caracteres, máximo 72 bytes UTF-8, sem NUL e confirmação idêntica; espaços são preservados. Login não impõe novamente o mínimo de cadastro. Limites compartilhados em `shared/forms/auth-policy.json`; servidor valida independentemente do navegador. Cadastro ignora atributos privilegiados e rejeita e-mail repetido com 422.
+
+Login inválido retorna 401 genérico; substituir sessão ativa retorna 409; host/origem proibidos 403; CSRF 419; validação 422 com errors por campo; limite 429. Falhas inesperadas retornam mensagem controlada. Contas is_push_test não entram pelo login de clientes. Cadastro não verifica e-mail; não há recuperação ou autenticação administrativa nesta etapa.

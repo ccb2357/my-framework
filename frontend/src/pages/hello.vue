@@ -1,5 +1,5 @@
 <template>
-  <f7-page name="hello" ref="page" @page:init="setup" @page:beforeremove="dispose">
+  <f7-page name="hello" ref="page" @page:init="setup" @page:afterin="refreshAccess" @page:beforeremove="dispose">
     <f7-navbar :title="appConfig.name" />
     <div class="app-content">
       <f7-block>
@@ -10,6 +10,7 @@
 
       <f7-block-title>Integração real</f7-block-title>
       <BackendStatus />
+      <ClientAccess />
 
       <f7-block-title>Grid responsivo</f7-block-title>
       <f7-block>
@@ -151,6 +152,8 @@ import {
 } from 'lucide';
 import { appConfig } from '../config.js';
 import { transitions } from '../transitions.js';
+import { clientAuth } from '../services/session.js';
+import ClientAccess from '../components/ClientAccess.vue';
 import { initDemoForm } from '../forms/demo.js';
 import BackendStatus from '../components/BackendStatus.vue';
 import LucideIcon from '../components/LucideIcon.vue';
@@ -198,6 +201,7 @@ async function setup() {
   });
   destroyForm = initDemoForm(form.value, () => track(f7.dialog.alert('Campos válidos. Nenhum dado foi salvo ou enviado.', 'Formulário validado')), value => { phoneValue.value = value; });
 }
+function refreshAccess() { clientAuth.check().catch(() => {}); pushSettings.value?.refreshSession(); }
 function dispose() {
   autocomplete?.destroy(); autocomplete = undefined;
   destroyForm?.(); destroyForm = undefined;

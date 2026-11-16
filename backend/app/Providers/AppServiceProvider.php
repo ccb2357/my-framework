@@ -25,6 +25,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('client-login', function (Request $request) {
+            $email = is_string($request->input('email')) ? strtolower(trim($request->input('email'))) : '';
+
+            return [Limit::perMinute(20)->by('client-login-ip:'.$request->ip()), Limit::perMinute(5)->by('client-login:'.hash('sha256', $email.'|'.$request->ip()))];
+        });
+        foreach (['client-register' => 5, 'client-read' => 60, 'client-logout' => 10] as $name => $attempts) {
+            RateLimiter::for($name, fn (Request $request) => Limit::perMinute($attempts)->by($name.':'.($name === 'client-register' ? $request->ip() : Auth::guard('web')->id())));
+        }
         // Named limiters keep each operation's quota separate from other routes.
         foreach (['push-api' => 60, 'push-login' => 5, 'push-logout' => 10, 'push-subscriptions' => 20, 'push-test' => 3] as $name => $attempts) {
             RateLimiter::for($name, function (Request $request) use ($name, $attempts) {

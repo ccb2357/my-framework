@@ -20,9 +20,9 @@ test('updates in another tab never reload a dirty form; explicit update saves fi
   await f.pwa.applyUpdate(); assert.deepEqual(f.calls, ['register', 'save', 'reload']); f.pwa.destroy();
 });
 test('refused draft storage blocks activation and reload; waiting update saves before activation', async () => {
-  const f = fixture(); f.callbacks().onNeedRefresh(); f.pwa.draftGuard(() => true, () => { throw Error('denied'); });
+  const f = fixture(); f.callbacks().onNeedRefresh(); const release = f.pwa.draftGuard(() => true, () => { throw Error('denied'); });
   await f.pwa.applyUpdate(); assert.deepEqual(f.calls, ['register']); assert.match(f.state.message, /mantida/);
-  f.pwa.draftGuard(() => true, () => f.calls.push('save')); await f.pwa.applyUpdate(); assert.deepEqual(f.calls, ['register', 'save', 'activate']);
+  release(); f.pwa.draftGuard(() => true, () => f.calls.push('save')); await f.pwa.applyUpdate(); assert.deepEqual(f.calls, ['register', 'save', 'activate']);
   f.callbacks().onNeedReload(); assert.deepEqual(f.calls, ['register', 'save', 'activate', 'save', 'reload']); f.pwa.destroy();
 });
 test('install prompt is only consumed on explicit click and cannot be reused', async () => {
@@ -54,4 +54,13 @@ test('a rejected staged build leaves the served HTML and old assets intact', asy
     await assert.rejects(publishBuild(path.join(root, 'staging'), path.join(root, 'served')));
     assert.equal(await fs.readFile(path.join(root, 'served/index.html'), 'utf8'), 'old HTML'); assert.equal(await fs.readFile(path.join(root, 'served/assets/old.js'), 'utf8'), 'old asset');
   } finally { await fs.rm(root, { recursive: true, force: true }); }
+});
+test('multiple cached-page draft guards coexist and authentication fields can block updates without persistence', async () => {
+  const f = fixture(); let saved = 0;
+  const releaseHello = f.pwa.draftGuard(() => true, () => { saved++; });
+  const releaseAccess = f.pwa.draftGuard(() => true, () => { throw new Error('passwords must not be persisted'); });
+  f.callbacks().onNeedRefresh(); await f.pwa.applyUpdate();
+  assert.equal(f.calls.includes('activate'), false); assert.equal(saved, 1);
+  releaseAccess(); await f.pwa.applyUpdate(); assert.equal(saved, 2); assert.equal(f.calls.includes('activate'), true);
+  releaseHello(); f.pwa.destroy();
 });

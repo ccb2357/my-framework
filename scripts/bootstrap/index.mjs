@@ -18,7 +18,7 @@ try {
   const saved = await readOptional(stateFile, '{}');
   try { state = JSON.parse(saved); } catch { throw new FoundationError('Estado local inválido. Preserve-o para diagnóstico; não reinicialize identidade automaticamente.'); }
   checkIdentity(state, c);
-  state = { ...state, schema, identity: identity(c), release: '0.7.1-forms.1', completeFoundation: false, startedAt: new Date().toISOString() };
+  state = { ...state, schema, identity: identity(c), release: '0.8.0-auth.2', completeFoundation: false, startedAt: new Date().toISOString() };
   console.log(`Preparação de ${c.PROJECT_SLUG} (${c.APP_ENV}).`);
   const d = await discover(c);
   if (state.composeProject) requireThat(state.composeProject === d.project, 'Identidade da infraestrutura Compose mudou; revisar explicitamente.');
@@ -97,7 +97,7 @@ try {
   requireThat(verifyAdmin.code === 0 && adminEvidence.status === 'ok', 'Admin HTTP: confira build e bloco Nginx administrativo no guia.');
   state.adminBuild = adminBuild.buildId;
   state.phase = 'interfaces-ready'; state.lastExitCode = 0; state.phpVersion = version; state.composerLock = hash(lockfile); state.frontendBuild = build.buildId; state.verifiedAt = new Date().toISOString(); state.checks = { ...evidence.checks, pwa: pwaEvidence.checks, admin: adminEvidence.checks };
-  state.pending = ['Validar instalação das duas interfaces no ambiente real', 'Autenticações de clientes/admin e recuperação de senha: próximas sprints']; await save();
+  state.pending = ['Validar instalação das duas interfaces no ambiente real', 'Autenticação administrativa e recuperação de senha: próximas sprints']; await save();
   console.log(`Backend, PWA e admin verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
   console.log(`Admin: ${c.adminUrl}. Autenticação administrativa será entregue na Sprint 3.`);
   console.log('Código 0 não atesta instalação, offline ou atualização em aparelhos. Recebimento push e aceite final exigem validação própria.');

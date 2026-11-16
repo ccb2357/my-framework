@@ -1,5 +1,5 @@
 export class ApiError extends Error {
-  constructor(message, status = 0) { super(message); this.status = status; }
+  constructor(message, status = 0, errors = {}) { super(message); this.status = status; this.errors = errors; }
 }
 const readCookie = name => {
   const raw = (globalThis.document?.cookie || '').split('; ').find(part => part.startsWith(name + '='));
@@ -19,7 +19,19 @@ export async function apiRequest(path, { method = 'GET', json, signal, fetcher =
   }
   if (json !== undefined) headers['Content-Type'] = 'application/json';
   const response = await fetcher(path, { method, headers, credentials: 'include', cache: 'no-store', signal, ...(json === undefined ? {} : { body: JSON.stringify(json) }) });
-  if (!response.ok) throw new ApiError(response.status === 503 ? 'Serviço indisponível.' : 'A requisição não foi concluída.', response.status);
+  if (!response.ok) {
+    const errors = {};
+    if (response.status === 422 && response.headers.get('content-type')?.includes('application/json')) {
+      try {
+        const body = await response.json();
+        for (const key of ['name', 'email', 'password', 'password_confirmation']) {
+          const value = body?.errors?.[key];
+          if (Array.isArray(value)) errors[key] = value.filter(message => typeof message === 'string').map(message => message.slice(0, 300)).slice(0, 2);
+        }
+      } catch { /* Do not expose arbitrary response bodies. */ }
+    }
+    throw new ApiError(response.status === 503 ? 'Serviço indisponível.' : 'A requisição não foi concluída.', response.status, errors);
+  }
   if (response.status === 204) return null;
   if (!response.headers.get('content-type')?.includes('application/json')) throw new ApiError('A API não retornou JSON.', response.status);
   try { return await response.json(); } catch { throw new ApiError('Resposta JSON inválida.', response.status); }

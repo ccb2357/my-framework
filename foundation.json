@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "0.7.1-forms.1",
-  "stage": "shared-forms",
+  "foundationVersion": "0.8.0-auth.2",
+  "stage": "client-auth",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -58,5 +58,12 @@
     "just-validate": "4.3.0",
     "messages": "pt-BR",
     "css": false
+  },
+  "clientAuth": {
+    "guard": "web",
+    "registration": true,
+    "emailVerification": false,
+    "passwordReset": false,
+    "adminAuth": false
   }
 }

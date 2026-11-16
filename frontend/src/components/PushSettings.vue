@@ -52,7 +52,7 @@ import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
 import { f7, f7Chip, f7Card, f7CardContent } from 'framework7-vue';
 import { pushApi, applicationKey, activeRegistration, subscriptionFingerprint, sameApplicationKey } from '../services/push.js';
 const busy = ref(false), user = ref(null), enabled = ref(false), preference = ref(false), devices = ref([]), current = ref(null), conflict = ref(false), deliveries = ref([]), code = ref(''), testLogin = ref(false), message = ref('Verificando push…');
-defineExpose({ hasPending: computed(() => busy.value || Boolean(code.value)) });
+defineExpose({ hasPending: computed(() => busy.value || Boolean(code.value)), refreshSession: () => { user.value = null; devices.value = []; deliveries.value = []; current.value = null; load(); } });
 let publicKey = '', permissionState, disposed = false;
 const permission = ref(window.Notification?.permission || 'default');
 const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

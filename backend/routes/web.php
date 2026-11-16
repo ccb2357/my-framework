@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\ClientAuthController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\PushTestSessionController;
+use App\Http\Middleware\ClientSession;
 use App\Http\Middleware\PushNoStore;
 use App\Http\Middleware\PushSession;
 use Illuminate\Support\Facades\Route;
@@ -23,5 +25,16 @@ Route::prefix('api/v1/push')->middleware([PushNoStore::class])->group(function (
         Route::put('preferences', [$controller, 'updatePreferences']);
         Route::post('test', [$controller, 'test'])->middleware('throttle:push-test');
         Route::get('deliveries', [$controller, 'deliveries']);
+    });
+});
+
+// Client session APIs always use web CSRF, including requests without Origin.
+Route::prefix('api/v1/auth')->group(function (): void {
+    $controller = ClientAuthController::class;
+    Route::post('register', [$controller, 'register'])->name('client.register')->middleware('throttle:client-register');
+    Route::post('login', [$controller, 'login'])->name('client.login')->middleware('throttle:client-login');
+    Route::middleware([ClientSession::class])->group(function () use ($controller): void {
+        Route::get('me', [$controller, 'me'])->middleware('throttle:client-read');
+        Route::post('logout', [$controller, 'logout'])->middleware('throttle:client-logout');
     });
 });

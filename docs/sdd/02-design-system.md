@@ -38,3 +38,5 @@ A página `offline.html` é a exceção técnica mínima em HTML, com fonte loca
 ## Máscaras e validação
 
 Mensagens pt-BR em `shared/forms/messages.pt-BR.json`, máscaras em `masks.js` e regras JustValidate em `rules.js`. `contact-form.js` reúne o ciclo neutro da demonstração: instâncias próprias, aria-invalid/aria-describedby, preservação de ajuda e limpeza. Bibliotecas são injetadas pelos adaptadores locais. PWA mantém classes/controles Framework7; admin usa Input/Label/Button shadcn e containers próprios. Nenhum CSS cruza as interfaces. Máscara móvel usa DDD e 11 dígitos; IMask formata, JustValidate informa erros. Não comprova existência do telefone. Regras do servidor continuam obrigatórias.
+
+Os formulários de acesso usam ListInput/Button oficiais Framework7 e `frontend/src/forms/auth.js`. Mensagens e limites vêm de `shared/forms/messages.pt-BR.json` e `auth-policy.json`; `rules.js` valida sem definir layout. Adaptadores mantêm aria-invalid/aria-describedby e destroem validadores ao sair. O admin não importa esses componentes.

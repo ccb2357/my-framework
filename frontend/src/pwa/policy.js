@@ -4,5 +4,5 @@ export function technicalPath(pathname) {
   return /^\/(api|sanctum|up|status|backend|storage|vendor)(\/|$)/.test(path) || /(^|\/)\./.test(path) || /\.php(\/|$)/.test(path);
 }
 export function shellPath(pathname) {
-  return pathname === '/' || /^\/transition\/(cover-v|dive|fade|parallax)\/?$/.test(pathname);
+  return ['/', '/entrar/', '/cadastro/', '/conta/'].includes(pathname) || /^\/transition\/(cover-v|dive|fade|parallax)\/?$/.test(pathname);
 }

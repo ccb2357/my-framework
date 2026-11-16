@@ -3,5 +3,15 @@
   "emailRequired": "Informe o e-mail.",
   "emailInvalid": "Informe um e-mail válido.",
   "phoneRequired": "Informe o telefone.",
-  "phoneIncomplete": "Informe DDD e celular com 11 dígitos."
+  "phoneIncomplete": "Informe DDD e celular com 11 dígitos.",
+  "nameRequired": "Informe seu nome.",
+  "nameMax": "O nome deve ter no máximo 120 caracteres.",
+  "emailMax": "O e-mail deve ter no máximo 254 caracteres.",
+  "emailUnavailable": "Este e-mail não está disponível para cadastro.",
+  "passwordRequired": "Informe a senha.",
+  "passwordMin": "A senha deve ter pelo menos 8 caracteres.",
+  "passwordMax": "A senha é muito longa. Use uma senha mais curta.",
+  "confirmationRequired": "Confirme a senha.",
+  "confirmationMismatch": "As senhas não coincidem.",
+  "passwordInvalid": "A senha contém caracteres inválidos."
 }

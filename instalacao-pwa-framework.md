@@ -1,6 +1,6 @@
 # Instalação — PWA Framework
 
-**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Acrescente o bind `/shared` aos dois serviços Node conforme a etapa 3.1, valide o Compose conforme a etapa 4 e repita o bootstrap da etapa 5. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada.
+**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Se os dois serviços Node já têm o bind `/shared` da etapa 3.1, repita apenas o bootstrap da etapa 5. Caso contrário, acrescente-o e valide o Compose conforme a etapa 4. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada.
 
 ## 1. Preparar a pasta e a configuração
 
@@ -233,6 +233,17 @@ O bootstrap verifica as dependências, a configuração, os bancos, as migration
 
 Com o Vite parado, abra a Hello pelo domínio do projeto. Teste instalação pelo botão/menu, offline após o primeiro carregamento e retorno da conexão. API/banco não podem manter OK offline. Código 0 não comprova instalação, funcionamento em aparelho ou recebimento push.
 
+
+### Cadastro, login e logout dos clientes
+
+Após atualizar os arquivos, repita o bootstrap da etapa 5 e aplique **Atualizar aplicativo**, se aparecer na PWA. Não precisa alterar a infraestrutura nem configurar e-mail nesta etapa.
+
+1. Na Hello, em **Sua conta**, clique **Criar conta**. Preencha nome, e-mail, senha (mínimo 8 caracteres) e confirmação. O cadastro abre **Minha conta** imediatamente, sem confirmação por e-mail.
+2. Recarregue a página e confira nome/e-mail. Clique **Sair**; acessar `/conta/` deve levar a **Entrar**.
+3. Entre novamente. Confira também senha incorreta, e-mail já cadastrado e campos inválidos.
+4. Execute a suíte Laravel da seção **Verificações e testes**, no banco testing.
+
+O admin continua com Hello pública. Login administrativo e recuperação de senha vêm nas próximas etapas.
 
 ## 7. Desenvolvimento com Vite (opcional)
 

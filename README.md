@@ -27,7 +27,7 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, L
 - **Web Push:** múltiplos dispositivos, preferência da conta, fila, revogação, retentativas e clique seguro, com VAPID por aplicativo/ambiente.
 - **API e testes:** Laravel/Sanctum, sessão/CSRF, diagnósticos HTTP/JSON, isolamento do banco testing e testes automatizados.
 
-Autenticações de clientes/admin e recuperação de senha seguem o [plano de implementação](plano-sprints-admin-autenticacao.md); ainda não estão disponíveis. Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
+Clientes têm cadastro público, login/logout e área protegida na PWA, com acesso imediato, sem confirmação de e-mail. Autenticação administrativa e recuperação de senha seguem o [plano de implementação](plano-sprints-admin-autenticacao.md). Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
 
 ## Stack
 
@@ -158,16 +158,9 @@ Manter os sete documentos SDD enxutos; contratos no SDD, procedimentos no manual
 
 ## Qualidade e validação
 
-| Verificação | Resultado local confirmado |
-| --- | --- |
-| Laravel/PHPUnit com MySQL testing | 35 testes, 260 assertions |
-| Bootstrap Node | 31 testes |
-| Frontend/Vitest | 16 testes |
-| Formatação PHP/Pint | 64 arquivos aprovados |
+Lint, testes unitários/HTTP e builds verificam as duas interfaces e o bootstrap. A suíte Laravel separa integrações com MySQL testing; o guard de isolamento roda antes de qualquer preparação destrutiva. Resultados e limitações atuais ficam em [MEMORY.md](MEMORY.md).
 
-Resultados recebidos em **14/11/2026**, com instalação do zero e diagnósticos funcionando. O bootstrap testa Engine/Compose/HTTP por simulação; isso não comprova todos os hosts reais. Instalação/offline/atualização e recebimento/clique push foram confirmados em testes locais Android anteriores.
-
-ESLint/Stylelint, build/check:pwa e testes de navegador/visuais complementam a suíte. Playwright usa imagem oficial compatível, com dependências próprias, sem compartilhar node_modules Alpine; referências visuais exigem aprovação humana. Playwright, VPS/HTTPS público, iOS e outros navegadores não foram homologados nesse aceite. Emulação, mocks e aceite HTTP não substituem aparelho real.
+Engine/Compose simulados não comprovam Docker real. Testes DOM não homologam navegador/aparelho; instalação, offline, atualização, push e VPS exigem validação no ambiente correspondente. Playwright e referências visuais complementam os testes e dependem de aceite humano.
 
 ## Versões e publicação
 
@@ -192,5 +185,5 @@ Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, reten�
 | Bancos | pwa_framework, pwa_framework_test |
 | Admin | http://admin.pwa-framework.localhost |
 | Admin dev / preview | 5182 / 5183 |
-| Fundação | 0.7.1-forms.1 |
+| Fundação | 0.8.0-auth.2 |
 <!-- END FOUNDATION IDENTITY -->

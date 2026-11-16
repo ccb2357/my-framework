@@ -36,3 +36,9 @@ Toda tela segue [02-design-system.md](02-design-system.md). Novas telas de negó
 ## Hello Dashboard administrativa
 
 Rota `/` do domínio `admin.<domínio>`, arquivo `admin/src/pages/HelloDashboard.vue`. Página pública de verificação da instalação, ainda sem login. Inclui formulário demonstrativo de e-mail/celular com as mesmas máscaras e mensagens da PWA, sem envio ou gravação de dados. Usa somente Vue/shadcn-vue/Tailwind: cabeçalho, cards, badge de diagnóstico real e botão de nova consulta. Loading/falha/offline descartam o OK anterior. Sem dados comerciais simulados. Não carrega Framework7 nem recursos PWA. Autenticação administrativa e área protegida serão entregues conforme o plano da raiz.
+
+## Acesso dos clientes
+
+A Hello pública oferece Entrar e Criar conta. `/entrar/` e `/cadastro/` usam `access.vue`; `/conta/` usa `account.vue` e exige sessão verificada no servidor. Cadastro pede nome, e-mail, senha e confirmação; libera acesso imediato, sem confirmação por e-mail. A conta mostra nome/e-mail e Sair. Usuário autenticado é redirecionado dos formulários para a conta.
+
+Sessão é consultada ao entrar e ao recuperar foco/conexão. Falha ou offline não mantêm identidade como verificada. Senhas e formulários de acesso não são persistidos; campos preenchidos bloqueiam atualização da PWA. Erros são acessíveis e controlados, sem exibir respostas técnicas.

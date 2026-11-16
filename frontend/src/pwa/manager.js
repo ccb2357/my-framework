@@ -1,7 +1,9 @@
 export function createPwaManager({ window: win, navigator: nav, production, secure, register, state }) {
   Object.assign(state, { mode: production ? 'starting' : 'dev', online: nav.onLine, offlineReady: false, needRefresh: false, reloadReady: false, installReady: false, installed: !!nav.standalone || win.matchMedia('(display-mode: standalone)').matches, busy: false, message: '' });
   let deferredPrompt, registration, updateWorker, timer, approvedReload = false;
-  let isDirty = () => false, saveDraft = () => {};
+  const guards = new Set();
+  const isDirty = () => [...guards].some(guard => guard.dirty());
+  const saveDraft = () => { for (const guard of guards) if (guard.dirty()) guard.save(); };
   const online = () => { state.online = nav.onLine; if (nav.onLine) checkUpdate(); };
   const installEvent = event => { event.preventDefault(); deferredPrompt = event; state.installReady = true; };
   const installed = () => { deferredPrompt = undefined; state.installReady = false; state.installed = true; };
@@ -52,8 +54,9 @@ export function createPwaManager({ window: win, navigator: nav, production, secu
     } catch { approvedReload = false; state.message = 'Não foi possível preservar os campos ou atualizar. Esta aba foi mantida.'; }
     finally { state.busy = false; }
   }
-  function draftGuard(dirty, save) { isDirty = dirty; saveDraft = save; return () => { isDirty = () => false; saveDraft = () => {}; }; }
+  function draftGuard(dirty, save) { const guard = { dirty, save }; guards.add(guard); return () => guards.delete(guard); }
   function destroy() {
+    guards.clear();
     win.removeEventListener('online', online); win.removeEventListener('offline', online); win.removeEventListener('beforeinstallprompt', installEvent); win.removeEventListener('appinstalled', installed); win.document.removeEventListener('visibilitychange', visible); win.clearInterval(timer);
   }
   return { start, install, checkUpdate, applyUpdate, draftGuard, destroy };

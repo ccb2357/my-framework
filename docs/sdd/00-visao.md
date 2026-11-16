@@ -2,6 +2,6 @@
 
 PWA Framework é uma base reutilizável para iniciar aplicações independentes com Vue 3, Framework7 Vue, Vite, Laravel, MySQL, PWA/Web Push e um admin Vue/shadcn-vue/Tailwind independente. Cada novo projeto recebe o código pronto e configura seu próprio `.env.foundation`.
 
-Inclui bootstrap Docker, backend/status, Hello demonstrativa, design system, build/offline/atualização, push e testes. A Hello Dashboard administrativa verifica a instalação; autenticações de produção e recuperação seguem o plano da raiz. Regras de negócio, dados do formulário, sincronização offline de registros e integrações comerciais pertencem ao produto criado sobre a base.
+Inclui bootstrap Docker, backend/status, Hello demonstrativa, design system, build/offline/atualização, push e testes. Clientes têm cadastro/login/logout e acesso imediato à área protegida, sem confirmação de e-mail. A Hello Dashboard administrativa verifica a instalação; login administrativo e recuperação seguem o plano da raiz. Regras de negócio, dados do formulário, sincronização offline de registros e integrações comerciais pertencem ao produto criado sobre a base.
 
 Instalação e operação: [guia da raiz](../../instalacao-pwa-framework.md). Versões: manifests/lockfiles e `foundation.json`. Aceite e limites comprovados: [MEMORY.md](../../MEMORY.md). Os documentos SDD descrevem os contratos atuais, sem histórico de construção.
