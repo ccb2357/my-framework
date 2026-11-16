@@ -1,0 +1,7 @@
+{
+  "required": "Preencha este campo.",
+  "emailRequired": "Informe o e-mail.",
+  "emailInvalid": "Informe um e-mail válido.",
+  "phoneRequired": "Informe o telefone.",
+  "phoneIncomplete": "Informe DDD e celular com 11 dígitos."
+}

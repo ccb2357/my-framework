@@ -29,6 +29,16 @@ Ampliar o PWA Framework com uma interface administrativa e autenticações indep
 
 **Aceite:** PWA e admin abrem em seus endereços; cada um carrega somente seus próprios componentes e estilos.
 
+## Sprint 1.1 — Formulários compartilhados e versões fixas
+
+- Disponibilizar IMask e JustValidate nas duas interfaces, com as mesmas versões exatas.
+- Centralizar mensagens pt-BR, máscaras, regras e integração comum em `shared/forms/`, sem CSS ou componentes de UI.
+- Adaptar Vite, builds e mounts somente leitura; preservar Framework7 e shadcn-vue separados.
+- Conferir manifests/lockfiles, instalar com npm ci e manter save-exact para novas dependências.
+- Migrar a demonstração da PWA e conferir o mesmo formulário no admin.
+
+**Aceite:** mesmas máscaras/mensagens nos dois formulários, erros acessíveis, builds válidos e dependências fixas/coerentes. Node mantém a faixa de compatibilidade atual.
+
 ## Sprint 2 — Autenticação dos clientes
 
 - Implementar cadastro público, login e logout na PWA com componentes Framework7.

@@ -79,6 +79,7 @@ export function infraProblems(c, d) {
     if (!node.profiles?.includes('dev')) problems.push(`Associar ${f.service} ao perfil dev.`);
     if (!Object.hasOwn(node.networks || {}, c.DOCKER_NETWORK)) problems.push(`Associar ${f.service} à rede compartilhada.`);
     if (!node.volumes?.some(v => v.type === 'bind' && v.target === '/app' && sameHost(resolveBind(v.source, d), d.mapping.toHost(f.directory)))) problems.push(`Corrigir bind mount de ${f.service} → /app.`);
+    if (!node.volumes?.some(v => v.type === 'bind' && v.target === '/shared' && v.read_only === true && sameHost(resolveBind(v.source, d), d.mapping.toHost(c.shared)))) problems.push(`Adicionar mount shared → /shared somente leitura em ${f.service}.`);
     if (!node.volumes?.some(v => v.type === 'volume' && v.source === f.volume && v.target === '/app/node_modules')) problems.push(`Corrigir node_modules exclusivo de ${f.service}.`);
     if (!node.ports?.some(p => +p.target === 5173 && +p.published === f.port && p.host_ip === '127.0.0.1')) problems.push(`Corrigir publicação local da porta dev de ${f.service}.`);
   }

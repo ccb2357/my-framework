@@ -34,3 +34,7 @@ A página `offline.html` é a exceção técnica mínima em HTML, com fonte loca
 ## Administrativo
 
 `admin/` usa shadcn-vue (componentes locais em src/components/ui), Reka UI e Tailwind 4 com Preflight. Importação somente em admin/src/main.js → style.css; aliases e gerador JavaScript em components.json/jsconfig.json. Tema neutral/new-york com variáveis CSS próprias, fonte de sistema e layout desktop com adaptação básica. Botões têm foco visível, estados disabled/loading e status com texto. Incorporar componentes oficiais conforme uso real. Nunca importar tokens, CSS ou componentes entre as duas interfaces. Regras visuais Framework7 acima pertencem exclusivamente à PWA.
+
+## Máscaras e validação
+
+Mensagens pt-BR em `shared/forms/messages.pt-BR.json`, máscaras em `masks.js` e regras JustValidate em `rules.js`. `contact-form.js` reúne o ciclo neutro da demonstração: instâncias próprias, aria-invalid/aria-describedby, preservação de ajuda e limpeza. Bibliotecas são injetadas pelos adaptadores locais. PWA mantém classes/controles Framework7; admin usa Input/Label/Button shadcn e containers próprios. Nenhum CSS cruza as interfaces. Máscara móvel usa DDD e 11 dígitos; IMask formata, JustValidate informa erros. Não comprova existência do telefone. Regras do servidor continuam obrigatórias.

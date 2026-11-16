@@ -7,6 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { publicApp, buildIdentity } from './scripts/build-config.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
+const shared = fileURLToPath(new URL('../shared', import.meta.url));
 const configPath = path.join(root, '.foundation.public.json');
 if (!fs.existsSync(configPath)) throw new Error('Execute o bootstrap do projeto antes de usar Vite. Configuração pública ausente.');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -17,6 +18,7 @@ const escapeHtml = value => String(value).replaceAll('&', '&amp;').replaceAll('<
 const backendProxy = () => ({ target: config.vite.proxyTarget, changeOrigin: true, headers: { Host: config.vite.proxyHost } });
 export default defineConfig({
   root,
+  resolve: { alias: { '@shared': shared } },
   plugins: [vue(), VitePWA({
     strategies: 'injectManifest', srcDir: 'src', filename: 'sw.js',
     includeManifestIcons: false, registerType: 'prompt', injectRegister: false, scope: '/', base: '/',
@@ -33,6 +35,7 @@ export default defineConfig({
   define: { __FOUNDATION_APP__: JSON.stringify(app), __APP_BUILD__: JSON.stringify(buildId) },
   server: {
     host: true, port: 5173, strictPort: true,
+    fs: { allow: [root, shared] },
     watch: { usePolling: true, interval: 300 },
     proxy: { '/api': backendProxy(), '/sanctum': backendProxy(), '/up': backendProxy() },
   },

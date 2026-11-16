@@ -39,6 +39,8 @@ O mesmo worker trata push/clique/mudança de inscrição. Destino seguro na mesm
 
 ## Fronteira PWA/admin
 
-Dois projetos Vite, dois serviços Node, dois volumes node_modules e dois dist. Dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e frontend/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir os dois sites.
+Dois projetos Vite, dois serviços Node, dois volumes node_modules e dois dist. Dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e frontend/; ambos importam apenas a lógica neutra em shared/forms/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir os dois sites.
 
 Autenticação atual permanece a sessão de teste push existente. O admin ainda não é uma área protegida. O plano aprovado acrescentará clientes com cadastro imediato e um administrador criado por comando, com guards/providers, cookies/sessões e recuperação separados. Não ampliar SESSION_DOMAIN para compartilhar cookies. Nenhuma compra, assinatura ou envio push administrativo integra este ciclo.
+
+`shared/forms/` não importa pacotes dos node_modules das aplicações; os adaptadores fornecem IMask/JustValidate de suas dependências próprias, fixadas na mesma versão. Mensagens/máscaras/regras são fonte única. O bind monta a pasta em /shared somente leitura, ao lado de /app, preservando o caminho relativo ../shared. Alias @shared nos dois Vites. Identificadores de build incluem shared/forms para que alterações dos textos participem da atualização PWA e identificação do admin.

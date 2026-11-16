@@ -104,7 +104,7 @@ export function validate(input, root) {
   if (c.PUSH_ENABLED === 'true') requireThat(c.VAPID_SUBJECT.startsWith('mailto:') || c.VAPID_SUBJECT.startsWith('https://'), 'Informe VAPID_SUBJECT real no central.');
   c.base = c.PROJECT_SLUG.replaceAll('-', '_'); c.nodeService = c.PROJECT_SLUG + '-node';
   c.vendorVolume = c.base + '_vendor'; c.modulesVolume = c.base + '_node_modules';
-  c.admin = path.join(root, 'admin'); c.adminNodeService = c.PROJECT_SLUG + '-admin-node'; c.adminModulesVolume = c.base + '_admin_node_modules';
+  c.shared = path.join(root, 'shared'); c.admin = path.join(root, 'admin'); c.adminNodeService = c.PROJECT_SLUG + '-admin-node'; c.adminModulesVolume = c.base + '_admin_node_modules';
   c.backend = path.join(root, 'backend'); c.frontend = path.join(root, 'frontend');
   c.sessionCookie = c.base + '_session';
   const origins = c.APP_ENV === 'production' ? [new URL(c.appUrl).host] : [c.LOCAL_DOMAIN, ...['localhost', '127.0.0.1', c.LOCAL_DOMAIN].flatMap(h => [`${h}:${c.DEV_PORT}`, `${h}:${c.PREVIEW_PORT}`])];

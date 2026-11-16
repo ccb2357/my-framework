@@ -17,6 +17,7 @@ export function buildIdentity(root, app) {
     }
   }
   scan(path.join(root, 'src'));
+  scan(path.join(root, '../shared/forms'));
   for (const file of ['index.html', 'package-lock.json', 'vite.config.js', 'scripts/build-config.mjs']) hash.update(fs.readFileSync(path.join(root, file)));
   return 'admin-' + hash.digest('hex').slice(0, 16);
 }

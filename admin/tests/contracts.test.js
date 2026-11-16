@@ -50,3 +50,14 @@ describe('admin integration', () => {
     await expect(fetchStatus()).rejects.toThrow();
   });
 });
+it('editing shared messages changes the administrative build identity', async () => {
+  const { buildIdentity } = await import('../scripts/build-config.mjs');
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'shared-admin-id-')), app = tmp + '/admin';
+  try {
+    for (const dir of ['admin/src', 'admin/scripts', 'shared/forms']) await fs.mkdir(tmp + '/' + dir, { recursive: true });
+    for (const file of ['index.html', 'package-lock.json', 'vite.config.js', 'scripts/build-config.mjs']) await fs.writeFile(app + '/' + file, 'fixture');
+    const messages = tmp + '/shared/forms/messages.pt-BR.json'; await fs.writeFile(messages, '{"required":"A"}');
+    const before = buildIdentity(app, {}); await fs.writeFile(messages, '{"required":"B"}');
+    expect(buildIdentity(app, {})).not.toBe(before);
+  } finally { await fs.rm(tmp, { recursive: true, force: true }); }
+});

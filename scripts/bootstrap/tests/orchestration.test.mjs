@@ -11,7 +11,7 @@ const entry = fileURLToPath(new URL('../index.mjs', import.meta.url));
 const runtime = process.env.FOUNDATION_RUNTIME_PACKAGE || fileURLToPath(new URL('../executor/package.json', import.meta.url));
 const example = parseCentral(await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8'));
 // Deterministic Engine/Compose simulation; never connects to or mutates a real Docker Engine.
-async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4', guideCrlf = false, adminBuildFailure = false, adminHttpFailure = false, missingAdmin = false } = {}) {
+async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4', guideCrlf = false, adminBuildFailure = false, adminHttpFailure = false, missingAdmin = false, missingShared = false } = {}) {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'foundation flow with spaces-'));
   const projects = tmp + '/projects', root = projects + '/product-a';
   await fs.mkdir(root + '/backend', { recursive: true }); await fs.mkdir(root + '/frontend'); await fs.mkdir(root + '/admin'); await fs.mkdir(projects + '/infra'); await fs.mkdir(tmp + '/bin');
@@ -34,6 +34,9 @@ async function fixture({ pending = false, production = false, desktop = false, h
   const config = { services: { 'php-fpm': { volumes: [{ type: 'volume', source: c.vendorVolume, target: c.backend + '/vendor' }] }, [c.nodeService]: { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/frontend', target: '/app' }, { type: 'volume', source: c.modulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.DEV_PORT), host_ip: '127.0.0.1' }] } }, volumes: { [c.vendorVolume]: { name: c.vendorVolume }, [c.modulesVolume]: { name: c.modulesVolume } } };
   config.volumes[c.adminModulesVolume] = { name: c.adminModulesVolume };
   if (!missingAdmin) config.services[c.adminNodeService] = { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/admin', target: '/app' }, { type: 'volume', source: c.adminModulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.ADMIN_DEV_PORT), host_ip: '127.0.0.1' }] };
+  for (const service of Object.values(config.services)) {
+    if (service.image === 'node:22-alpine' && !missingShared) service.volumes.push({ type: 'bind', source: '/srv/apps/product-a/shared', target: '/shared', read_only: true });
+  }
   const data = { adminBuildFailure, adminHttpFailure, adminInstalls: 0, adminBuilds: 0, adminMarker: '', php, nginx, config, site: pending ? '' : nginxSnippet(c) + nginxSnippet(c, true), marker: '', installs: 0, syncs: 0, calls: [], httpFailure, npmMarker: '', npmInstalls: 0, npmFailure, builds: 0, buildFailure, pwaFailure, frontendNode };
   const dataFile = tmp + '/fake-engine.json'; await fs.writeFile(dataFile, JSON.stringify(data));
   const fake = `#!${process.execPath}
@@ -131,6 +134,8 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     assert.equal(await fs.readFile(guidePath, 'utf8'), guide);
     assert.equal((guide.match(/<!-- BEGIN FOUNDATION INSTALL INFRA -->/g) || []).length, 1);
     const data = await f.data(); assert.equal(data.installs, 1); assert.equal(data.syncs, 2); assert.equal(data.npmInstalls, 1); assert.equal(data.adminInstalls, 1); assert.equal(data.adminBuilds, 2);
+    const runs = data.calls.filter(a => a[0] === 'run' && (a.includes('build') || a.includes('ci')));
+    assert.ok(runs.every(a => a.some(x => x.includes('target=/shared,readonly'))));
     assert.ok(data.calls.some(a => a[0] === 'run' && a.includes('--publish') && a.includes('infra_network')));
     const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
     assert.ok(!data.calls.some(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))));
@@ -204,4 +209,16 @@ test('admin build or HTTP failure never announces successful installation', asyn
       assert.equal(state.phase, 'failed'); assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE-ADMIN|Admin: http/);
     } finally { await f.cleanup(); }
   }
+});
+
+test('missing shared mounts stop before installs and both Node services receive readonly shared', async () => {
+  const f = await fixture({ missingShared: true });
+  try {
+    const result = await f.invoke(); assert.equal(result.code, 2, result.stdout + result.stderr);
+    assert.match(result.stdout, /shared.*somente leitura/);
+    assert.equal((await f.data()).installs, 0); await assert.rejects(fs.access(f.root + '/backend/.env'));
+    const guide = await fs.readFile(f.root + '/instalacao-pwa-framework.md', 'utf8');
+    assert.equal((guide.match(/target: \/shared/g) || []).length, 2);
+    assert.equal((guide.match(/read_only: true/g) || []).length, 2);
+  } finally { await f.cleanup(); }
 });

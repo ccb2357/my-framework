@@ -1,0 +1,43 @@
+// @vitest-environment jsdom
+import { test, expect, vi, afterEach } from 'vitest';
+import { createApp, nextTick } from 'vue';
+import DemoForm from '../src/components/DemoForm.vue';
+import { initDemoForm } from '../src/forms/demo.js';
+import { messages } from '@shared/forms/rules.js';
+let dispose;
+afterEach(() => { dispose?.(); dispose = undefined; document.body.innerHTML = ''; });
+test('admin adapter uses the same messages in its own error containers and restores attributes', async () => {
+  document.body.innerHTML = '<form novalidate><input id="admin-demo-email" aria-describedby="help"><div data-email-errors></div><input id="admin-demo-phone" type="text"><div data-phone-errors></div></form>';
+  const form = document.querySelector('form'), email = form.querySelector('#admin-demo-email'), phone = form.querySelector('#admin-demo-phone');
+  const success = vi.fn(), controller = initDemoForm(form, success); dispose = () => controller.destroy();
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await vi.waitFor(() => expect(email.getAttribute('aria-invalid')).toBe('true'));
+  expect(form.querySelector('[data-email-errors]').textContent).toBe(messages.emailRequired);
+  expect(email.getAttribute('aria-describedby')).toBe('help admin-demo-email-error');
+  expect(form.querySelector('[data-phone-errors]').textContent).toBe(messages.phoneRequired);
+  email.value = 'invalid'; phone.value = '11'; phone.dispatchEvent(new Event('input', { bubbles: true }));
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await vi.waitFor(() => expect(form.textContent).toContain(messages.emailInvalid));
+  expect(form.textContent).toContain(messages.emailInvalid); expect(form.textContent).toContain(messages.phoneIncomplete);
+  email.value = 'teste@example.test'; phone.value = '11999999999'; phone.dispatchEvent(new Event('input', { bubbles: true }));
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await vi.waitFor(() => expect(success).toHaveBeenCalledOnce());
+  expect(email.getAttribute('aria-describedby')).toBe('help');
+  controller.destroy(); controller.destroy();
+  expect(email.hasAttribute('aria-invalid')).toBe(false);
+  expect(form.querySelector('.just-validate-error-label')).toBeNull();
+});
+test('Vue shadcn input retains the formatted value after reactive updates and cleans up on unmount', async () => {
+  const container = document.createElement('div'); document.body.append(container);
+  const app = createApp(DemoForm); app.mount(container); dispose = () => app.unmount();
+  const form = container.querySelector('form'), email = container.querySelector('#admin-demo-email'), phone = container.querySelector('#admin-demo-phone');
+  email.value = 'teste@example.test'; email.dispatchEvent(new Event('input', { bubbles: true }));
+  phone.value = '11999999999'; phone.dispatchEvent(new Event('input', { bubbles: true }));
+  await nextTick(); await nextTick();
+  expect(phone.value).toBe('(11) 99999-9999');
+  expect(phone.dataset.slot).toBe('input');
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await vi.waitFor(() => expect(container.textContent).toContain('Campos válidos. Nenhum dado foi salvo ou enviado.'));
+  dispose(); dispose = undefined;
+  expect(container.querySelector('form')).toBeNull();
+});

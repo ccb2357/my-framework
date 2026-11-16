@@ -6,6 +6,7 @@ import { requireThat } from './errors.mjs';
 export function frontendCommand(c, d, command) {
   return ['run', '--rm', '-i', '--network', c.DOCKER_NETWORK, '--workdir', '/app',
     '--mount', `type=bind,source=${d.mapping.toHost(c.frontend)},target=/app`,
+    '--mount', `type=bind,source=${d.mapping.toHost(c.shared)},target=/shared,readonly`,
     '--mount', `type=volume,source=${c.modulesVolume},target=/app/node_modules`,
     '--env', 'npm_config_cache=/tmp/npm-cache', 'node:22-alpine', ...command];
 }

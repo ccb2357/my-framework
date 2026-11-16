@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { app } from '@/lib/config';
+import DemoForm from '@/components/DemoForm.vue';
 import { fetchStatus } from '@/services/status';
 const state = ref('loading');
 let request;
@@ -69,6 +70,7 @@ onBeforeUnmount(() => {
           </CardContent>
         </Card>
       </div>
+      <DemoForm />
     </main>
   </div>
 </template>

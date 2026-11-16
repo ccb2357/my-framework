@@ -35,7 +35,7 @@ Autenticações de clientes/admin e recuperação de senha seguem o [plano de im
 | --- | --- |
 | Interface | Vue 3.5.45 · Framework7/framework7-vue 9.2.0 · JavaScript/SFC/Composition API |
 | Estilos e ícones | CSS/grid Framework7 · tokens próprios · Nunito local · Framework7 Icons 5.0.5 · Lucide 1.72.0 |
-| Formulários | IMask 7.6.1 · JustValidate 4.3.0; validação também obrigatória no backend |
+| Formulários compartilhados | IMask 7.6.1 · JustValidate 4.3.0 nas duas interfaces; mensagens/máscaras/regras em `shared/forms/`; validação também obrigatória no backend |
 | Build e PWA | Vite 8.3.4 · plugin-vue 6.0.11 · vite-plugin-pwa 2.0.0 · Workbox 7.4.1/injectManifest |
 | Administrativo | Vue 3.5.45 · shadcn-vue/JavaScript · Reka UI 2.11.0 · Tailwind 4.3.5 · Vite 8.3.4 |
 | Backend | PHP 8.2 · Laravel 12.70.0 · Sanctum 4.4.0 · Composer 2 |
@@ -43,7 +43,7 @@ Autenticações de clientes/admin e recuperação de senha seguem o [plano de im
 | Infraestrutura | Docker/Compose · Node 22.13+ na linha 22 · Nginx · PHP-FPM · MySQL 8 · HTTPS/Certbot conforme infraestrutura |
 | Qualidade | PHPUnit/Pint · Vitest 5.1.0 · Playwright 1.65.1 · ESLint 10.15.0/Vue · Stylelint 16.26.1 |
 
-Manifests, lockfiles e [foundation.json](foundation.json) identificam as versões efetivas. Conferir engines, exports e peerDependencies antes de atualizar. Branch principal: `master`. Não acrescentar React ou TypeScript. Framework7 e seu roteador pertencem à PWA; shadcn-vue/Tailwind somente ao admin.
+Manifests, lockfiles e [foundation.json](foundation.json) identificam as versões efetivas. Conferir engines, exports e peerDependencies antes de atualizar. Dependências npm diretas exatas, lockfiles no Git e instalação com `npm ci`; atualizações são deliberadas e testadas. `.npmrc` mantém `save-exact=true`. Node continua na faixa 22 compatível. Branch principal: `master`. Não acrescentar React ou TypeScript. Framework7 e seu roteador pertencem à PWA; shadcn-vue/Tailwind somente ao admin.
 
 ## Começar um projeto
 
@@ -123,6 +123,7 @@ Endpoints/chaves/payload privados não entram nos logs; destinos e transporte s�
 | `frontend/src/css/`, `public/` | Tokens/estilos, fonte local, ícones e estáticos |
 | `frontend/src/sw.js`, `dist/` | Fonte do worker e saída gerada do build |
 | `admin/src/`, `components.json` | Hello Dashboard e componentes shadcn-vue/JavaScript; Tailwind e build próprios, sem PWA |
+| `shared/forms/` | Mensagens pt-BR, máscaras, regras e integração comum, sem CSS/framework visual |
 | `backend/` | Laravel, APIs, sessão, modelos, migrations, serviços e fila |
 | `docs/sdd/`, `docs/telas/` | Contratos técnicos e referências visuais aprovadas |
 | `AGENTS.md`, `RULES.md`, `MEMORY.md` | Orientação, regras obrigatórias e registros específicos do projeto |
@@ -191,5 +192,5 @@ Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, reten�
 | Bancos | pwa_framework, pwa_framework_test |
 | Admin | http://admin.pwa-framework.localhost |
 | Admin dev / preview | 5182 / 5183 |
-| Fundação | 0.7.0-admin.1 |
+| Fundação | 0.7.1-forms.1 |
 <!-- END FOUNDATION IDENTITY -->

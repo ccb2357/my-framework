@@ -1,19 +1,21 @@
 # Estado da fundação
 
-## Estrutura administrativa — Sprint 1
+## Entrega atual — Sprint 1.1
 
-Entregue: `admin/` Vue/shadcn-vue/Tailwind em JavaScript, Hello Dashboard pública com diagnóstico real, componentes oficiais locais e dependências/build isolados da PWA. Bootstrap prepara e verifica as duas interfaces; central inclui domínio/portas administrativos. Manual contém os dois serviços Node, três volumes e dois sites Nginx. README, sete SDD e plano atualizados.
+`shared/forms/` centraliza mensagens pt-BR JSON, máscaras, regras e o ciclo neutro da validação. PWA e admin usam IMask 7.6.1/JustValidate 4.3.0, com dependências/volumes/builds e visuais próprios. A demonstração Framework7 foi migrada sem alterar seu CSS; o admin recebeu formulário demonstrativo com Input/Label/Button oficiais shadcn-vue. Nenhum formulário envia ou grava dados.
 
-Preservados: fontes, estilos, dependências e configuração Vite da PWA Framework7; backend Laravel e dados existentes. Apenas o atalho frontend/vite.cmd foi atualizado para o exemplo agnóstico e continua sendo regenerado pelo bootstrap.
+Os dois serviços Node e os contêineres temporários recebem shared em /shared somente leitura. O Vite restringe fs.allow à aplicação e shared; ambos os hashes de build incluem shared/forms. Manifests npm têm versões exatas, lockfiles coerentes, save-exact e instalação por npm ci. Nenhuma dependência existente mudou de versão. Jsdom 26.1.0 foi acrescentado somente para testes DOM. Node/imagens Docker mantêm a compatibilidade atual, sem promessa de versão exata de runtime.
 
-Verificado nesta entrega:
+## Verificações
 
-- 35 testes Node do bootstrap: contratos e orquestração com Engine/Compose/HTTP explicitamente simulados, incluindo falhas do admin e reexecução.
-- 5 testes do admin: configuração pública, publicação, isolamento de artefatos, diagnóstico e renderização inicial SSR.
-- 16 testes da PWA; ESLint/Stylelint e builds reais PWA/admin aprovados com Node 22.23.4.
-- Trechos Compose gerados aceitos por `docker compose config --quiet`; novo verificador PHP passou em sintaxe/Pint.
-- Código do backend inalterado; suíte Laravel/MySQL não repetida neste ambiente.
+- 37 testes Node do bootstrap: contratos/Engine/Compose/HTTP simulados, incluindo mounts shared, reexecução, falhas e coerência de versões/lockfiles.
+- 19 testes PWA e 8 do admin aprovados, incluindo bibliotecas reais em DOM simulado, mensagens comuns, correção, acessibilidade, limpeza, Input Vue com máscara e mudança do hash ao editar shared.
+- npm ci e npm run check aprovados nas duas aplicações: lint local/compartilhado, testes e builds reais. PWA segue com manifest/worker; admin sem recursos PWA.
+- HTTP real do Vite neste ambiente: arquivos da aplicação/shared retornaram 200; arquivo do backend fora de fs.allow retornou 403 em ambos os serviços.
+- Trechos Compose gerados passaram em docker compose config --quiet. Backend e CSS Framework7 preservados. Não foi repetida a suíte Laravel/MySQL, pois o backend não mudou.
 
-Pendente: instalação do zero no computador do responsável, seguindo instalacao-pwa-framework.md. Confirmar bootstrap código 0, abertura dos dois domínios, diagnóstico/backend/MySQL e separação visual em navegador. Não houve Docker Engine, Nginx, MySQL, Windows, aparelho ou VPS reais nesta validação.
+## Instalação e próximo passo
 
-Próximas etapas: autenticação de clientes (cadastro com acesso imediato, sem confirmação de e-mail), autenticação de um único administrador criado por comando e recuperação de senha separada por e-mail. Não há login administrativo implementado nesta sprint. Compras, assinaturas e permissões para vários administradores ficam fora deste ciclo.
+Sprint 1: responsável informou abertura dos cinco endereços locais (PWA, admin, status HTML/JSON e up). Sprint 1.1: ainda falta aplicar o mount shared nos dois serviços Node, repetir o bootstrap e conferir os formulários no computador do responsável, conforme instalacao-pwa-framework.md. Os testes desta entrega não comprovam Docker Engine, Windows, Nginx/MySQL, navegador visual, aparelho ou VPS reais.
+
+Depois do aceite: Sprint 2, cadastro/login/logout de clientes com acesso imediato, sem confirmação de e-mail. Admin continua público nesta etapa; login administrativo e recuperação separados seguem o plano. Capacitor/app nativo, compras e assinaturas permanecem fora do escopo.

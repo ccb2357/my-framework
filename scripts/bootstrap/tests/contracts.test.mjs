@@ -192,3 +192,21 @@ test('admin public config and Nginx exclude PWA resources and private credential
   assert.match(shortcut, /--service-ports pwa-teste-admin-node/);
   assert.doesNotMatch(shortcut, /--service-ports pwa-teste-node /);
 });
+
+test('npm manifests pin direct versions and lockfiles agree, including shared form libraries', async () => {
+  const manifests = [];
+  for (const directory of ['frontend', 'admin', 'scripts/bootstrap/executor']) {
+    const base = new URL('../../../' + directory + '/', import.meta.url);
+    const manifest = JSON.parse(await fs.readFile(new URL('package.json', base), 'utf8'));
+    const lock = JSON.parse(await fs.readFile(new URL('package-lock.json', base), 'utf8'));
+    for (const group of ['dependencies', 'devDependencies']) {
+      assert.deepEqual(lock.packages[''][group] || {}, manifest[group] || {}, directory + ' lockfile desatualizado');
+      for (const [name, version] of Object.entries(manifest[group] || {})) {
+        assert.match(version, /^\d+\.\d+\.\d+$/, directory + ': ' + name);
+        assert.equal(lock.packages['node_modules/' + name]?.version, version, directory + ': ' + name);
+      }
+    }
+    manifests.push(manifest);
+  }
+  for (const name of ['imask', 'just-validate']) assert.equal(manifests[0].dependencies[name], manifests[1].dependencies[name]);
+});

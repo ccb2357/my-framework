@@ -28,3 +28,5 @@ Regra visual aprovada: inputs, selects e textareas sem outline retangular de foc
 18. O plano aprovado entrega autenticações separadas: clientes com cadastro e acesso imediato; um administrador criado por comando; recuperação de senha por e-mail para ambos. Não implementar compras, assinaturas ou perfis administrativos adicionais neste ciclo.
 
 Validação final por instalação do zero e evidências reais. Não exigir clones A/B nem aprovar referências visuais automaticamente.
+
+19. Compartilhar somente lógica neutra em shared/forms/; mensagens JSON, máscaras, regras e ciclo de validação. Nunca colocar CSS/componentes F7/shadcn nessa pasta nem reutilizar node_modules entre serviços. Dependências diretas npm exatas, lockfiles versionados e instalação com npm ci; mudanças de versão exigem testes/builds. A faixa Node/imagens Docker não se torna fixa por fixar pacotes npm.

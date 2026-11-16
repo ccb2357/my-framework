@@ -1,5 +1,7 @@
 # Instalação — PWA Framework
 
+**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Acrescente o bind `/shared` aos dois serviços Node conforme a etapa 3.1, valide o Compose conforme a etapa 4 e repita o bootstrap da etapa 5. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada.
+
 ## 1. Preparar a pasta e a configuração
 
 Os exemplos usam `meu-projeto` em `C:\var\www`, com a pasta `infra` ao lado. Substitua nomes, caminhos, portas e rede pelos valores do seu `.env.foundation` e da infraestrutura.
@@ -54,6 +56,10 @@ services:
             - type: bind
               source: C:/var/www/pwa-framework/frontend
               target: /app
+            - type: bind
+              source: C:/var/www/pwa-framework/shared
+              target: /shared
+              read_only: true
             - pwa_framework_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5180:5173"
@@ -68,6 +74,10 @@ services:
             - type: bind
               source: C:/var/www/pwa-framework/admin
               target: /app
+            - type: bind
+              source: C:/var/www/pwa-framework/shared
+              target: /shared
+              read_only: true
             - pwa_framework_admin_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5182:5173"
@@ -219,7 +229,7 @@ O bootstrap verifica as dependências, a configuração, os bancos, as migration
 - [Mesmo diagnóstico em JSON](http://meu-projeto.localhost/api/v1/status)
 - [Verificação básica do Laravel](http://meu-projeto.localhost/up)
 
-**Nesta etapa o admin tem uma página de instalação pública; ainda não tem login.** A PWA e o admin devem mostrar backend/banco OK.
+**Nesta etapa o admin tem uma página de instalação pública; ainda não tem login.** A PWA e o admin devem mostrar backend/banco OK. Nos dois formulários demonstrativos, confira campos vazios, e-mail inválido e celular completo; as mensagens devem ser iguais, com o visual de cada interface.
 
 Com o Vite parado, abra a Hello pelo domínio do projeto. Teste instalação pelo botão/menu, offline após o primeiro carregamento e retorno da conexão. API/banco não podem manter OK offline. Código 0 não comprova instalação, funcionamento em aparelho ou recebimento push.
 
@@ -254,6 +264,10 @@ vite.cmd dev
 ```
 
 Abra [http://localhost:5182](http://localhost:5182), conforme `ADMIN_DEV_PORT`. Para publicar alterações, encerre com Ctrl+C e execute `vite.cmd build` nessa pasta; abra novamente o domínio administrativo. O admin não oferece instalação PWA.
+
+### Personalizar mensagens e máscaras
+
+Edite `shared/forms/messages.pt-BR.json` para mensagens, `masks.js` para máscaras e `rules.js` para regras. São usados pela PWA e pelo admin. Após alterações, execute `vite.cmd build` na pasta frontend e na pasta admin; na PWA instalada, aceite a atualização disponível. O Vite dev usa os mesmos arquivos compartilhados.
 
 ## Android por USB
 

@@ -35,4 +35,4 @@ Toda tela segue [02-design-system.md](02-design-system.md). Novas telas de negó
 
 ## Hello Dashboard administrativa
 
-Rota `/` do domínio `admin.<domínio>`, arquivo `admin/src/pages/HelloDashboard.vue`. Página pública de verificação da instalação, ainda sem login. Usa somente Vue/shadcn-vue/Tailwind: cabeçalho, cards, badge de diagnóstico real e botão de nova consulta. Loading/falha/offline descartam o OK anterior. Sem dados comerciais simulados. Não carrega Framework7 nem recursos PWA. Autenticação administrativa e área protegida serão entregues conforme o plano da raiz.
+Rota `/` do domínio `admin.<domínio>`, arquivo `admin/src/pages/HelloDashboard.vue`. Página pública de verificação da instalação, ainda sem login. Inclui formulário demonstrativo de e-mail/celular com as mesmas máscaras e mensagens da PWA, sem envio ou gravação de dados. Usa somente Vue/shadcn-vue/Tailwind: cabeçalho, cards, badge de diagnóstico real e botão de nova consulta. Loading/falha/offline descartam o OK anterior. Sem dados comerciais simulados. Não carrega Framework7 nem recursos PWA. Autenticação administrativa e área protegida serão entregues conforme o plano da raiz.

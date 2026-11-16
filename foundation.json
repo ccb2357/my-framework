@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "0.7.0-admin.1",
-  "stage": "admin-structure",
+  "foundationVersion": "0.7.1-forms.1",
+  "stage": "shared-forms",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -37,7 +37,8 @@
     "vitest": "5.1.0",
     "playwright": "1.65.1",
     "eslint": "10.15.0",
-    "stylelint": "16.26.1"
+    "stylelint": "16.26.1",
+    "jsdom": "26.1.0"
   },
   "admin": {
     "vue": "3.5.45",
@@ -50,5 +51,12 @@
     "shadcnCli": "2.9.0 (somente geração dos componentes entregues)",
     "cn": "0.5.2",
     "@vueuse/core": "15.0.0"
+  },
+  "sharedForms": {
+    "directory": "shared/forms",
+    "imask": "7.6.1",
+    "just-validate": "4.3.0",
+    "messages": "pt-BR",
+    "css": false
   }
 }
