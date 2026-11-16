@@ -65,6 +65,7 @@ const deliveryColor = status => ({ queued: 'blue', accepted: 'green', failed: 'r
 const deliveryDetails = item => [item.provider_status ? `HTTP ${item.provider_status}` : '', ({ 'provider-auth': 'confira VAPID', 'provider-temporary': 'aguardando retentativa', 'configuration-or-endpoint': 'confira configuração e provedor', 'retries-exhausted': 'tentativas esgotadas', 'subscription-expired': 'inscrição expirada' })[item.result] || ''].filter(Boolean).join(' · ');
 function failure(error) { message.value = ({ 401: 'Autenticação necessária. Entre novamente.', 419: 'Sessão expirada. Atualize a página e entre novamente.', 409: 'Inscrição vinculada a outra conta ou chave. Revogue o vínculo local antes de tentar.', 422: 'Dados da inscrição inválidos.', 429: 'Aguarde antes de repetir.', 503: 'Push está desabilitado ou indisponível.' })[error.status] || error.message || 'Não foi possível concluir.'; }
 async function refresh() {
+  if (!import.meta.env.PROD) { message.value = 'Use a PWA pelo build para ativar push.'; return; }
   current.value = null; conflict.value = false; permission.value = window.Notification?.permission || 'default';
   try {
     const config = await pushApi('config'); enabled.value = config.enabled; publicKey = config.public_key; user.value = config.user; testLogin.value = config.test_auth;

@@ -7,7 +7,7 @@
         <template v-if="clientState.status === 'authenticated' && clientState.user"><p>Olá, {{ clientState.user.name }}.</p><p>{{ clientState.user.email }}</p><p class="app-note">Você está na área protegida do cliente.</p></template>
         <p v-else role="status">{{ clientState.status === 'checking' ? 'Conferindo sessão…' : 'Sessão não verificada. Confira a conexão antes de continuar.' }}</p>
         <p v-if="message" role="alert">{{ message }}</p>
-        <div class="app-actions"><f7-button type="button" fill :disabled="busy" :aria-disabled="busy" :tabindex="busy ? -1 : 0" @click="logout">Sair da conta</f7-button><f7-button type="button" outline href="/">Abrir Hello</f7-button><f7-button v-if="clientState.status === 'unavailable'" type="button" outline @click="verify">Tentar novamente</f7-button></div>
+        <div class="app-actions"><f7-button type="button" fill :disabled="busy" :aria-disabled="busy" :tabindex="busy ? -1 : 0" @click="logout">Sair da conta</f7-button><f7-button outline href="/">Abrir Hello</f7-button><f7-button v-if="clientState.status === 'unavailable'" type="button" outline @click="verify">Tentar novamente</f7-button></div>
       </f7-block>
     </div>
   </f7-page>

@@ -11,10 +11,16 @@ Nenhuma dependência ou infraestrutura nova. Versões exatas e lockfiles preserv
 ## Evidências desta entrega
 
 - 35 testes PHP sem integração MySQL: 271 assertions; sessão/CSRF, contexto, validação, rate limits e regressões push/status. Pint aprovado.
-- 31 testes PWA e 8 admin aprovados, com JustValidate real em DOM simulado e renderização dos componentes oficiais Framework7.
+- 35 testes PWA e 8 admin aprovados, com JustValidate real em DOM simulado e renderização dos componentes oficiais Framework7.
 - Lint e builds reais das duas interfaces aprovados; PWA com manifest/worker e admin sem recursos PWA.
 - 37 testes bootstrap aprovados; Engine/Compose/HTTP são simulados.
 - Cinco testes novos de persistência/autenticação MySQL entregues, não executados neste ambiente. TestingDatabaseGuard preservado; nenhum SQLite substitui a integração.
+
+## Correção após uso local
+
+Links de conta/retorno usam anchors oficiais Framework7: type=button removia href e impedia navegação. Teste de renderização agora confere os links reais para entrar, cadastrar, conta e Hello. No Vite dev, push informa uso pelo build e não consulta APIs protegidas; teste cobre montagem/atualização/eventos. Favicon explícito evita a consulta ausente a favicon.ico. Lint, 33 testes PWA e build/check:pwa aprovados após a correção. Uma resposta 401 de auth/me antes do login continua sendo esperada e tratada como visitante.
+
+Mensagens de cadastro/login movidas para o slot info, dentro de item-input-wrap, abaixo dos campos; antes estavam fora de item-inner. Dois testes adicionais montam componentes/roteador reais em DOM simulado, clicam no submit vazio e conferem mensagens e aria-invalid. Após a correção: 35 testes PWA, lint e build/check:pwa aprovados. Pacotes não incluem mais os vite.cmd derivados por ambiente; o bootstrap os gera, preservando os atalhos existentes ao extrair atualizações.
 
 ## Aceite e próximo passo
 
