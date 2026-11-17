@@ -58,13 +58,9 @@ docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
 
 ## 3. Preparar serviços Node, mount, volumes e sites
 
-O executor usa docker run --rm (etapas 2 e 5); não cadastrar serviço de bootstrap no Compose.
-
-Antes de executar o bootstrap, aplique **todos os quatro itens** abaixo para o ambiente **local** e o projeto **meu-projeto**. Não duplique entradas que já estejam corretas. Os trechos abaixo refletem a configuração central e o mapeamento deste ambiente; confira-os antes de aplicar. O restante do guia usa exemplos, que devem ser adaptados ao projeto.
-
 ### 3.1 Serviços Node no Compose existente
 
-Arquivo de destino: `C:\var\www\infra\docker-compose.yml`. Acrescentar o serviço ao `services` existente, sem duplicar essa chave. Inicie o Vite somente após executar o bootstrap e instalar as dependências, conforme a etapa 7.
+Arquivo de destino: `C:\var\www\infra\docker-compose.yml`.
 
 ```yaml
 services:
@@ -116,7 +112,7 @@ No mesmo Compose, localizar `services.php-fpm.volumes` e acrescentar somente a l
 
 ### 3.3 Declaração dos volumes ao final do Compose
 
-No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`. Se o bloco ainda não existir, criá-lo. O mount do passo anterior e esta declaração são necessários.
+No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`.
 
 ```yaml
 volumes:
@@ -154,7 +150,7 @@ server {
         fastcgi_pass php-fpm:9000;
         fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
         fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
-        
+
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
@@ -183,7 +179,7 @@ server {
         fastcgi_pass php-fpm:9000;
         fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
         fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
-        
+
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
@@ -194,8 +190,6 @@ server {
 <!-- END FOUNDATION INSTALL INFRA -->
 
 ## 4. Validar e aplicar a infraestrutura
-
-Somente depois de construir a imagem e salvar **todas** as alterações da etapa 3, abra o **Prompt de Comando (CMD)**. Execute uma linha por vez; se um comando falhar, corrija antes de continuar.
 
 Entre na pasta da infraestrutura e valide o Compose:
 
