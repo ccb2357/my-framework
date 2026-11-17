@@ -20,3 +20,7 @@ Responsável confirmou Sprint 2 com testes manuais e 47 testes MySQL/367 asserti
 ## Próximo passo
 
 Aplicar pacote e SMTP privado, repetir bootstrap e conferir recebimento/link/login antigo/novo nas duas contas pelo manual; executar suíte completa em MySQL testing. Envio SMTP real não foi executado neste ambiente. Após aceite: Sprint 5, consolidação/testes de isolamento e proteção dos acessos. Comércio/assinaturas/Capacitor fora do ciclo.
+
+## Validação local de envio
+
+Responsável confirmou envio/recebimento pelo admin, pelo broker de clientes e em duas solicitações consecutivas pela tela da PWA. Causa da falha inicial não foi identificada; nenhuma correção causal foi demonstrada. Diagnóstico temporário removido integralmente por solicitação, mantendo resposta genérica, regras de recuperação e teste HTTP habilitado. Limpeza aprovada em 45 testes PHP sem MySQL (372 assertions) e Pint. Redefinição efetiva, rejeição da senha antiga e suíte MySQL completa da Sprint 4 ainda aguardam confirmação.

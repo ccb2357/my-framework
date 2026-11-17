@@ -23,7 +23,7 @@ class PasswordRecoveryController
         // Never send reset links to a log transport or silently fall back to one.
         if (config('mail.default') === 'smtp' && config('foundation.recovery_enabled')) {
             try {
-                Password::broker($area === 'admin' ? 'administrators' : 'clients')->sendResetLink($request->safe()->only('email'));
+                Password::broker($area === 'admin' ? 'administrators' : 'clients')->sendResetLink($request->safe()->only(['email']));
             } catch (\Throwable) {
                 Log::warning('password-recovery-mail-unavailable', ['area' => $area]);
             }

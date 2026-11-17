@@ -92,4 +92,16 @@ class PasswordRecoveryGuardsTest extends TestCase
             }
         }
     }
+
+    public function test_enabled_http_flow_invokes_the_right_broker_with_only_normalized_email(): void
+    {
+        config(['foundation.recovery_enabled' => true, 'mail.default' => 'smtp']);
+        foreach (['client' => 'clients', 'admin' => 'administrators'] as $area => $name) {
+            $broker = \Mockery::mock();
+            $broker->shouldReceive('sendResetLink')->once()->with(['email' => 'person@example.test'])->andReturn(Password::RESET_LINK_SENT);
+            Password::shouldReceive('broker')->once()->with($name)->andReturn($broker);
+            $prefix = $area === 'admin' ? 'http://admin.localhost/api/v1/admin/auth/' : 'http://localhost/api/v1/auth/';
+            $this->postJson($prefix.'forgot-password', ['email' => ' PERSON@EXAMPLE.TEST ', 'role' => 'admin', 'token' => 'PRIVATE'])->assertOk()->assertDontSee('PRIVATE');
+        }
+    }
 }
