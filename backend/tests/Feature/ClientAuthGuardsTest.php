@@ -18,13 +18,11 @@ class ClientAuthGuardsTest extends TestCase
         $this->getJson('/api/v1/auth/me')->assertUnauthorized();
     }
 
-    public function test_real_session_returns_only_the_client_resource_and_test_session_is_rejected(): void
+    public function test_real_session_returns_only_the_client_resource(): void
     {
         $user = new User(['name' => 'Cliente', 'email' => 'client@example.test', 'password' => 'Secret123!']);
         $user->id = 42;
         $this->actingAs($user, 'web')->getJson('/api/v1/auth/me')->assertOk()->assertExactJson(['user' => ['id' => 42, 'name' => 'Cliente', 'email' => 'client@example.test']])->assertHeader('Cache-Control', 'no-store, private');
-        $user->is_push_test = true;
-        $this->getJson('/api/v1/auth/me')->assertUnauthorized();
     }
 
     public function test_admin_host_and_foreign_or_malformed_origins_are_rejected_before_auth(): void

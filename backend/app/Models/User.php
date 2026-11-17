@@ -4,7 +4,6 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Notifications\AccountPasswordReset;
-use App\Notifications\FoundationPushNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -13,12 +12,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, \NotificationChannels\WebPush\HasPushSubscriptions;
-
-    public function routeNotificationForWebPush($notification = null)
-    {
-        return $this->pushSubscriptions()->whereKey($notification instanceof FoundationPushNotification ? $notification->delivery->subscription_id : 0)->get();
-    }
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -51,8 +45,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'push_enabled' => 'boolean',
-            'is_push_test' => 'boolean',
         ];
     }
 

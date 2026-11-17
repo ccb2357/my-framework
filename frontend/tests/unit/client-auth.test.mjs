@@ -4,8 +4,8 @@ import { requireClient, requireGuest } from '../../src/services/client-route.js'
 import { apiRequest, ApiError } from '../../src/services/api.js';
 const user = { id: 1, name: 'Cliente', email: 'client@example.test' };
 function fixture(request) {
-  const state = {}; const afterLogout = vi.fn();
-  return { state, afterLogout, auth: createClientAuth({ request, state, afterLogout }) };
+  const state = {};
+  return { state, auth: createClientAuth({ request, state }) };
 }
 test('registration submits only permitted fields and keeps a minimal session resource', async () => {
   const request = vi.fn().mockResolvedValue({ user: { ...user, password: 'PRIVATE', role: 'admin' } });
@@ -28,15 +28,15 @@ test('late session response cannot restore an older identity after login', async
   finish({ user: { ...user, id: 2 } }); await old;
   expect(f.state.user).toEqual(user);
 });
-test('logout clears private UI immediately and waits for server before local push cleanup', async () => {
+test('logout clears private UI immediately and waits for the server', async () => {
   let finish; const request = vi.fn().mockImplementation(() => new Promise(resolve => { finish = resolve; }));
   const f = fixture(request); f.state.user = user;
-  const pending = f.auth.logout(); expect(f.state.user).toBeNull(); expect(f.afterLogout).not.toHaveBeenCalled();
-  finish(null); await pending; expect(f.state.status).toBe('guest'); expect(f.afterLogout).toHaveBeenCalledOnce();
+  const pending = f.auth.logout(); expect(f.state.user).toBeNull();
+  finish(null); await pending; expect(f.state.status).toBe('guest');
 });
 test('failed logout is not announced as completed and expired session is accepted as logged out', async () => {
   const f = fixture(vi.fn().mockRejectedValueOnce(new Error('network')).mockRejectedValueOnce(new ApiError('', 401)));
-  await expect(f.auth.logout()).rejects.toThrow(); expect(f.state.status).toBe('unavailable'); expect(f.afterLogout).not.toHaveBeenCalled();
+  await expect(f.auth.logout()).rejects.toThrow(); expect(f.state.status).toBe('unavailable');
   await f.auth.logout(); expect(f.state.status).toBe('guest');
 });
 test('protected route requires an actual successful check on every entry', async () => {
@@ -57,4 +57,25 @@ test('already authenticated clients are redirected away from login and registrat
   const context = { resolve: vi.fn(), reject: vi.fn(), router: { navigate: vi.fn() } };
   await requireGuest({ check: async () => user }, context);
   expect(context.reject).toHaveBeenCalledOnce(); expect(context.router.navigate).toHaveBeenCalledWith('/conta/', expect.any(Object));
+});
+
+for (const action of ['login', 'register', 'logout']) {
+  test(`session checks and overlapping mutations cannot interfere with pending ${action}`, async () => {
+    let finish;
+    const request = vi.fn().mockImplementationOnce(() => new Promise(resolve => { finish = resolve; })).mockResolvedValue({ user });
+    const f = fixture(request);
+    const operation = f.auth[action]({ name: user.name, email: user.email, password: 'Secret123!', password_confirmation: 'Secret123!' });
+    expect(await f.auth.check()).toBeNull();
+    await expect(f.auth.login({})).rejects.toSatisfy(error => error.status === 409);
+    await expect(f.auth.logout()).rejects.toSatisfy(error => error.status === 409);
+    expect(request).toHaveBeenCalledTimes(1); expect(f.state.user).toBeNull();
+    finish(action === 'logout' ? null : { user }); await operation;
+    expect(f.state.status).toBe(action === 'logout' ? 'guest' : 'authenticated');
+    await f.auth.check(); expect(request).toHaveBeenCalledTimes(2);
+  });
+}
+test('failed login releases mutation lock and permits another attempt', async () => {
+  const f = fixture(vi.fn().mockRejectedValueOnce(new ApiError('', 401)).mockResolvedValue({ user }));
+  await expect(f.auth.login({})).rejects.toThrow(); expect(f.state.status).toBe('guest');
+  await f.auth.login({}); expect(f.state.user).toEqual(user);
 });

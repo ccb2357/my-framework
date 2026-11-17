@@ -1,26 +1,18 @@
 # Estado da fundação
 
-## Entrega atual — Sprint 4
+## Entrega atual
 
-Recuperação de senha para clientes/admin, com telas independentes e validação compartilhada. Brokers/providers/tabelas separados; token hash/60min/uso único sob transação, reenvio após 60s, quotas por área/IP/e-mail, CSRF e mensagens controladas/genéricas. Conta de teste push não recupera senha. Sem login automático; troca de senha incrementa auth_version e invalida sessões antigas apenas da conta/área alvo.
+PWA Framework7 e admin shadcn-vue com autenticações independentes, recuperação por SMTP, formulários neutros compartilhados e Lucide 1.72.0 nas duas interfaces. Instalação/offline/atualização permanecem na PWA; configuração manual somente em .env.foundation.
 
-SMTP centralizado em .env.foundation; TLS obrigatório, sem fallback/log de links/segredos. Sem SMTP_HOST não envia. Testing força array/recuperação desabilitada/senha SMTP vazia. Links usam origens configuradas e fragmento removido do histórico; token/senhas só em memória, nunca rascunho ou cache de API. Sem novas dependências/serviços/worker; bootstrap aplica migration/configuração/builds e preserva contas/chaves.
+Módulo descontinuado removido das APIs, UI, worker, bootstrap, dependências, exemplos e documentação por decisão do responsável. Uma migration histórica limpa somente estruturas, fila e contas de teste exclusivas, preservando clientes/admin e demais filas. Em instalação nova, não cria essas estruturas. Limpeza irreversível; dados removidos só retornam com backup anterior.
 
-## Aceite anterior
+## Evidências
 
-Responsável confirmou Sprint 2 com testes manuais e 47 testes MySQL/367 assertions. Sprint 3: suíte completa com 55 testes/464 assertions aprovada no MySQL real; login/Dashboard acessados. Isolamento está coberto pela suíte e roteiro manual.
-
-## Verificações desta entrega
-
-- 44 testes PHP sem integração MySQL aprovados (364 assertions), incluindo CSRF sem Origin, quotas, transporte desabilitado, falha SMTP controlada, links e rejeição de versão antiga. Pint aprovado.
-- 39 testes PWA e 15 admin aprovados; testes com campos/botões reais, confirmação de senha, fragmento removido, submissão permitida e limpeza dos segredos. Lint e builds reais aprovados; PWA mantém worker/manifest e admin não os inclui.
-- 39 testes bootstrap aprovados, incluindo SMTP privado e configuração testing sem senha/envio. Engine/Compose/HTTP de infraestrutura são simulados. Manifests/lockfiles preservados; sete SDD e links locais conferidos.
-- Quatro testes MySQL novos entregues para separação/hash/expiração/reuso/reenvio/revogação das sessões nas duas direções; não executados aqui. Nenhum envio SMTP real, Docker/Windows, navegador visual ou aparelho foi homologado nesta entrega.
+- Antes da remoção, responsável aprovou a suíte real MySQL: 71 testes, 627 assertions; recebimento de recuperação de senha confirmado nas duas interfaces.
+- Após remoção: 36 testes PHP sem MySQL/246 assertions, 37 PWA, 18 admin e 38 bootstrap aprovados; Pint, lints e builds aprovados. Oito pacotes PHP exclusivos retirados sem atualizar os demais; manifests/lockfiles npm preservados.
+- Limpeza transitória validada em pasta temporária: 35 arquivos retirados, campos antigos removidos dos envs, APP_KEY/SMTP preservados, script autoexcluído. Os nomes legados existem somente na migration, em seu teste de upgrade e nesse utilitário descartável.
+- Migration/teste de atualização entregues para MySQL testing, não executados aqui. Engine/Compose são simulados, DOM não equivale a navegador/aparelho. SMTP permanece síncrono; resposta genérica não garante tempo uniforme. Sem homologação Docker/Windows/VPS nesta entrega.
 
 ## Próximo passo
 
-Aplicar pacote e SMTP privado, repetir bootstrap e conferir recebimento/link/login antigo/novo nas duas contas pelo manual; executar suíte completa em MySQL testing. Envio SMTP real não foi executado neste ambiente. Após aceite: Sprint 5, consolidação/testes de isolamento e proteção dos acessos. Comércio/assinaturas/Capacitor fora do ciclo.
-
-## Validação local de envio
-
-Responsável confirmou envio/recebimento pelo admin, pelo broker de clientes e em duas solicitações consecutivas pela tela da PWA. Causa da falha inicial não foi identificada; nenhuma correção causal foi demonstrada. Diagnóstico temporário removido integralmente por solicitação, mantendo resposta genérica, regras de recuperação e teste HTTP habilitado. Limpeza aprovada em 45 testes PHP sem MySQL (372 assertions) e Pint. Redefinição efetiva, rejeição da senha antiga e suíte MySQL completa da Sprint 4 ainda aguardam confirmação.
+Aplicar o pacote, executar uma vez a limpeza transitória e repetir bootstrap; aceitar atualização da PWA. Executar suíte completa no MySQL testing e conferir login/logout/recuperação nas duas interfaces. Depois, Sprint 6: instalação completa pelo manual e fechamento. Compras, assinaturas, múltiplos administradores e Capacitor fora do ciclo.

@@ -1,6 +1,6 @@
 # Instalação — PWA Framework
 
-**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Se os dois serviços Node já têm o bind `/shared` da etapa 3.1, repita apenas o bootstrap da etapa 5. Caso contrário, acrescente-o e valide o Compose conforme a etapa 4. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada.
+**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Se os dois serviços Node já têm o bind `/shared` da etapa 3.1, repita apenas o bootstrap da etapa 5. Caso contrário, acrescente-o e valide o Compose conforme a etapa 4. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada. Esta atualização não exige novos serviços nem recriação do administrador.
 
 ## 1. Preparar a pasta e a configuração
 
@@ -231,8 +231,7 @@ O bootstrap verifica as dependências, a configuração, os bancos, as migration
 
 O endereço administrativo abre o login. Crie a conta conforme abaixo; após entrar, PWA e Dashboard devem mostrar backend/banco OK. Os formulários demonstrativos mantêm máscaras/mensagens comuns e visuais separados.
 
-Com o Vite parado, abra a Hello pelo domínio do projeto. Teste instalação pelo botão/menu, offline após o primeiro carregamento e retorno da conexão. API/banco não podem manter OK offline. Código 0 não comprova instalação, funcionamento em aparelho ou recebimento push.
-
+Com o Vite parado, abra a Hello pelo domínio do projeto. Teste instalação pelo botão/menu, offline após o primeiro carregamento e retorno da conexão. API/banco não podem manter OK offline. Código 0 não comprova instalação, funcionamento em aparelho.
 
 ### Cadastro, login e logout dos clientes
 
@@ -251,7 +250,7 @@ Após extrair a atualização, repita o bootstrap da etapa 5. Não precisa alter
 docker compose exec -it -w /var/www/meu-projeto/backend php-fpm php artisan admin:create admin@example.com --name="Administrador"
 ```
 
-Informe e confirme a senha no terminal (mínimo 8 caracteres); ela não aparece enquanto digita. O e-mail será o login da conta, independente dos clientes e do VAPID. O comando cria somente um administrador e recusa outra criação sem alterar a conta existente. Não há cadastro público. A recuperação por e-mail exige o SMTP da seção abaixo.
+Informe e confirme a senha no terminal (mínimo 8 caracteres); ela não aparece enquanto digita. O e-mail será o login da conta, independente dos clientes. O comando cria somente um administrador e recusa outra criação sem alterar a conta existente. Não há cadastro público. A recuperação por e-mail exige o SMTP da seção abaixo.
 
 1. Abra o domínio administrativo e entre. Confira nome/e-mail, recarregue e teste **Sair**; a Dashboard deve voltar ao login.
 2. Confira campos vazios, senha incorreta e limite de tentativas.
@@ -295,7 +294,7 @@ vite.cmd dev
 
 Abra [http://localhost:5180](http://localhost:5180). Mantenha esse terminal aberto; encerre com Ctrl+C. Alterações em .vue/JS/CSS devem aparecer pelo HMR.
 
-Esse endereço usa HMR e não registra o service worker. Teste a PWA pelo domínio Nginx ou pela prévia abaixo. Push funciona somente no build.
+Esse endereço usa HMR e não registra o service worker. Teste a PWA pelo domínio Nginx ou pela prévia abaixo.
 
 Para refazer o build e publicar em dist:
 
@@ -356,7 +355,7 @@ C:\tools\platform-tools\adb.exe reverse tcp:5180 tcp:5180
 
 3. Abra [http://localhost:5180](http://localhost:5180) no Chrome do celular para desenvolver com atualização automática das alterações.
 
-### Instalar a PWA e testar offline/push
+### Instalar a PWA e testar offline
 
 Use o **build na PREVIEW_PORT (5181)**. O bootstrap da etapa 5 já gera o build; se alterou o frontend depois, execute `vite.cmd build` na pasta frontend antes de continuar.
 
@@ -389,64 +388,6 @@ C:\tools\platform-tools\adb.exe reverse --remove tcp:5180
 ```cmd
 C:\tools\platform-tools\adb.exe reverse --remove tcp:5181
 ```
-
-## Push Notifications (opcional)
-
-**Nome exibido nas notificações:** configure `PROJECT_NAME="Nome do aplicativo"` e `PWA_SHORT_NAME="Nome curto"` no `.env.foundation` e repita o bootstrap da etapa 5 para atualizar o manifest e o build. O Android pode demorar para atualizar o nome da PWA já instalada. O sininho é o ícone pequeno da notificação, separado do nome.
-
-1. No CMD, crie o acesso de teste local:
-
-```cmd
-cd /d C:\var\www\infra
-```
-
-```cmd
-docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan push:test-user teste-push@example.test
-```
-
-`teste-push@example.test` identifica apenas o usuário de teste no banco; pode manter esse exemplo. Não precisa ser igual ao e-mail do `VAPID_SUBJECT` e não recebe e-mails.
-
-2. Abra a Hello pelo build (Nginx ou prévia na PREVIEW_PORT/ADB). Se aparecer Atualizar aplicativo, aplique a atualização. Na seção Push Notifications, cole o código exibido no terminal e entre; ele vale 10 minutos e só pode ser usado uma vez. Clique **Ativar neste dispositivo** e permita notificações.
-
-3. Clique **Enviar teste para este dispositivo**. Depois, no CMD:
-
-```cmd
-docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan push:work
-```
-
-Confira a notificação e o clique de retorno ao app. Repita com o app fechado, mantendo navegador/SO autorizados. **Enfileirada** aguarda o worker; **aceita pelo provedor** ainda não comprova exibição. Se houver retentativa, aguarde e execute o worker novamente.
-
-4. Confira preferência global desligada, desativação/revogação do dispositivo e saída da conta. Imagens dependem do navegador. iPhone/iPad exige PWA instalada e aberta pela Tela de Início; fora de localhost, use HTTPS. O código de acesso não é salvo: conclua o login ou limpe o campo antes de atualizar a PWA.
-
-Em VPS, agende o worker no Cron a cada minuto, adaptando os caminhos/serviço existentes:
-
-```cron
-* * * * * cd /var/www/infra && docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan push:work >/dev/null 2>&1
-```
-
-O usuário do Cron precisa acessar Docker. O comando tem lock e tempo limitado; não substitui a autenticação do produto. Desligue `PUSH_TEST_AUTH_ENABLED` e repita o bootstrap ao terminar os testes locais.
-
-### Usar push nas funcionalidades do aplicativo
-
-Crie a regra de notificação no backend do produto, em um Service, Job ou Listener. Quando a novidade estiver confirmada, selecione o usuário autorizado e chame o serviço central:
-
-```php
-$resultado = app(\App\Services\PushNotificationService::class)->sendToUser($usuario, [
-    'title' => 'Nova publicação',
-    'body' => 'Há uma novidade para você.',
-    'url' => '/novidades/123/',
-]);
-```
-
-`$usuario` é um modelo `App\Models\User` autorizado a acessar a novidade. Personalize `title`, `body` e `url`; o link deve ser uma rota real dentro do aplicativo. Não altere o teste da Hello para implementar notificações do produto. Avisos agendados usam uma rotina periódica que identifica quando notificar.
-
-O serviço enfileira para os dispositivos inscritos com preferência ativa; `$resultado['queued']` informa a quantidade enfileirada. O worker descrito acima processa os envios; enfileirar não confirma recebimento.
-
-Referências:
-
-- [docs/sdd/03-arquitetura.md](docs/sdd/03-arquitetura.md) — serviço central, fila e gatilhos.
-- [docs/sdd/05-api.md](docs/sdd/05-api.md) — campos, limites e contratos.
-- [instalacao-pwa-framework.md](instalacao-pwa-framework.md#push-notifications-opcional) — configuração, teste e operação.
 
 ## Verificações e testes
 

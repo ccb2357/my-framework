@@ -111,7 +111,7 @@ class FoundationVerify extends Command
     private function capture(string $root, array $central, string $main, string $test, array $state): array
     {
         $id = $state['identity'] ?? [];
-        $identity = ['root' => $root, 'slug' => $central['PROJECT_SLUG'], 'domain' => $central['LOCAL_DOMAIN'] ?? $central['PROJECT_SLUG'].'.localhost', 'ports' => [(int) $central['DEV_PORT'], (int) $central['PREVIEW_PORT']], 'databases' => [$main, $test], 'volumes' => [$id['vendor'] ?? '', $id['modules'] ?? ''], 'appKey' => hash('sha256', (string) config('app.key')), 'vapidKey' => config('webpush.vapid.private_key') ? hash('sha256', config('webpush.vapid.private_key')) : null];
+        $identity = ['root' => $root, 'slug' => $central['PROJECT_SLUG'], 'domain' => $central['LOCAL_DOMAIN'] ?? $central['PROJECT_SLUG'].'.localhost', 'ports' => [(int) $central['DEV_PORT'], (int) $central['PREVIEW_PORT']], 'databases' => [$main, $test], 'volumes' => [$id['vendor'] ?? '', $id['modules'] ?? ''], 'appKey' => hash('sha256', (string) config('app.key'))];
         if (empty(config('app.key')) || in_array('', $identity['volumes'], true)) {
             throw new RuntimeException('identity-incomplete');
         }
@@ -166,9 +166,6 @@ class FoundationVerify extends Command
             if (count(array_unique($all)) !== count($all)) {
                 $result[] = $key;
             }
-        }
-        if ($a['vapidKey'] && $a['vapidKey'] === $b['vapidKey']) {
-            $result[] = 'vapidKey';
         }
 
         return $result;

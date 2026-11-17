@@ -18,7 +18,7 @@ async function fixture() {
 afterEach(() => vi.unstubAllGlobals());
 describe('admin integration', () => {
   it('browser config uses a whitelist even when input contains secrets', () => {
-    const result = buildConfig({ app: { name: 'Admin', slug: 'sample', locale: 'pt-BR', appUrl: 'http://admin.sample.localhost', apiBase: '/api/v1', DB_PASSWORD: 'PRIVATE' }, vite: { proxyTarget: 'http://nginx', proxyHost: 'admin.sample.localhost', devPort: 5182, previewPort: 5183 }, VAPID_PRIVATE_KEY: 'PRIVATE' });
+    const result = buildConfig({ app: { name: 'Admin', slug: 'sample', locale: 'pt-BR', appUrl: 'http://admin.sample.localhost', apiBase: '/api/v1', DB_PASSWORD: 'PRIVATE' }, vite: { proxyTarget: 'http://nginx', proxyHost: 'admin.sample.localhost', devPort: 5182, previewPort: 5183 }, SMTP_PASS: 'PRIVATE' });
     expect(JSON.stringify(result)).not.toContain('PRIVATE');
     expect(result.app).not.toHaveProperty('proxyTarget');
   });

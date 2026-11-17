@@ -88,7 +88,7 @@ class PasswordRecoveryMySqlTest extends TestCase
         $this->assertGuest('admin');
     }
 
-    public function test_resend_is_throttled_then_replaces_old_link_and_unknown_or_push_test_accounts_are_generic(): void
+    public function test_resend_is_throttled_then_replaces_old_link_and_unknown_accounts_are_generic(): void
     {
         [$u] = $this->accounts();
         $first = $this->token($u, 'client');
@@ -96,9 +96,6 @@ class PasswordRecoveryMySqlTest extends TestCase
         Notification::assertSentToTimes($u, AccountPasswordReset::class, 1);
         $unknown = $this->postJson($this->endpoint('client', 'forgot-password'), ['email' => 'unknown@example.test'])->assertOk();
         $this->assertSame($response->json(), $unknown->json());
-        $push = User::factory()->create(['is_push_test' => true]);
-        $this->postJson($this->endpoint('client', 'forgot-password'), ['email' => $push->email])->assertOk();
-        Notification::assertNotSentTo($push, AccountPasswordReset::class);
         $this->travel(61)->seconds();
         $second = $this->token($u, 'client');
         $this->assertNotSame($first, $second);

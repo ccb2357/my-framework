@@ -64,7 +64,7 @@ return [
     */
 
     'providers' => [
-        'client_recovery' => ['driver' => 'recovery-clients', 'model' => User::class],
+        'client_recovery' => ['driver' => 'eloquent', 'model' => User::class],
         'administrators' => ['driver' => 'eloquent', 'model' => Administrator::class],
         'users' => [
             'driver' => 'eloquent',

@@ -27,10 +27,11 @@ export async function adminRequest(path, { method = 'GET', json, fetcher = globa
 }
 export const adminMessage = error => ({ 401: 'E-mail ou senha inválidos, ou sessão encerrada.', 403: 'Acesse pelo endereço administrativo.', 409: 'Já existe uma sessão administrativa ativa. Confira o acesso novamente.', 419: 'Sessão expirada. Tente novamente.', 422: 'Confira os campos informados.', 429: 'Muitas tentativas. Aguarde antes de repetir.' })[error.status] || 'Não foi possível conectar. Confira a conexão e tente novamente.';
 export function createAdminAuth(state, request = adminRequest) {
-  let revision = 0, pending;
+  let revision = 0, pending, mutating = false;
   const reset = (status = 'guest') => { revision++; pending = undefined; state.user = null; state.status = status; };
   const read = body => { const u = body?.user; if (u?.id !== 1 || typeof u.name !== 'string' || typeof u.email !== 'string') throw new AdminApiError(); return { id: u.id, name: u.name, email: u.email }; };
   function check() {
+    if (mutating) return Promise.resolve(null);
     if (pending) return pending;
     if (state.status === 'authenticating') return Promise.resolve(null);
     reset('checking'); const version = revision;
@@ -38,7 +39,24 @@ export function createAdminAuth(state, request = adminRequest) {
       .catch(error => { if (version !== revision) return null; state.status = error.status === 401 ? 'guest' : 'unavailable'; if (error.status !== 401) throw error; return null; }).finally(() => { if (pending === task) pending = undefined; });
     pending = task; return task;
   }
-  async function login(values) { reset('authenticating'); const version = revision; try { const user = read(await request('login', { method: 'POST', json: { email: values.email, password: values.password } })); if (version !== revision) throw new AdminApiError(); state.user = user; state.status = 'authenticated'; return user; } catch (error) { if (version === revision) reset('guest'); throw error; } }
-  async function logout() { reset('ending'); try { await request('logout', { method: 'POST' }); } catch (error) { if (error.status !== 401) { reset('unavailable'); throw error; } } reset(); }
+  async function login(values) {
+    if (mutating) throw new AdminApiError(409);
+    mutating = true; reset('authenticating'); const version = revision;
+    try {
+      const user = read(await request('login', { method: 'POST', json: { email: values.email, password: values.password } }));
+      if (version !== revision) throw new AdminApiError();
+      state.user = user; state.status = 'authenticated'; return user;
+    } catch (error) { if (version === revision) reset('guest'); throw error; }
+    finally { mutating = false; }
+  }
+  async function logout() {
+    if (mutating) throw new AdminApiError(409);
+    mutating = true; reset('ending');
+    try {
+      try { await request('logout', { method: 'POST' }); }
+      catch (error) { if (error.status !== 401) { reset('unavailable'); throw error; } }
+      reset();
+    } finally { mutating = false; }
+  }
   return { check, login, logout, reset };
 }

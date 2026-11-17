@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use App\Support\AccountSessionVersion;
 use Closure;
 use Illuminate\Http\Request;
@@ -12,9 +13,9 @@ class ClientSession
     public function handle(Request $request, Closure $next)
     {
         $user = Auth::guard('web')->user();
-        abort_unless($user && ! $user->is_push_test, 401);
+        abort_unless($user instanceof User, 401);
 
-        AccountSessionVersion::check($request, Auth::guard('web')->user(), 'web');
+        AccountSessionVersion::check($request, $user, 'web');
 
         return $next($request);
     }

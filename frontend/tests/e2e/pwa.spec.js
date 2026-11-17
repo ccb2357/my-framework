@@ -30,7 +30,6 @@ test('atualização de worker real respeita confirmação e preserva duas abas',
   await open(page); await readyWorker(page);
   const second = await context.newPage();
   await second.route('**/api/v1/status', route => route.fulfill({ json: { status: 'ok', checks: { application: 'ok', database: 'ok' } } }));
-  await second.route('**/api/v1/push/**', route => route.fulfill({ status: 401, json: {} }));
   await open(second); await readyWorker(second);
   await page.locator('#demo-email').fill('aba-a@example.test');
   await second.locator('#demo-email').fill('aba-b@example.test');

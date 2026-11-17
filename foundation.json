@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "0.10.0-auth.4",
-  "stage": "password-recovery",
+  "foundationVersion": "0.11.1-auth.5",
+  "stage": "access-hardening",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -27,12 +27,6 @@
     "vite-plugin-pwa": "2.0.0",
     "workbox": "7.4.1"
   },
-  "push": {
-    "channel": "13.0.1",
-    "web-push": "11.0.0",
-    "queue": "database",
-    "enabledByDefault": false
-  },
   "testing": {
     "vitest": "5.1.0",
     "playwright": "1.65.1",
@@ -50,7 +44,8 @@
     "pwa": false,
     "shadcnCli": "2.9.0 (somente geração dos componentes entregues)",
     "cn": "0.5.2",
-    "@vueuse/core": "15.0.0"
+    "@vueuse/core": "15.0.0",
+    "lucide": "1.72.0"
   },
   "sharedForms": {
     "directory": "shared/forms",

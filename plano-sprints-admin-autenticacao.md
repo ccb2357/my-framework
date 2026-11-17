@@ -11,7 +11,7 @@ Ampliar o PWA Framework com uma interface administrativa e autenticações indep
 - `admin/`: Vue + shadcn-vue + Tailwind, no subdomínio administrativo, por exemplo `admin.dominio.com.br`. Desktop prioritário; suporte básico no celular.
 - **Nunca misturar Framework7 e shadcn-vue na mesma tela.** Entradas, componentes, CSS, dependências e builds separados; cada domínio carrega apenas sua interface. Manter JavaScript.
 - Administrativo sempre incluído na fundação, sem opção para desabilitá-lo.
-- Manifest, service worker, instalação e offline exclusivos da PWA. Push existente permanece opcional, sem ferramenta de envio no admin.
+- Manifest, service worker, instalação e offline exclusivos da PWA. 
 - Contas de clientes e administradores separadas, com sessões/cookies, autenticação e permissões independentes no Laravel.
 - Clientes podem criar suas próprias contas e acessar imediatamente, sem confirmação de e-mail. Haverá somente um administrador, criado por comando, sem cadastro público.
 - Recuperação de senha por e-mail para ambas as interfaces.
@@ -25,7 +25,7 @@ Ampliar o PWA Framework com uma interface administrativa e autenticações indep
 - Separar dependências, componentes, CSS, configuração Vite e build de `frontend/`.
 - Acrescentar domínio e portas administrativas ao `.env.foundation`.
 - Adaptar bootstrap e preparar os dois blocos Nginx e a integração Node no Compose compartilhado.
-- Manter manifest, service worker e push exclusivamente na PWA.
+- Manter manifest, service worker exclusivamente na PWA.
 
 **Aceite:** PWA e admin abrem em seus endereços; cada um carrega somente seus próprios componentes e estilos.
 
@@ -72,7 +72,7 @@ Ampliar o PWA Framework com uma interface administrativa e autenticações indep
 - Verificar separação de guard/provider, sessões, cookies, tokens e rotas entre os dois acessos.
 - Impedir que cadastro/login/recuperação do cliente concedam acesso administrativo.
 - Testar CSRF, autorização e limites de tentativas, inclusive chamadas diretas à API.
-- Preservar o módulo push e a compatibilidade da PWA.
+- Preservar a compatibilidade da PWA.
 
 **Aceite:** cada sessão acessa somente sua área; sair ou recuperar senha de uma não autentica nem encerra a outra.
 
@@ -92,4 +92,4 @@ Cada sprint entrega código, documentação enxuta e testes correspondentes. Com
 
 ## Fora deste ciclo
 
-Catálogo, tarot, compras avulsas, assinaturas, pagamentos e liberação de recursos por plano pertencem aos aplicativos derivados. Não antecipar essas funcionalidades na fundação. O módulo push existente permanece opcional e sem ferramenta de envio no administrativo.
+Catálogo, tarot, compras avulsas, assinaturas, pagamentos e liberação de recursos por plano pertencem aos aplicativos derivados. Não antecipar essas funcionalidades na fundação.

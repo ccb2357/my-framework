@@ -48,7 +48,7 @@ class ClientAuthController
     {
         $this->guest();
         $data = $request->validated();
-        abort_unless(Auth::guard('web')->attempt(['email' => $data['email'], 'password' => $data['password'], 'is_push_test' => false]), 401);
+        abort_unless(Auth::guard('web')->attempt(['email' => $data['email'], 'password' => $data['password']]), 401);
         $request->session()->regenerate();
         $request->session()->regenerateToken();
         if (Auth::guard('web')->check()) {

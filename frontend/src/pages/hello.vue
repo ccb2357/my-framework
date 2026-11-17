@@ -92,7 +92,7 @@
           <f7-button type="button" outline @click="sheetOpened = true">Abrir sheet</f7-button>
           <f7-button type="button" outline @click="showToast">Abrir toast</f7-button>
         </div>
-        <p class="app-note">A notificação acima é interna do Framework7. Web Push é configurado na seção Push Notifications.</p>
+        <p class="app-note">Esta é uma notificação interna do Framework7.</p>
       </f7-block>
 
       <f7-block-title>Ícones Lucide</f7-block-title>
@@ -114,7 +114,6 @@
 
       <f7-block-title>Recursos da PWA</f7-block-title>
       <PwaStatus />
-      <PushSettings ref="pushSettings" />
     </div>
 
     <template #fixed>
@@ -158,10 +157,9 @@ import { initDemoForm } from '../forms/demo.js';
 import BackendStatus from '../components/BackendStatus.vue';
 import LucideIcon from '../components/LucideIcon.vue';
 import PwaStatus from '../components/PwaStatus.vue';
-import PushSettings from '../components/PushSettings.vue';
 import { pwa } from '../pwa/index.js';
 import { cleanDraft, draftStorage } from '../pwa/draft.js';
-const page = ref(null), form = ref(null), pushSettings = ref(null);
+const page = ref(null), form = ref(null);
 let session;
 try { session = window.sessionStorage; } catch { session = { getItem() { return null; }, setItem() { throw new Error('Session unavailable'); } }; }
 const drafts = draftStorage(session, appConfig.slug);
@@ -170,8 +168,7 @@ const city = ref(restored.city), date = ref(restored.date.map(value => new Date(
 const phoneValue = ref(restored.phone), emailValue = ref(restored.email);
 const snapshot = () => ({ city: city.value, date: date.value.map(value => new Date(value).toISOString()), email: emailValue.value, phone: phoneValue.value, checked: checked.value, language: language.value, count: count.value });
 const dirty = computed(() => JSON.stringify(snapshot()) !== JSON.stringify(cleanDraft(null)));
-const releaseDraftGuard = pwa.draftGuard(() => dirty.value || pushSettings.value?.hasPending, () => {
-  if (pushSettings.value?.hasPending) throw new Error('Conclua a operação push ou limpe o código de acesso antes de atualizar.');
+const releaseDraftGuard = pwa.draftGuard(() => dirty.value, () => {
   drafts.save(snapshot());
 });
 const fabOpened = ref(false);
@@ -201,7 +198,7 @@ async function setup() {
   });
   destroyForm = initDemoForm(form.value, () => track(f7.dialog.alert('Campos válidos. Nenhum dado foi salvo ou enviado.', 'Formulário validado')), value => { phoneValue.value = value; });
 }
-function refreshAccess() { clientAuth.check().catch(() => {}); pushSettings.value?.refreshSession(); }
+function refreshAccess() { clientAuth.check().catch(() => {}); }
 function dispose() {
   autocomplete?.destroy(); autocomplete = undefined;
   destroyForm?.(); destroyForm = undefined;

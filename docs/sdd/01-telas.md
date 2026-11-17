@@ -11,19 +11,13 @@ Rota `/`, arquivo `frontend/src/pages/hello.vue`. Demonstra a base instalada e p
 | Calendar | Calendário oficial em sheet, inclusive no desktop. |
 | FAB | Speed Dial com três ações para cima, +/×, fechamento por ação/Escape e feedback por toast. |
 | Ícones | Seção com 20 Lucide identificados; Framework7 Icons nos demais controles. |
-| Notification, sheet, Smart Select e toast | APIs oficiais; Smart Select em popup. Notification interna não é Web Push. |
+| Notification, sheet, Smart Select e toast | APIs oficiais; Smart Select em popup. Notification é interna do Framework7. |
 | Formulário | E-mail/celular obrigatórios, máscara brasileira, validação e erros acessíveis; sem gravação. |
 | Navegação | cover-v, dive, fade e parallax, com retorno preservando o estado da Hello. |
 
 `BackendStatus.vue` consulta `/api/v1/status` sem cache: carregando, OK, indisponível, erro ou não verificado. Offline/falha descartam o OK anterior; retorno da conexão consulta novamente.
 
 `PwaStatus.vue` informa conexão, versão, instalação/menu, offline e atualização. Vite dev não registra worker nem oferece instalação. O build usa confirmação para atualizar; campos da Hello são preservados por aba. Formulário alterado impede recarga por outra aba; falha de armazenamento mantém a página. Novos formulários devem integrar a proteção de rascunho descrita na arquitetura.
-
-## Push na Hello
-
-`PushSettings.vue` reúne acesso de teste local, permissão por clique, preferência da conta, inscrição e remoção de dispositivos. Acesso por código de uso único, válido por 10 minutos; indisponível em produção. Código pendente/operação push bloqueiam atualização e não entram no rascunho.
-
-Dispositivos aparecem em cards, com identificação e botão de remoção confirmado. Histórico mostra os quatro últimos envios em pilha: enfileirada azul, aceita verde, falhou vermelho e cancelada cinza; texto/detalhes acompanham as cores. A lista não apaga o histórico no banco. Aceite do provedor não comprova recebimento/leitura.
 
 ## Outras rotas
 

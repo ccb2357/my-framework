@@ -9,13 +9,10 @@ class ClientAuthContext
 {
     public function handle(Request $request, Closure $next)
     {
-        if ($request->is('api/v1/auth/*', 'api/v1/push/*', 'sanctum/csrf-cookie') && $request->getHost() === parse_url((string) config('foundation.admin_url'), PHP_URL_HOST)) {
-            abort(403);
-        }
-        if (! $request->is('api/v1/auth/*')) {
+        if (! $request->is('api/v1/auth/*', 'sanctum/csrf-cookie')) {
             return $next($request);
         }
-        // Run before web cookies/session/CSRF: admin host must not authenticate clients.
+        // Validate every client session entry point before cookies/session/CSRF.
         abort_unless($request->getHost() === parse_url(config('app.url'), PHP_URL_HOST), 403);
         $origin = $request->headers->get('Origin');
         if ($origin !== null) {

@@ -150,16 +150,6 @@ test('PWA Nginx separates backend routes, mutable entrypoints and immutable asse
   assert.match(site, /location \/assets\/[^}]+immutable/);
   assert.doesNotMatch(site, /return 302 \/status/);
 });
-test('push defaults, private derivation and production test access are guarded', async () => {
-  const defaults = config(); assert.equal(defaults.PUSH_ENABLED, 'false');
-  assert.throws(() => config({ PUSH_ENABLED: 'true', VAPID_SUBJECT: '' }));
-  assert.throws(() => config({ VAPID_PUBLIC_KEY: 'partial' }));
-  assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'https://app.example.test', PUSH_TEST_AUTH_ENABLED: 'true' }));
-  const c = config({ PUSH_ENABLED: 'true', VAPID_SUBJECT: 'mailto:push@example.test', VAPID_PUBLIC_KEY: 'PUBLIC-TEST', VAPID_PRIVATE_KEY: 'PRIVATE-TEST' });
-  assert.doesNotMatch(JSON.stringify(publicConfiguration(c)), /PRIVATE-TEST|PUBLIC-TEST|VAPID/);
-  const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'push-env-'));
-  try { await synchronizeEnvs({ ...c, backend: temp }); const env = parseCentral(await fs.readFile(path.join(temp, '.env'), 'utf8')); assert.equal(env.QUEUE_CONNECTION, 'database'); assert.equal(env.VAPID_PRIVATE_KEY, 'PRIVATE-TEST'); const testing = parseCentral(await fs.readFile(path.join(temp, '.env.testing'), 'utf8')); assert.equal(testing.PUSH_ENABLED, 'false'); assert.equal(testing.VAPID_PRIVATE_KEY, ''); } finally { await fs.rm(temp, { recursive: true, force: true }); }
-});
 
 test('admin origins and four ports are distinct and production admin requires HTTPS', () => {
   const c = config();
@@ -176,9 +166,9 @@ test('admin origins and four ports are distinct and production admin requires HT
   assert.equal(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' }).adminUrl, 'https://admin.example.com');
 });
 test('admin public config and Nginx exclude PWA resources and private credentials', () => {
-  const c = config({ DB_PASSWORD: 'PRIVATE-SECRET', VAPID_PUBLIC_KEY: 'PUBLIC-TEST', VAPID_PRIVATE_KEY: 'PRIVATE-TEST' });
+  const c = config({ DB_PASSWORD: 'PRIVATE-SECRET' });
   const output = adminPublicConfiguration(c), site = nginxSnippet(c, true);
-  assert.doesNotMatch(JSON.stringify(output), /PRIVATE|VAPID|PWA_THEME|SESSION|DB_PASSWORD/);
+  assert.doesNotMatch(JSON.stringify(output), /PRIVATE|PWA_THEME|SESSION|DB_PASSWORD/);
   assert.equal(output.app.appUrl, c.adminUrl);
   assert.equal(output.vite.proxyHost, 'admin.pwa-teste.localhost');
   assert.match(site, /root "\/var\/www\/pwa-teste\/admin\/dist"/);

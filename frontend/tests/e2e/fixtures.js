@@ -3,7 +3,6 @@ export const healthy = { status: 'ok', checks: { application: 'ok', database: 'o
 export const test = base.extend({
   page: async ({ page }, use) => {
     await page.route('**/api/v1/status', route => route.fulfill({ json: healthy, headers: { 'cache-control': 'no-store' } }));
-    await page.route('**/api/v1/push/**', route => route.fulfill({ status: 401, json: { message: 'Autenticação necessária.' }, headers: { 'cache-control': 'no-store' } }));
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await use(page);

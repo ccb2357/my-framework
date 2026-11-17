@@ -21,12 +21,9 @@ Regra visual aprovada: inputs, selects e textareas sem outline retangular de foc
 
 15. PWA usa injectManifest/worker único e atualização prompt. Cache somente público; APIs/sessão/CSRF/diagnóstico nunca recebem fallback HTML/offline. Formulário alterado bloqueia recarga externa; atualização confirmada preserva campos ou mantém a aba em falha. Instalação só por ação explícita/menu. Validar build antes de publicar e assets antes do HTML/worker.
 
-16. Web Push: usar serviço central, APIs de sessão com CSRF/ownership/rate limit, VAPID privada por ambiente e worker único. Não transferir endpoints, pedir permissão ao abrir, enviar no bootstrap ou inventar login de produção. Revalidar preferências/dispositivos na fila; remover apenas inscrições expiradas 404/410; não registrar endpoints/chaves/payload. Acesso local de teste é opcional e nunca habilitado em produção. Evidência de entrega exige aparelho real.
-
-
-17. Admin obrigatório em admin/, com Vue/shadcn-vue/Tailwind e build próprio. Proibido importar componentes/CSS/dependências de Framework7 no admin ou shadcn-vue/Tailwind na PWA. Rotas/domínios separados; mesmo backend/banco. Admin não registra manifest/service worker ou push. Catálogo shadcn é incorporado ao código conforme necessidade, sem antecipar componentes não usados.
-18. O plano aprovado entrega autenticações separadas: clientes com cadastro e acesso imediato; um administrador criado por comando; recuperação de senha por e-mail para ambos. Não implementar compras, assinaturas ou perfis administrativos adicionais neste ciclo.
+16. Admin obrigatório em admin/, com Vue/shadcn-vue/Tailwind e build próprio. Proibido importar componentes/CSS/dependências de Framework7 no admin ou shadcn-vue/Tailwind na PWA. Rotas/domínios separados; mesmo backend/banco. Admin não registra manifest/service worker. Catálogo shadcn é incorporado ao código conforme necessidade, sem antecipar componentes não usados.
+17. O plano aprovado entrega autenticações separadas: clientes com cadastro e acesso imediato; um administrador criado por comando; recuperação de senha por e-mail para ambos. Não implementar compras, assinaturas ou perfis administrativos adicionais neste ciclo.
 
 Validação final por instalação do zero e evidências reais. Não exigir clones A/B nem aprovar referências visuais automaticamente.
 
-19. Compartilhar somente lógica neutra em shared/forms/; mensagens JSON, máscaras, regras e ciclo de validação. Nunca colocar CSS/componentes F7/shadcn nessa pasta nem reutilizar node_modules entre serviços. Dependências diretas npm exatas, lockfiles versionados e instalação com npm ci; mudanças de versão exigem testes/builds. A faixa Node/imagens Docker não se torna fixa por fixar pacotes npm.
+18. Compartilhar somente lógica neutra em shared/forms/; mensagens JSON, máscaras, regras e ciclo de validação. Nunca colocar CSS/componentes F7/shadcn nessa pasta nem reutilizar node_modules entre serviços. Dependências diretas npm exatas, lockfiles versionados e instalação com npm ci; mudanças de versão exigem testes/builds. A faixa Node/imagens Docker não se torna fixa por fixar pacotes npm.

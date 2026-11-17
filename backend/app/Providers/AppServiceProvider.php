@@ -2,12 +2,9 @@
 
 namespace App\Providers;
 
-use App\Support\RecoveryUserProvider;
-use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,7 +23,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Auth::provider('recovery-clients', fn ($app, $config) => new RecoveryUserProvider($app['hash'], $config['model']));
         foreach (['client', 'admin'] as $area) {
             foreach (['forgot' => 5, 'reset' => 10] as $action => $max) {
                 RateLimiter::for($area.'-password-'.$action, fn (Request $r) => [Limit::perMinute($max)->by($area.'-'.$action.'-ip:'.$r->ip()), Limit::perMinute($max)->by($area.'-'.$action.':'.hash('sha256', is_string($r->input('email')) ? strtolower(trim($r->input('email'))) : ''))]);
@@ -48,20 +44,5 @@ class AppServiceProvider extends ServiceProvider
         foreach (['client-register' => 5, 'client-read' => 60, 'client-logout' => 10] as $name => $attempts) {
             RateLimiter::for($name, fn (Request $request) => Limit::perMinute($attempts)->by($name.':'.($name === 'client-register' ? $request->ip() : Auth::guard('web')->id())));
         }
-        // Named limiters keep each operation's quota separate from other routes.
-        foreach (['push-api' => 60, 'push-login' => 5, 'push-logout' => 10, 'push-subscriptions' => 20, 'push-test' => 3] as $name => $attempts) {
-            RateLimiter::for($name, function (Request $request) use ($name, $attempts) {
-                $id = $name === 'push-login' ? null : Auth::guard('web')->id();
-                $key = $id !== null ? 'user:'.$id : 'ip:'.$request->ip();
-
-                return Limit::perMinute($attempts)->by($key);
-            });
-        }
-
-        Event::listen(Logout::class, function ($event): void {
-            if ($event->guard === 'web' && $event->user && request()->hasSession() && ($id = request()->session()->pull('push_subscription_id'))) {
-                $event->user->pushSubscriptions()->whereKey($id)->delete();
-            }
-        });
     }
 }

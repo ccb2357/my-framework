@@ -7,6 +7,7 @@ use App\Models\Administrator;
 use App\Models\User;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
@@ -58,7 +59,6 @@ class AdminAuthGuardsTest extends TestCase
         $this->getJson($this->admin('me'), ['Origin' => 'http://localhost:5180'])->assertForbidden();
         $this->getJson($this->admin('me'), ['Origin' => 'http://admin.localhost.evil.test'])->assertForbidden();
         $this->getJson('http://admin.localhost/api/v1/auth/me')->assertForbidden();
-        $this->getJson('http://admin.localhost/api/v1/push/config')->assertForbidden();
         $this->getJson('http://admin.localhost/sanctum/csrf-cookie')->assertForbidden();
         $this->postJson($this->admin('register'), [])->assertNotFound();
     }
@@ -92,6 +92,34 @@ class AdminAuthGuardsTest extends TestCase
         $this->withUnencryptedCookies($loggedJar)->getJson($this->admin('me'))->assertUnauthorized();
         $this->assertSame('users', config('auth.guards.web.provider'));
         $this->assertSame('administrators', config('auth.guards.admin.provider'));
+    }
+
+    public function test_client_and_admin_csrf_tokens_cannot_be_exchanged_even_with_both_cookie_pairs(): void
+    {
+        foreach ([ValidateCsrfToken::class, AdminCsrf::class] as $middleware) {
+            $this->app->bind($middleware, fn () => $middleware === AdminCsrf::class
+                ? new class(app(), app('encrypter')) extends AdminCsrf
+                {
+                    protected function runningUnitTests()
+                    {
+                        return false;
+                    }
+                }
+                : new class(app(), app('encrypter')) extends ValidateCsrfToken
+                {
+                    protected function runningUnitTests()
+                    {
+                        return false;
+                    }
+                });
+        }
+        $clientJar = $this->jar($this->getJson('http://localhost/sanctum/csrf-cookie')->assertNoContent());
+        $adminJar = $this->jar($this->withUnencryptedCookies($clientJar)->getJson($this->admin('csrf-cookie'))->assertNoContent());
+        $both = array_replace($clientJar, $adminJar);
+        $this->withUnencryptedCookies($both)->postJson($this->admin('login'), [], ['X-XSRF-TOKEN' => $clientJar['XSRF-TOKEN']])->assertStatus(419);
+        $this->withUnencryptedCookies($both)->postJson('http://localhost/api/v1/auth/login', [], ['X-XSRF-TOKEN' => $adminJar['XSRF-ADMIN-TOKEN']])->assertStatus(419);
+        $this->withUnencryptedCookies($both)->postJson($this->admin('login'), [], ['X-XSRF-TOKEN' => $adminJar['XSRF-ADMIN-TOKEN']])->assertUnprocessable();
+        $this->withUnencryptedCookies($both)->postJson('http://localhost/api/v1/auth/login', [], ['X-XSRF-TOKEN' => $clientJar['XSRF-TOKEN']])->assertUnprocessable();
     }
 
     public function test_wrong_password_rate_limits_and_errors_remain_controlled(): void

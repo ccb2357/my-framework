@@ -1,6 +1,6 @@
 # PWA Framework
 
-Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, Laravel, MySQL e Web Push**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
+Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, Laravel e MySQL**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
 
 [![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![Framework7 9](https://img.shields.io/badge/Framework7-9-EF2D5E?style=for-the-badge&logo=framework7&logoColor=white)](https://framework7.io/vue/)
@@ -20,11 +20,10 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, L
 - **Admin independente:** Vue/shadcn-vue/Tailwind em `admin/`, subdomínio e build próprios; sem misturar componentes ou estilos com a PWA.
 
 - **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations e publica os builds PWA/admin.
-- **Configuração única:** `.env.foundation` define identidade, ambiente, infraestrutura, bancos, sessão e PWA/push. Arquivos internos são gerados automaticamente.
+- **Configuração única:** `.env.foundation` define identidade, ambiente, infraestrutura, bancos, sessão e PWA. Arquivos internos são gerados automaticamente.
 - **Interface nativa:** Vue/Framework7, grid responsivo, Nunito local, ícones, máscaras, validação e design system compartilhado.
 - **Hello demonstrativa:** componentes oficiais, FAB com três ações, quatro transições, formulário e status real de backend/banco.
 - **PWA:** manifest, instalação em navegadores compatíveis, shell offline e atualização confirmada, preservando campos e abas em uso.
-- **Web Push:** múltiplos dispositivos, preferência da conta, fila, revogação, retentativas e clique seguro, com VAPID por aplicativo/ambiente.
 - **API e testes:** Laravel/Sanctum, sessão/CSRF, diagnósticos HTTP/JSON, isolamento do banco testing e testes automatizados.
 
 Clientes têm cadastro público, login/logout e área protegida na PWA, com acesso imediato, sem confirmação de e-mail. O admin tem login/logout independentes, conta criada por comando e Dashboard protegida. Ambos recuperam a senha por e-mail, com SMTP centralizado e tokens separados. Validação final segue o [plano de implementação](plano-sprints-admin-autenticacao.md). Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
@@ -37,9 +36,8 @@ Clientes têm cadastro público, login/logout e área protegida na PWA, com aces
 | Estilos e ícones | CSS/grid Framework7 · tokens próprios · Nunito local · Framework7 Icons 5.0.5 · Lucide 1.72.0 |
 | Formulários compartilhados | IMask 7.6.1 · JustValidate 4.3.0 nas duas interfaces; mensagens/máscaras/regras em `shared/forms/`; validação também obrigatória no backend |
 | Build e PWA | Vite 8.3.4 · plugin-vue 6.0.11 · vite-plugin-pwa 2.0.0 · Workbox 7.4.1/injectManifest |
-| Administrativo | Vue 3.5.45 · shadcn-vue/JavaScript · Reka UI 2.11.0 · Tailwind 4.3.5 · Vite 8.3.4 |
+| Administrativo | Vue 3.5.45 · shadcn-vue/JavaScript · Reka UI 2.11.0 · Tailwind 4.3.5 · Lucide 1.72.0 · Vite 8.3.4 |
 | Backend | PHP 8.2 · Laravel 12.70.0 · Sanctum 4.4.0 · Composer 2 |
-| Push | Laravel Notifications/Jobs · WebPush Channel 13.0.1 · Minishlink Web Push 11.0.0 · fila database |
 | Infraestrutura | Docker/Compose · Node 22.13+ na linha 22 · Nginx · PHP-FPM · MySQL 8 · HTTPS/Certbot conforme infraestrutura |
 | Qualidade | PHPUnit/Pint · Vitest 5.1.0 · Playwright 1.65.1 · ESLint 10.15.0/Vue · Stylelint 16.26.1 |
 
@@ -64,9 +62,9 @@ Cada aplicação recebe código pronto; não recrie Laravel/Vite. Preserve os ar
 | Infraestrutura | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT, DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL |
 | Acesso e dados | DEV_PORT, PREVIEW_PORT, ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
 | Regionalização e sessão | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME |
-| PWA e push | PWA_SHORT_NAME/DESCRIPTION/THEME_COLOR/BACKGROUND_COLOR, PUSH_ENABLED, PUSH_TEST_AUTH_ENABLED, VAPID_SUBJECT/PUBLIC_KEY/PRIVATE_KEY |
+| PWA | PWA_SHORT_NAME/DESCRIPTION/THEME_COLOR/BACKGROUND_COLOR |
 
-O bootstrap deriva os `.env` Laravel/testing e configurações públicas próprias de `frontend/` e `admin/`; não criar `.env` no frontend nem repetir valores nos derivados. Somente campos públicos permitidos chegam ao navegador. APP_KEY e VAPID válidas são preservadas; push é opcional e desabilitado por padrão.
+O bootstrap deriva os `.env` Laravel/testing e configurações públicas próprias de `frontend/` e `admin/`; não criar `.env` no frontend nem repetir valores nos derivados. Somente campos públicos permitidos chegam ao navegador. APP_KEY válida é preservada.
 
 Serviço Node, volumes, bancos, cookie e manifest têm identidade própria por projeto. Portas do host devem estar livres e não podem conflitar entre aplicativos. Credenciais são da conta MySQL existente; o bootstrap não cria usuários, senhas ou grants.
 
@@ -76,7 +74,7 @@ Serviço Node, volumes, bancos, cookie e manifest têm identidade própria por p
 | --- | --- |
 | Desenvolvimento | `frontend/vite.cmd dev`: Vite/HMR via Docker, na DEV_PORT do host → 5173 interno. Worker desativado; sem instalação da PWA. |
 | Build | `frontend/vite.cmd build`: publica `frontend/dist` após validar artefatos; não instala npm automaticamente. |
-| Prévia | Build na PREVIEW_PORT do host → 4173 interno; instalação/offline/push em localhost, inclusive Android por USB/ADB. |
+| Prévia | Build na PREVIEW_PORT do host → 4173 interno; instalação/offline em localhost, inclusive Android por USB/ADB. |
 | Produção | Nginx serve dist e encaminha API/Laravel ao PHP-FPM, na mesma origem HTTPS. Node só para build; sem servidor Node permanente. |
 | Admin | `admin/vite.cmd dev` ou `build`: serviço e dist próprios; subdomínio administrativo, sem PWA. |
 | Backend | `app:sync`: limpa caches e aplica migrations pendentes, com propagação de falhas; --force obrigatório em produção. |
@@ -102,15 +100,9 @@ Descobre serviços por labels/mounts reais, preserva a identidade Compose e mape
 
 Dependências PHP e Node ficam em volumes exclusivos; vendor real é conferido antes do Composer para reduzir lentidão no Windows. Reexecução preserva chaves, dados e dependências inalteradas. Lock bloqueia concorrência; `.foundation-state.json` registra estado sem segredos. Mudança de slug/pasta/bancos/volumes inicializados exige migração explícita. [Contrato do ambiente](docs/sdd/04-ambiente.md).
 
-## PWA e Web Push
+## PWA
 
-Um único worker em `frontend/src/sw.js` atende precache, offline, atualização e push. Atualizações são detectadas automaticamente e aplicadas por confirmação; não recarregar formulários alterados por outra aba. Novos formulários integram `draftGuard`. API, sessão, CSRF e diagnóstico nunca entram no cache público ou no fallback HTML. Assets antigos são conservados para clientes ainda abertos.
-
-Envio pelo [PushNotificationService](backend/app/Services/PushNotificationService.php): o produto define usuários autorizados, conteúdo e gatilhos; Notifications/Jobs processam a fila database no MySQL existente. Não exige Redis, novo contêiner ou SDK Firebase/OneSignal; utiliza os serviços push dos navegadores. VAPID pertence ao aplicativo/ambiente e não deve ser rotacionada silenciosamente.
-
-Permissão somente por clique, APIs com sessão/CSRF/ownership/rate limit e revalidação de preferências/dispositivos pelos jobs. Inscrição de uma conta não é transferida para outra. Acesso de teste local usa código de uso único; produção integra o login do produto. O bootstrap não cria conta nem envia notificações.
-
-Endpoints/chaves/payload privados não entram nos logs; destinos e transporte são validados contra acesso indevido. Só inscrições expiradas 404/410 são removidas. **Enfileirada**, **aceita pelo provedor** e **recebida** são resultados diferentes; imagem/exibição dependem do navegador/SO. Publicação externa exige HTTPS; iOS requer instalação pela Tela de Início. [Arquitetura e fila](docs/sdd/03-arquitetura.md) · [Contratos push](docs/sdd/05-api.md#web-push).
+Um único worker em `frontend/src/sw.js` atende precache, offline e atualização confirmada. Novos formulários integram `draftGuard`; API, sessão, CSRF e diagnóstico nunca entram no cache público. Assets antigos são preservados para abas abertas.
 
 ## Estrutura
 
@@ -119,7 +111,7 @@ Endpoints/chaves/payload privados não entram nos logs; destinos e transporte s�
 | `scripts/bootstrap/` | Executor, validação, descoberta Docker, templates e verificações PHP/HTTP |
 | `frontend/src/main.js`, `App.vue`, `routes.js` | Inicialização Vue/Framework7 e navegação |
 | `frontend/src/pages/`, `components/` | Telas e composições reutilizáveis; Hello em `pages/hello.vue` |
-| `frontend/src/services/`, `forms/` | HTTP/CSRF/push, máscaras, conversões e validação |
+| `frontend/src/services/`, `forms/` | HTTP/CSRF, máscaras, conversões e validação |
 | `frontend/src/css/`, `public/` | Tokens/estilos, fonte local, ícones e estáticos |
 | `frontend/src/sw.js`, `dist/` | Fonte do worker e saída gerada do build |
 | `admin/src/`, `components.json` | Hello Dashboard e componentes shadcn-vue/JavaScript; Tailwind e build próprios, sem PWA |
@@ -145,13 +137,13 @@ Endpoints/chaves/payload privados não entram nos logs; destinos e transporte s�
 
 | Documento | Conteúdo |
 | --- | --- |
-| [Instalação](instalacao-pwa-framework.md) | Configuração, Compose/Nginx, bootstrap, desenvolvimento, PWA/USB, push, testes e VPS |
+| [Instalação](instalacao-pwa-framework.md) | Configuração, Compose/Nginx, bootstrap, desenvolvimento, PWA/USB,  testes e VPS |
 | [00 — Visão](docs/sdd/00-visao.md) | Escopo da base e do produto |
 | [01 — Telas](docs/sdd/01-telas.md) | Hello, navegação, estados e interação |
 | [02 — Design system](docs/sdd/02-design-system.md) | Tokens, layout, componentes e acessibilidade |
-| [03 — Arquitetura](docs/sdd/03-arquitetura.md) | Módulos, sessão, PWA e processamento push |
+| [03 — Arquitetura](docs/sdd/03-arquitetura.md) | Módulos, sessão, PWA e autenticação |
 | [04 — Ambiente](docs/sdd/04-ambiente.md) | Configuração central, executor, infraestrutura e isolamento |
-| [05 — API](docs/sdd/05-api.md) | Diagnósticos, sessão/CSRF, contratos e limites push |
+| [05 — API](docs/sdd/05-api.md) | Diagnósticos, sessão/CSRF, contratos e limites de acesso |
 | [06 — Pedidos de componentes](docs/sdd/06-pedidos-componentes.md) | Lacunas oficiais e propostas de alternativa |
 
 Manter os sete documentos SDD enxutos; contratos no SDD, procedimentos no manual, regras em RULES/AGENTS e andamento no MEMORY. Não criar documentos de passagem paralelos.
@@ -160,14 +152,14 @@ Manter os sete documentos SDD enxutos; contratos no SDD, procedimentos no manual
 
 Lint, testes unitários/HTTP e builds verificam as duas interfaces e o bootstrap. A suíte Laravel separa integrações com MySQL testing; o guard de isolamento roda antes de qualquer preparação destrutiva. Resultados e limitações atuais ficam em [MEMORY.md](MEMORY.md).
 
-Engine/Compose simulados não comprovam Docker real. Testes DOM não homologam navegador/aparelho; instalação, offline, atualização, push e VPS exigem validação no ambiente correspondente. Playwright e referências visuais complementam os testes e dependem de aceite humano.
+Engine/Compose simulados não comprovam Docker real. Testes DOM não homologam navegador/aparelho; instalação, offline, atualização e VPS exigem validação no ambiente correspondente. Playwright e referências visuais complementam os testes e dependem de aceite humano.
 
 ## Versões e publicação
 
 Cada aplicativo tem versão/histórico próprios. Registrar versão e commit de origem da fundação; usar tags/versionamento semântico e notas de release para mudanças, requisitos, incompatibilidades e migração. A versão da fundação, a do produto e o hash de build são distintos.
 
-Para incorporar atualizações, comparar a base de origem com a desejada, selecionar mudanças, resolver conflitos e validar personalizações; não sobrescrever o produto. Manter código, lockfiles, scripts e referências aprovadas juntos. Não distribuir configurações privadas, chaves, bancos, inscrições, sessões, dependências ou estado de outro ambiente.
+Para incorporar atualizações, comparar a base de origem com a desejada, selecionar mudanças, resolver conflitos e validar personalizações; não sobrescrever o produto. Manter código, lockfiles, scripts e referências aprovadas juntos. Não distribuir configurações privadas, chaves, bancos, sessões, dependências ou estado de outro ambiente.
 
-Produção usa `.env.foundation` próprio (`APP_ENV=production`, PRODUCTION_URL HTTPS), certificado real e bootstrap com --force para migrations; --force não autoriza alteração automática de infraestrutura ou operações destrutivas. Preservar APP_KEY/VAPID/dados/volumes. Validar worker/Cron e jornadas; evidência local não homologa a VPS.
+Produção usa `.env.foundation` próprio (`APP_ENV=production`, PRODUCTION_URL HTTPS), certificado real e bootstrap com --force para migrations; --force não autoriza alteração automática de infraestrutura ou operações destrutivas. Preservar APP_KEY/dados/volumes. Validar as jornadas; evidência local não homologa a VPS.
 
 Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, retenção/acesso e recuperação testados. Publicar assets antes do HTML/worker, manter clientes antigos compatíveis com API/banco e separar rollback de código de recuperação de dados. Não presumir migration reversa segura. Procedimentos concretos no [manual](instalacao-pwa-framework.md#vps-e-atualizações).

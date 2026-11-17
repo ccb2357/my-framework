@@ -9,7 +9,7 @@ class CsrfTest extends TestCase
 {
     public function test_sanctum_issues_host_only_cookies(): void
     {
-        config(['session.driver' => 'file', 'session.domain' => null]);
+        config(['session.driver' => 'file', 'session.domain' => null, 'sanctum.stateful' => ['localhost:5176']]);
         $response = $this->withHeader('Origin', 'http://localhost:5176')->get('/sanctum/csrf-cookie');
         $response->assertNoContent();
         $cookies = $response->headers->getCookies();

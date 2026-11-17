@@ -23,12 +23,10 @@ class ClientAuthMySqlTest extends TestCase
     {
         $this->withSession(['_token' => 'old-token']);
         $oldId = session()->getId();
-        $this->postJson('/api/v1/auth/register', $this->signup(['email' => ' CLIENT@EXAMPLE.TEST ', 'is_push_test' => true, 'push_enabled' => true, 'role' => 'admin', 'email_verified_at' => now()]))->assertCreated()->assertJsonPath('user.email', 'client@example.test')->assertJsonCount(3, 'user')->assertDontSee('password');
+        $this->postJson('/api/v1/auth/register', $this->signup(['email' => ' CLIENT@EXAMPLE.TEST ', 'role' => 'admin', 'email_verified_at' => now()]))->assertCreated()->assertJsonPath('user.email', 'client@example.test')->assertJsonCount(3, 'user')->assertDontSee('password');
         $user = User::firstOrFail();
         $this->assertAuthenticatedAs($user, 'web');
         $this->assertTrue(Hash::check('ValidPassword123!', $user->password));
-        $this->assertFalse($user->is_push_test);
-        $this->assertFalse($user->push_enabled);
         $this->assertNull($user->email_verified_at);
         $this->assertNotSame($oldId, session()->getId());
         $this->assertNotSame('old-token', session()->token());
@@ -45,11 +43,10 @@ class ClientAuthMySqlTest extends TestCase
         $this->assertGuest('web');
     }
 
-    public function test_login_rotates_session_wrong_credentials_and_push_test_users_are_rejected(): void
+    public function test_login_rotates_session_and_wrong_credentials_are_rejected(): void
     {
         $user = User::factory()->create(['email' => 'client@example.test', 'password' => 'ValidPassword123!']);
-        $test = User::factory()->create(['email' => 'push@example.test', 'password' => 'ValidPassword123!', 'is_push_test' => true]);
-        foreach (['absent@example.test', $test->email] as $email) {
+        foreach (['absent@example.test'] as $email) {
             $this->postJson('/api/v1/auth/login', ['email' => $email, 'password' => 'ValidPassword123!'])->assertUnauthorized()->assertDontSee('trace');
         }
         $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'Incorrect123!'])->assertUnauthorized();
@@ -70,16 +67,11 @@ class ClientAuthMySqlTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
-    public function test_logout_revokes_only_session_device_and_ends_access(): void
+    public function test_logout_ends_access_and_rotates_csrf(): void
     {
         $user = User::factory()->create();
-        $create = fn ($suffix) => $user->pushSubscriptions()->create(['endpoint' => 'https://fcm.googleapis.com/'.$suffix, 'endpoint_hash' => hash('sha256', $suffix), 'public_key' => 'test-key', 'auth_token' => 'test-auth']);
-        $current = $create('current');
-        $other = $create('other');
-        $this->actingAs($user, 'web')->withSession(['push_subscription_id' => $current->id, '_token' => 'old-token'])->postJson('/api/v1/auth/logout')->assertNoContent()->assertHeader('Cache-Control', 'no-store, private');
+        $this->actingAs($user, 'web')->withSession(['_token' => 'old-token'])->postJson('/api/v1/auth/logout')->assertNoContent()->assertHeader('Cache-Control', 'no-store, private');
         $this->assertGuest('web');
-        $this->assertFalse($user->pushSubscriptions()->whereKey($current->id)->exists());
-        $this->assertTrue($user->pushSubscriptions()->whereKey($other->id)->exists());
         $this->getJson('/api/v1/auth/me')->assertUnauthorized();
         $this->assertNull(Auth::guard('web')->user());
         $this->assertNotSame('old-token', session()->token());

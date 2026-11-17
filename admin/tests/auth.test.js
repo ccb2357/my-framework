@@ -49,3 +49,24 @@ test('administrative root never renders dashboard before session verification an
  expect(target.textContent).not.toContain('Hello Dashboard');
  app.unmount();target.remove();check.mockRestore();login.mockRestore();
 });
+
+for (const action of ['login', 'logout']) {
+ test(`session reads and overlapping mutations cannot interfere with administrative ${action}`, async () => {
+  let finish; const user={id:1,name:'Admin',email:'admin@example.test'},state={};
+  const request=vi.fn().mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;})).mockResolvedValue({user});
+  const auth=createAdminAuth(state,request),operation=auth[action]({email:user.email,password:'Secret123!'});
+  expect(await auth.check()).toBeNull();
+  await expect(auth.login({})).rejects.toSatisfy(error=>error.status===409);
+  await expect(auth.logout()).rejects.toSatisfy(error=>error.status===409);
+  expect(request).toHaveBeenCalledTimes(1);expect(state.user).toBeNull();
+  finish(action==='logout'?null:{user});await operation;
+  expect(state.status).toBe(action==='logout'?'guest':'authenticated');
+  await auth.check();expect(request).toHaveBeenCalledTimes(2);
+ });
+}
+test('failed administrative login releases mutation lock for retry', async()=>{
+ const state={},user={id:1,name:'Admin',email:'admin@example.test'};
+ const auth=createAdminAuth(state,vi.fn().mockRejectedValueOnce(new AdminApiError(401)).mockResolvedValue({user}));
+ await expect(auth.login({})).rejects.toThrow();expect(state.status).toBe('guest');
+ await auth.login({});expect(state.user).toEqual(user);
+});
