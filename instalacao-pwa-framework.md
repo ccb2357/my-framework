@@ -198,21 +198,7 @@ cd /d C:\var\www\infra
 docker compose --profile dev config --quiet
 ```
 
-A validação `config --quiet` não mostra nada quando está correta. Se os mounts já estiverem aplicados, não recrie PHP-FPM. Se o site já corresponder à etapa 3.4, preserve-o; valide/recarregue somente após mudanças.
-
-Recrie somente o PHP-FPM para aplicar o mount vendor. Isso interrompe brevemente os sites PHP compartilhados; não é necessário reconstruir a imagem PHP.
-
-```cmd
-docker compose up -d --no-deps --force-recreate php-fpm
-```
-
-Valide o Nginx e recarregue somente se a validação passar:
-
-```cmd
-docker compose exec -T nginx nginx -t && docker compose exec -T nginx nginx -s reload
-```
-
-Não execute `down -v` nem inicie todo o perfil dev. O bootstrap instala dependências e publica o build. Vite é opcional para desenvolvimento.
+A validação `config --quiet` não mostra nada quando está correta.
 
 ## 5. Executar o bootstrap
 
