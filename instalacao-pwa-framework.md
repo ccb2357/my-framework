@@ -22,7 +22,26 @@ Os exemplos deste guia usam:
 | PWA | meu-projeto.localhost | 5180 | 5181 |
 | Admin | admin.meu-projeto.localhost | 5182 | 5183 |
 
-No central, ajuste `PROJECT_SLUG` ao nome da pasta e `LOCAL_DOMAIN` ao domínio da PWA. Deixe `ADMIN_LOCAL_DOMAIN` vazio para derivar `admin.<LOCAL_DOMAIN>`. Confira as quatro portas; cada uma deve estar livre. Em produção, informe `PRODUCTION_URL`; `ADMIN_PRODUCTION_URL` vazio deriva `https://admin.<host da PWA>`. Prepare HTTPS para os dois domínios.
+**Ambiente local — seu computador:**
+
+- `APP_ENV=local`.
+- `PROJECT_SLUG`: mesmo nome da pasta do projeto, por exemplo `meu-projeto`.
+- `LOCAL_DOMAIN`: domínio local da PWA, por exemplo `meu-projeto.localhost`.
+- `ADMIN_LOCAL_DOMAIN`: deixe vazio para usar `admin.meu-projeto.localhost` automaticamente.
+- `PRODUCTION_URL` e `ADMIN_PRODUCTION_URL`: deixe ambos vazios no ambiente local.
+
+**Portas locais:**
+
+- `DEV_PORT` e `PREVIEW_PORT`: desenvolvimento e prévia da PWA.
+- `ADMIN_DEV_PORT` e `ADMIN_PREVIEW_PORT`: desenvolvimento e prévia do admin.
+- As quatro portas devem ser diferentes e estar livres.
+
+**Produção — na VPS:**
+
+- `APP_ENV=production`.
+- `PRODUCTION_URL`: endereço HTTPS real da PWA, por exemplo `https://meu-dominio.com.br`.
+- `ADMIN_PRODUCTION_URL`: deixe vazio para usar `https://admin.meu-dominio.com.br`, ou informe outro endereço HTTPS.
+- Configure DNS e HTTPS válidos para os dois domínios.
 
 Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas da PWA e do admin, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
 
