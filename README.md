@@ -15,6 +15,8 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, L
 
 **[Instalação e operação](instalacao-pwa-framework.md)** · **[Especificação técnica](docs/sdd/00-visao.md)** · **[Regras de desenvolvimento](RULES.md)**
 
+Versão da fundação: **1.0.0**. Instalação local e fluxos de acesso validados; evidências em [MEMORY.md](MEMORY.md).
+
 ## Recursos
 
 - **Admin independente:** Vue/shadcn-vue/Tailwind em `admin/`, subdomínio e build próprios; sem misturar componentes ou estilos com a PWA.
@@ -26,7 +28,7 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, L
 - **PWA:** manifest, instalação em navegadores compatíveis, shell offline e atualização confirmada, preservando campos e abas em uso.
 - **API e testes:** Laravel/Sanctum, sessão/CSRF, diagnósticos HTTP/JSON, isolamento do banco testing e testes automatizados.
 
-Clientes têm cadastro público, login/logout e área protegida na PWA, com acesso imediato, sem confirmação de e-mail. O admin tem login/logout independentes, conta criada por comando e Dashboard protegida. Ambos recuperam a senha por e-mail, com SMTP centralizado e tokens separados. Validação final segue o [plano de implementação](plano-sprints-admin-autenticacao.md). Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
+Clientes têm cadastro público, login/logout e área protegida na PWA, com acesso imediato, sem confirmação de e-mail. O admin tem login/logout independentes, conta criada por comando e Dashboard protegida. Ambos recuperam a senha por e-mail, com SMTP centralizado e tokens separados. Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
 
 ## Stack
 
@@ -137,7 +139,7 @@ Um único worker em `frontend/src/sw.js` atende precache, offline e atualizaçã
 
 | Documento | Conteúdo |
 | --- | --- |
-| [Instalação](instalacao-pwa-framework.md) | Configuração, Compose/Nginx, bootstrap, desenvolvimento, PWA/USB,  testes e VPS |
+| [Instalação](instalacao-pwa-framework.md) | Configuração, Compose/Nginx, bootstrap, desenvolvimento, PWA/USB, testes e VPS |
 | [00 — Visão](docs/sdd/00-visao.md) | Escopo da base e do produto |
 | [01 — Telas](docs/sdd/01-telas.md) | Hello, navegação, estados e interação |
 | [02 — Design system](docs/sdd/02-design-system.md) | Tokens, layout, componentes e acessibilidade |
@@ -163,19 +165,3 @@ Para incorporar atualizações, comparar a base de origem com a desejada, seleci
 Produção usa `.env.foundation` próprio (`APP_ENV=production`, PRODUCTION_URL HTTPS), certificado real e bootstrap com --force para migrations; --force não autoriza alteração automática de infraestrutura ou operações destrutivas. Preservar APP_KEY/dados/volumes. Validar as jornadas; evidência local não homologa a VPS.
 
 Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, retenção/acesso e recuperação testados. Publicar assets antes do HTML/worker, manter clientes antigos compatíveis com API/banco e separar rollback de código de recuperação de dados. Não presumir migration reversa segura. Procedimentos concretos no [manual](instalacao-pwa-framework.md#vps-e-atualizações).
-
-<!-- BEGIN FOUNDATION IDENTITY -->
-| Campo | Valor |
-| --- | --- |
-| Projeto | PWA Framework |
-| Slug | pwa-framework |
-| Ambiente | local |
-| URL | http://pwa-framework.localhost |
-| Dev / preview | 5180 / 5181 |
-| Serviço / Compose | pwa-framework-node / infra |
-| Volumes | pwa_framework_vendor, pwa_framework_node_modules |
-| Bancos | pwa_framework, pwa_framework_test |
-| Admin | http://admin.pwa-framework.localhost |
-| Admin dev / preview | 5182 / 5183 |
-| Fundação | 0.11.1-auth.5 |
-<!-- END FOUNDATION IDENTITY -->

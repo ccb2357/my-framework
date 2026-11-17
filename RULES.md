@@ -22,7 +22,7 @@ Regra visual aprovada: inputs, selects e textareas sem outline retangular de foc
 15. PWA usa injectManifest/worker único e atualização prompt. Cache somente público; APIs/sessão/CSRF/diagnóstico nunca recebem fallback HTML/offline. Formulário alterado bloqueia recarga externa; atualização confirmada preserva campos ou mantém a aba em falha. Instalação só por ação explícita/menu. Validar build antes de publicar e assets antes do HTML/worker.
 
 16. Admin obrigatório em admin/, com Vue/shadcn-vue/Tailwind e build próprio. Proibido importar componentes/CSS/dependências de Framework7 no admin ou shadcn-vue/Tailwind na PWA. Rotas/domínios separados; mesmo backend/banco. Admin não registra manifest/service worker. Catálogo shadcn é incorporado ao código conforme necessidade, sem antecipar componentes não usados.
-17. O plano aprovado entrega autenticações separadas: clientes com cadastro e acesso imediato; um administrador criado por comando; recuperação de senha por e-mail para ambos. Não implementar compras, assinaturas ou perfis administrativos adicionais neste ciclo.
+17. A fundação entrega autenticações separadas: clientes com cadastro e acesso imediato; um administrador criado por comando; recuperação de senha por e-mail para ambos. Não implementar compras, assinaturas ou perfis administrativos adicionais neste ciclo.
 
 Validação final por instalação do zero e evidências reais. Não exigir clones A/B nem aprovar referências visuais automaticamente.
 

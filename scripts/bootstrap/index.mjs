@@ -18,7 +18,7 @@ try {
   const saved = await readOptional(stateFile, '{}');
   try { state = JSON.parse(saved); } catch { throw new FoundationError('Estado local inválido. Preserve-o para diagnóstico; não reinicialize identidade automaticamente.'); }
   checkIdentity(state, c);
-  state = { ...state, schema, identity: identity(c), release: '0.11.1-auth.5', completeFoundation: false, startedAt: new Date().toISOString() };
+  state = { ...state, schema, identity: identity(c), release: '1.0.0', completeFoundation: false, startedAt: new Date().toISOString() };
   console.log(`Preparação de ${c.PROJECT_SLUG} (${c.APP_ENV}).`);
   const d = await discover(c);
   if (state.composeProject) requireThat(state.composeProject === d.project, 'Identidade da infraestrutura Compose mudou; revisar explicitamente.');
@@ -93,7 +93,7 @@ try {
   requireThat(verifyAdmin.code === 0 && adminEvidence.status === 'ok', 'Admin HTTP: confira build e bloco Nginx administrativo no guia.');
   state.adminBuild = adminBuild.buildId;
   state.phase = 'interfaces-ready'; state.lastExitCode = 0; state.phpVersion = version; state.composerLock = hash(lockfile); state.frontendBuild = build.buildId; state.verifiedAt = new Date().toISOString(); state.checks = { ...evidence.checks, pwa: pwaEvidence.checks, admin: adminEvidence.checks };
-  state.pending = ['Validar instalação das duas interfaces no ambiente real', 'Validar SMTP e recuperação das duas contas no ambiente real']; await save();
+  state.completeFoundation = true; state.pending = []; state.manualChecks = ['Conferir instalação e acesso nas duas interfaces', 'Conferir SMTP e recuperação das duas contas']; await save();
   console.log(`Backend, PWA e admin verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
   console.log(`Admin: ${c.adminUrl}. Crie o administrador com admin:create conforme o manual.`);
   console.log('Código 0 não atesta instalação, offline ou atualização em aparelhos. Aceite final exige validação própria.');

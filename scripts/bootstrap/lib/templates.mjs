@@ -101,7 +101,7 @@ export async function generate(c, d) {
   await writeAtomic(guidePath, guide.replace(infraBlock, () => installationInfra(c, d)));
   const file = path.join(c.frontend, 'vite.cmd');
   await writeAtomic(file, viteCmd(c, d));
-  const summary = `<!-- BEGIN FOUNDATION IDENTITY -->\n| Campo | Valor |\n| --- | --- |\n| Projeto | ${c.PROJECT_NAME.replaceAll('|', '\\|')} |\n| Slug | ${c.PROJECT_SLUG} |\n| Ambiente | ${c.APP_ENV} |\n| URL | ${c.appUrl} |\n| Dev / preview | ${c.DEV_PORT} / ${c.PREVIEW_PORT} |\n| Serviço / Compose | ${c.nodeService} / ${d.project} |\n| Volumes | ${c.vendorVolume}, ${c.modulesVolume} |\n| Bancos | ${c.DB_DATABASE}, ${c.DB_TEST_DATABASE} |\n| Admin | ${c.adminUrl} |\n| Admin dev / preview | ${c.ADMIN_DEV_PORT} / ${c.ADMIN_PREVIEW_PORT} |\n| Fundação | 0.11.1-auth.5 |\n<!-- END FOUNDATION IDENTITY -->`;
+  const summary = `<!-- BEGIN FOUNDATION IDENTITY -->\n| Campo | Valor |\n| --- | --- |\n| Projeto | ${c.PROJECT_NAME.replaceAll('|', '\\|')} |\n| Slug | ${c.PROJECT_SLUG} |\n| Ambiente | ${c.APP_ENV} |\n| URL | ${c.appUrl} |\n| Dev / preview | ${c.DEV_PORT} / ${c.PREVIEW_PORT} |\n| Serviço / Compose | ${c.nodeService} / ${d.project} |\n| Volumes | ${c.vendorVolume}, ${c.modulesVolume} |\n| Bancos | ${c.DB_DATABASE}, ${c.DB_TEST_DATABASE} |\n| Admin | ${c.adminUrl} |\n| Admin dev / preview | ${c.ADMIN_DEV_PORT} / ${c.ADMIN_PREVIEW_PORT} |\n| Fundação | 1.0.0 |\n<!-- END FOUNDATION IDENTITY -->`;
   const readmePath = path.join(c.root, 'README.md'), readme = await readOptional(readmePath);
   const block = /<!-- BEGIN FOUNDATION IDENTITY -->[\s\S]*?<!-- END FOUNDATION IDENTITY -->/;
   await writeAtomic(readmePath, block.test(readme) ? readme.replace(block, () => summary) : readme.trimEnd() + '\n\n' + summary + '\n');
@@ -114,19 +114,17 @@ export function installationInfra(c, d) {
   const volumes = compose.slice(volumesStart + 1).trimEnd();
   return [
     '<!-- BEGIN FOUNDATION INSTALL INFRA -->',
-    '## 3. Preparar serviços Node, mount, volumes e sites',
-    'O executor usa docker run --rm (etapas 2 e 5); não cadastrar serviço de bootstrap no Compose.',
-    'Antes de executar o bootstrap, aplique **todos os quatro itens** abaixo para o ambiente **' + c.APP_ENV + '** e o projeto **' + c.PROJECT_SLUG + '**. Não duplique entradas que já estejam corretas. Os trechos abaixo refletem a configuração central e o mapeamento deste ambiente; confira-os antes de aplicar. O restante do guia usa exemplos, que devem ser adaptados ao projeto.',
-    '### 3.1 Serviços Node no Compose existente',
-    'Arquivo de destino: `' + d.mapping.toHost(d.internalFiles[0]) + '`. Acrescentar o serviço ao `services` existente, sem duplicar essa chave. Inicie o Vite somente após executar o bootstrap e instalar as dependências, conforme a etapa 7.',
+    '## 2. Preparar serviços Node, mount, volumes e sites',
+    '### 2.1 Serviços Node no Compose existente',
+    'Arquivo de destino: `' + d.mapping.toHost(d.internalFiles[0]) + '`.',
     '```yaml\n' + node + '\n```',
-    '### 3.2 Mount vendor no PHP-FPM existente',
+    '### 2.2 Mount vendor no PHP-FPM existente',
     'No mesmo Compose, localizar `services.' + c.PHP_SERVICE + '.volumes` e acrescentar somente a linha abaixo. Preservar os mounts atuais; não criar outro serviço PHP nem substituir sua lista de volumes.',
     '```yaml\n- ' + c.vendorVolume + ':' + c.backend + '/vendor\n```',
-    '### 3.3 Declaração dos volumes ao final do Compose',
-    'No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`. Se o bloco ainda não existir, criá-lo. O mount do passo anterior e esta declaração são necessários.',
+    '### 2.3 Declaração dos volumes ao final do Compose',
+    'No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`.',
     '```yaml\n' + volumes + '\n```',
-    '### 3.4 Sites Nginx',
+    '### 2.4 Sites Nginx',
     'No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\\var\\www\\infra\\nginx\\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. A PWA usa `frontend/dist` e o admin usa `admin/dist`; ambos encaminham rotas técnicas ao mesmo Laravel. O admin não possui PWA. Substitua o bloco anterior deste projeto, sem duplicar o server_name.',
     '```nginx\n' + (nginxSnippet(c) + '\n' + nginxSnippet(c, true)).trimEnd() + '\n```',
     '<!-- END FOUNDATION INSTALL INFRA -->',

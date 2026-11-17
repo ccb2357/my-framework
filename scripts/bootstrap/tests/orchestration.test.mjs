@@ -101,9 +101,12 @@ test('preparation exits 2 before dependencies/env writes when effective infra is
     assert.match(guide, /docker build -t pwa-foundation-bootstrap:0\.1\.0/);
     assert.match(guide, /source=C:\\var\\www,target=\/var\/www/);
     assert.match(guide, /--network infra_network/);
-    assert.match(guide, /não cadastrar serviço de bootstrap no Compose/);
-    assert.ok(guide.indexOf('### 3.4 Sites Nginx') < guide.indexOf('## 4. Validar e aplicar a infraestrutura'));
-    assert.ok(guide.indexOf('## 4. Validar e aplicar a infraestrutura') < firstRun);
+    assert.doesNotMatch(guide, /não cadastrar serviço de bootstrap no Compose|aplique \*\*todos os quatro itens/);
+    assert.ok(guide.indexOf('### 2.4 Sites Nginx') < guide.indexOf('## 3. Validar e aplicar a infraestrutura'));
+    assert.ok(guide.indexOf('## 3. Validar e aplicar a infraestrutura') < firstRun);
+    const imageBuild = guide.indexOf('docker build -t pwa-foundation-bootstrap:0.1.0');
+    assert.ok(guide.indexOf('## 3. Validar e aplicar a infraestrutura') < imageBuild);
+    assert.ok(imageBuild < guide.indexOf('## 5. Executar o bootstrap'));
     assert.ok(guide.indexOf('## 5. Executar o bootstrap') < firstRun);
     assert.match(result.stderr, /instalacao-pwa-framework.md/);
     await assert.rejects(fs.access(f.root + '/infra-generated'));
@@ -137,7 +140,7 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     const runs = data.calls.filter(a => a[0] === 'run' && (a.includes('build') || a.includes('ci')));
     assert.ok(runs.every(a => a.some(x => x.includes('target=/shared,readonly'))));
     assert.ok(data.calls.some(a => a[0] === 'run' && a.includes('--publish') && a.includes('infra_network')));
-    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
+    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, true); assert.equal(state.release, '1.0.0'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 2); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
     assert.ok(!data.calls.some(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))));
     assert.doesNotMatch(first.stdout + first.stderr + second.stdout + second.stderr, /fixture\$special/);
   } finally { await f.cleanup(); }

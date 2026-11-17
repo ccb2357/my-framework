@@ -1,6 +1,6 @@
 # PWA Framework — instruções de trabalho
 
-Construir uma fundação reutilizável; o checkout de referência é pwa-framework. Ler [RULES.md](RULES.md), [MEMORY.md](MEMORY.md) e os documentos pertinentes em [docs/sdd/](docs/sdd/), antes de alterar código. O [README.md](README.md) contém o contrato aprovado e plano de construção.
+Construir uma fundação reutilizável; o checkout de referência é pwa-framework. Ler [RULES.md](RULES.md), [MEMORY.md](MEMORY.md) e os documentos pertinentes em [docs/sdd/](docs/sdd/), antes de alterar código. O [README.md](README.md) contém o contrato da fundação.
 
 **REGRA OBRIGATÓRIA — NÃO ADIVINHAR O FUNCIONAMENTO DA STACK. Ao menor sinal de dúvida sobre qualquer ferramenta, SEMPRE consultar sua documentação oficial antes de escrever código ou responder.**
 
@@ -14,7 +14,7 @@ Executor temporário por docker run --rm, imagem construída com docker build; s
 
 Atualizar a especificação responsável e MEMORY.md em cada entrega relevante. SDD descreve o sistema, MEMORY registra estado/evidências e próximo passo. Distinguir entregue, instalado e validado. Não declarar funcionamento no Windows ou VPS sem evidência real.
 
-PWA em frontend/: grid/CSS Framework7 + tokens compartilhados; main.js/App.vue/rotas F7, sem Tailwind nem estilos do admin. O bootstrap gera frontend/.foundation.public.json com whitelist e instala npm pelo lockfile no volume node_modules. Não ler o central privado no Vite. PWA/worker injectManifest; autenticações seguem o plano aprovado.
+PWA em frontend/: grid/CSS Framework7 + tokens compartilhados; main.js/App.vue/rotas F7, sem Tailwind nem estilos do admin. O bootstrap gera frontend/.foundation.public.json com whitelist e instala npm pelo lockfile no volume node_modules. Não ler o central privado no Vite. PWA/worker injectManifest; autenticações seguem os contratos do SDD.
 
 Consistência: usar classes app-content/app-heading/app-note/app-actions e tokens existentes antes de criar CSS local. Conferir label/input, nomes acessíveis, foco visível, disabled/loading, mensagens e teclado (inclusive FAB). Não substituir controles oficiais por wrappers. Aceite visual e de teclado depende de navegador real; registrar separadamente simulações.
 

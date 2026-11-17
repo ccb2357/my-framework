@@ -1,7 +1,7 @@
 {
-  "foundationVersion": "0.11.1-auth.5",
-  "stage": "access-hardening",
-  "completeFoundation": false,
+  "foundationVersion": "1.0.0",
+  "stage": "stable",
+  "completeFoundation": true,
   "skeleton": {
     "package": "laravel/laravel",
     "version": "v12.12.2",
