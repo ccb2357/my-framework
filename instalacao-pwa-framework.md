@@ -214,13 +214,11 @@ Quando o comando terminar e o prompt voltar, execute separadamente:
 echo %ERRORLEVEL%
 ```
 
-Ao terminar, o contêiner é removido; a imagem e os dados do projeto permanecem.
-
 O código esperado ao concluir esta etapa é **0**. Se retornar **2**, ainda existe alguma pendência: leia a lista exibida, confira as alterações da etapa 3, aplique-as conforme a etapa 4 e repita este comando. Não é necessário refazer as etapas que já estiverem corretas. Código **1** indica erro; envie a mensagem para análise.
 
 ## 6. Conferir o resultado
 
-O bootstrap verifica as dependências, a configuração, os bancos, as migrations e a comunicação com o backend. Código **0** confirma backend, builds PWA/admin e arquivos/cabeçalhos HTTP no Nginx. Confira:
+Confira:
 
 - [Hello/PWA](http://meu-projeto.localhost/)
 - [Login/Dashboard administrativa](http://admin.meu-projeto.localhost/)
@@ -228,13 +226,7 @@ O bootstrap verifica as dependências, a configuração, os bancos, as migration
 - [Mesmo diagnóstico em JSON](http://meu-projeto.localhost/api/v1/status)
 - [Verificação básica do Laravel](http://meu-projeto.localhost/up)
 
-O endereço administrativo abre o login. Crie a conta conforme abaixo; após entrar, PWA e Dashboard devem mostrar backend/banco OK. Os formulários demonstrativos mantêm máscaras/mensagens comuns e visuais separados.
-
-Com o Vite parado, abra a Hello pelo domínio do projeto. Teste instalação pelo botão/menu, offline após o primeiro carregamento e retorno da conexão. API/banco não podem manter OK offline. Código 0 não comprova instalação, funcionamento em aparelho.
-
 ### Cadastro, login e logout dos clientes
-
-Após atualizar os arquivos, repita o bootstrap da etapa 5 e aplique **Atualizar aplicativo**, se aparecer na PWA. Não precisa alterar a infraestrutura nem configurar e-mail nesta etapa.
 
 1. Na Hello, em **Sua conta**, clique **Criar conta**. Preencha nome, e-mail, senha (mínimo 8 caracteres) e confirmação. O cadastro abre **Minha conta** imediatamente, sem confirmação por e-mail.
 2. Recarregue a página e confira nome/e-mail. Clique **Sair**; acessar `/conta/` deve levar a **Entrar**.
