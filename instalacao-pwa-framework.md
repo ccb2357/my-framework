@@ -264,50 +264,51 @@ SMTP_FROM_ADDRESS=seu-email@gmail.com
 SMTP_FROM_NAME="Nome do aplicativo"
 ```
 
-Gmail exige **senha de app**, gerada com verificação em duas etapas ativa; não use a senha normal da conta. Para outro servidor, use seus dados SMTP. `smtp` na porta 587 usa STARTTLS; `smtps` atende TLS direto, normalmente 465. Host vazio desabilita envio. Nome/remetente vazios derivam nome do projeto/SMTP_USER.
-
-1. Repita o bootstrap da etapa 5 e aplique **Atualizar aplicativo**, se aparecer na PWA. Não preencher outros .env nem reconstruir o executor.
-2. No login da PWA, clique **Esqueci minha senha**, informe o e-mail de uma conta existente e abra o e-mail recebido (confira Spam). O endereço SMTP é o remetente; o destinatário é a conta que recupera a senha.
-3. Abra o link, informe/confirme nova senha e entre novamente. A senha anterior e o mesmo link não devem funcionar mais. O link expira em 60 minutos; reenvio após 60 segundos substitui o anterior.
-4. Repita no login administrativo. A alteração deve afetar somente a conta dessa interface, mesmo se cliente/admin usarem o mesmo e-mail. Sessões antigas da conta alterada são encerradas; a outra área permanece conectada.
-5. Execute a suíte Laravel da seção **Verificações e testes** no MySQL testing.
-
-Links usam os domínios configurados da PWA/admin; o servidor SMTP deve ser acessível pelo PHP-FPM. Não há worker/Cron adicional. A mensagem de solicitação é genérica e não comprova entrega. Se não receber, confira Spam, dados SMTP e saída de rede; falhas geram somente o código `password-recovery-mail-unavailable` no log privado. Reabrir o link do e-mail se recarregar a tela de redefinição. Testing não envia e-mails reais.
+Aguarde **60 segundos** antes de solicitar outro e-mail de recuperação para a mesma conta.
 
 ## 7. Desenvolvimento com Vite (opcional)
 
-No CMD:
+### PWA — CMD
 
 ```cmd
 cd /d C:\var\www\meu-projeto\frontend
 vite.cmd dev
 ```
 
-Abra [http://localhost:5180](http://localhost:5180). Mantenha esse terminal aberto; encerre com Ctrl+C. Alterações em .vue/JS/CSS devem aparecer pelo HMR.
+Acesso: [http://localhost:5180](http://localhost:5180) (`DEV_PORT`). Encerrar: **Ctrl+C**.
 
-Esse endereço usa HMR e não registra o service worker. Teste a PWA pelo domínio Nginx ou pela prévia abaixo.
-
-Para refazer o build e publicar em dist:
+Build:
 
 ```cmd
 cd /d C:\var\www\meu-projeto\frontend
 vite.cmd build
 ```
 
-### Desenvolvimento do admin
-
-No CMD:
+### Admin — CMD
 
 ```cmd
 cd /d C:\var\www\meu-projeto\admin
 vite.cmd dev
 ```
 
-Abra [http://localhost:5182](http://localhost:5182), conforme `ADMIN_DEV_PORT`. Para publicar alterações, encerre com Ctrl+C e execute `vite.cmd build` nessa pasta; abra novamente o domínio administrativo. O admin não oferece instalação PWA.
+Acesso: [http://localhost:5182](http://localhost:5182) (`ADMIN_DEV_PORT`). Encerrar: **Ctrl+C**.
 
-### Personalizar mensagens e máscaras
+Build:
 
-Edite `shared/forms/messages.pt-BR.json` para mensagens, `masks.js` para máscaras e `rules.js` para regras. São usados pela PWA e pelo admin. Após alterações, execute `vite.cmd build` na pasta frontend e na pasta admin; na PWA instalada, aceite a atualização disponível. O Vite dev usa os mesmos arquivos compartilhados.
+```cmd
+cd /d C:\var\www\meu-projeto\admin
+vite.cmd build
+```
+
+### Mensagens e máscaras
+
+Arquivos compartilhados em `shared/forms/`:
+
+- `messages.pt-BR.json`: mensagens.
+- `masks.js`: máscaras.
+- `rules.js`: regras.
+
+Após alterar, gere os dois builds. Na PWA instalada, aceite a atualização.
 
 ## Android por USB
 
