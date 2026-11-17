@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\AccountPasswordReset;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -18,5 +19,10 @@ class Administrator extends Authenticatable
     protected function casts(): array
     {
         return ['id' => 'integer', 'password' => 'hashed'];
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new AccountPasswordReset($token, 'admin'));
     }
 }

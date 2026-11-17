@@ -89,6 +89,13 @@ export function validate(input, root) {
   c.APP_LOCALE ||= 'pt_BR'; c.APP_TIMEZONE ||= 'UTC'; c.DISPLAY_TIMEZONE ||= 'America/Sao_Paulo';
   requireThat(/^[a-z]{2}(?:[_-][A-Z]{2})?$/.test(c.APP_LOCALE), 'APP_LOCALE inválido.');
   for (const key of ['APP_TIMEZONE', 'DISPLAY_TIMEZONE']) { try { new Intl.DateTimeFormat('pt-BR', { timeZone: c[key] }); } catch { throw new FoundationError(`${key} inválido.`); } }
+  c.SMTP_HOST ||= ''; c.SMTP_USER ||= ''; c.SMTP_PASS ||= ''; c.SMTP_FROM_ADDRESS ||= c.SMTP_USER; c.SMTP_FROM_NAME ||= c.PROJECT_NAME;
+  c.SMTP_PORT = port(c.SMTP_PORT || '587', 'SMTP_PORT'); c.SMTP_SCHEME ||= c.SMTP_PORT === '465' ? 'smtps' : 'smtp';
+  requireThat(['smtp','smtps'].includes(c.SMTP_SCHEME), 'SMTP_SCHEME deve ser smtp ou smtps.');
+  if (c.SMTP_HOST) {
+    requireThat(/^[a-zA-Z0-9.-]+$/.test(c.SMTP_HOST), 'SMTP_HOST inválido.');
+    requireThat(c.SMTP_USER && c.SMTP_PASS && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.SMTP_FROM_ADDRESS), 'Configure SMTP_USER, SMTP_PASS e SMTP_FROM_ADDRESS válidos.');
+  }
   c.SESSION_LIFETIME ||= '120'; requireThat(/^\d+$/.test(c.SESSION_LIFETIME) && +c.SESSION_LIFETIME > 0, 'SESSION_LIFETIME deve ser inteiro positivo.');
   c.PWA_SHORT_NAME ||= c.PROJECT_NAME; c.PWA_DESCRIPTION ||= 'Descrição do aplicativo';
   c.PWA_THEME_COLOR ||= '#007aff'; c.PWA_BACKGROUND_COLOR ||= '#ffffff';

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\AccountPasswordReset;
 use App\Notifications\FoundationPushNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -53,5 +54,10 @@ class User extends Authenticatable
             'push_enabled' => 'boolean',
             'is_push_test' => 'boolean',
         ];
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new AccountPasswordReset($token, 'client'));
     }
 }

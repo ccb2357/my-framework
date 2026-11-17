@@ -38,6 +38,7 @@ export async function synchronizeEnvs(c) {
     APP_LOCALE: c.APP_LOCALE, APP_FALLBACK_LOCALE: c.APP_LOCALE, APP_TIMEZONE: c.APP_TIMEZONE,
     DB_URL: 'null', DB_SOCKET: '', DB_CONNECTION: 'mysql', DB_HOST: c.DB_HOST, DB_PORT: c.DB_PORT, DB_DATABASE: c.DB_DATABASE, DB_USERNAME: c.DB_USERNAME, DB_PASSWORD: c.DB_PASSWORD,
     ADMIN_URL: c.adminUrl, ADMIN_STATEFUL_DOMAINS: c.APP_ENV === 'production' ? new URL(c.adminUrl).host : [new URL(c.adminUrl).host, 'localhost:' + c.ADMIN_DEV_PORT, '127.0.0.1:' + c.ADMIN_DEV_PORT, 'localhost:' + c.ADMIN_PREVIEW_PORT, '127.0.0.1:' + c.ADMIN_PREVIEW_PORT].join(','),
+    RECOVERY_ENABLED: c.SMTP_HOST ? 'true':'false', MAIL_MAILER: c.SMTP_HOST ? 'smtp':'array', MAIL_URL: 'null', MAIL_HOST: c.SMTP_HOST || '', MAIL_PORT: c.SMTP_PORT, MAIL_SCHEME: c.SMTP_SCHEME, MAIL_USERNAME: c.SMTP_USER || '', MAIL_PASSWORD: c.SMTP_PASS || '', MAIL_FROM_ADDRESS: c.SMTP_FROM_ADDRESS || '', MAIL_FROM_NAME: c.SMTP_FROM_NAME || c.PROJECT_NAME,
     SESSION_DRIVER: 'file', SESSION_LIFETIME: c.SESSION_LIFETIME, SESSION_ENCRYPT: 'false', SESSION_COOKIE: c.sessionCookie, SESSION_DOMAIN: 'null',
     SESSION_SECURE_COOKIE: c.APP_ENV === 'production' ? 'true' : 'false', SESSION_HTTP_ONLY: 'true', SESSION_SAME_SITE: 'lax',
     SANCTUM_STATEFUL_DOMAINS: c.stateful, CACHE_STORE: 'file', QUEUE_CONNECTION: 'database',
@@ -48,5 +49,5 @@ export async function synchronizeEnvs(c) {
   await writeAtomic(envPath, managedEnv(existing, { ...common, APP_KEY: appKey(existing) }), 0o640);
   const testPath = path.join(c.backend, '.env.testing'), test = await readOptional(testPath);
   // Production never receives a ready-to-use destructive test environment.
-  if (c.APP_ENV === 'local') await writeAtomic(testPath, managedEnv(test, { ...common, APP_ENV: 'testing', APP_DEBUG: 'false', APP_KEY: appKey(test), DB_DATABASE: c.DB_TEST_DATABASE, SESSION_DRIVER: 'array', CACHE_STORE: 'array', MAIL_MAILER: 'array', PUSH_ENABLED: 'false', PUSH_TEST_AUTH_ENABLED: 'false', VAPID_PUBLIC_KEY: '', VAPID_PRIVATE_KEY: '' }), 0o640);
+  if (c.APP_ENV === 'local') await writeAtomic(testPath, managedEnv(test, { ...common, APP_ENV: 'testing', APP_DEBUG: 'false', APP_KEY: appKey(test), DB_DATABASE: c.DB_TEST_DATABASE, SESSION_DRIVER: 'array', CACHE_STORE: 'array', MAIL_MAILER: 'array', RECOVERY_ENABLED: 'false', MAIL_PASSWORD: '', MAIL_USERNAME: '', PUSH_ENABLED: 'false', PUSH_TEST_AUTH_ENABLED: 'false', VAPID_PUBLIC_KEY: '', VAPID_PRIVATE_KEY: '' }), 0o640);
 }

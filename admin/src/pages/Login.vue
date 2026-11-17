@@ -29,6 +29,7 @@ onBeforeUnmount(() => { active = false; dispose?.(); password.value = ''; });
           <div class="space-y-2"><Label for="admin-login-password">Senha</Label><Input id="admin-login-password" v-model="password" name="password" type="password" autocomplete="current-password" required :disabled="busy" /><div id="admin-login-password-errors" data-errors="password" aria-live="polite" class="text-sm text-destructive"></div></div>
           <div v-if="message" role="alert" class="text-sm text-destructive"><p>{{ message }}</p><ul><li v-for="error in errors" :key="error">{{ error }}</li></ul></div>
           <Button type="submit" class="w-full" :disabled="busy">{{ busy ? 'Entrando…' : 'Entrar' }}</Button>
+        <p class="text-sm"><a href="/esqueci-senha/" class="underline">Esqueci minha senha</a></p>
         </form>
       </CardContent>
     </Card>

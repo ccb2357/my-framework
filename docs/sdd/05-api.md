@@ -1,6 +1,6 @@
 # API e sessão
 
-Base `/api/v1`. APIs de negócio são responsabilidade do produto. Autenticações de clientes e admin estão incluídas; recuperação segue o plano.
+Base `/api/v1`. APIs de negócio são responsabilidade do produto. Autenticações de clientes e admin estão incluídas; recuperação por SMTP também está incluída.
 
 | Método/rota | Contrato |
 | --- | --- |
@@ -61,4 +61,17 @@ Prefixo `/api/v1/auth`, somente no host da PWA. Cookies host-only, sessão web e
 
 E-mail é normalizado para minúsculas/sem espaços externos, até 254 caracteres; nome até 120. Senha de cadastro: mínimo 8 caracteres, máximo 72 bytes UTF-8, sem NUL e confirmação idêntica; espaços são preservados. Login não impõe novamente o mínimo de cadastro. Limites compartilhados em `shared/forms/auth-policy.json`; servidor valida independentemente do navegador. Cadastro ignora atributos privilegiados e rejeita e-mail repetido com 422.
 
-Login inválido retorna 401 genérico; substituir sessão ativa retorna 409; host/origem proibidos 403; CSRF 419; validação 422 com errors por campo; limite 429. Falhas inesperadas retornam mensagem controlada. Contas is_push_test não entram pelo login de clientes. Cadastro não verifica e-mail; recuperação fica para a próxima etapa.
+Login inválido retorna 401 genérico; substituir sessão ativa retorna 409; host/origem proibidos 403; CSRF 419; validação 422 com errors por campo; limite 429. Falhas inesperadas retornam mensagem controlada. Contas is_push_test não entram pelo login de clientes. Cadastro não verifica e-mail; recuperação usa o fluxo separado abaixo.
+
+## Recuperação de senha
+
+Em cada prefixo de autenticação (`/api/v1/auth` e `/api/v1/admin/auth`):
+
+| POST | Entrada | Resposta | Limite independente por área |
+| --- | --- | --- | --- |
+| forgot-password | email | 200 genérico, sem revelar conta, throttling do broker ou falha SMTP. | 5/min/IP e e-mail; reenvio do broker após 60s |
+| reset-password | email, token, password, password_confirmation | 200 após redefinir; 422 para link inválido/expirado/usado ou campos inválidos. | 10/min/IP e e-mail |
+
+Mesmos hosts/origens, CSRF e no-store/private da área. Senha segue o cadastro: mínimo 8 caracteres, até 72 bytes UTF-8. Brokers clients/administrators usam providers e tabelas distintos, mesmo para e-mails iguais; clientes excluem is_push_test. Tokens de 64 caracteres têm apenas hash no banco, expiram em 60 minutos e são consumidos sob transação/lock. Não autenticar automaticamente. Redefinição incrementa auth_version e troca remember_token; ClientSession/AdminSession/PushSession rejeitam sessões antigas apenas daquela conta/área. APIs futuras devem usar essas proteções.
+
+SMTP vazio desabilita envio; nenhuma recuperação usa transporte log ou grava tokens nos logs. Resposta de solicitação não confirma entrega. Falha SMTP registra somente password-recovery-mail-unavailable e área, sem detalhes privados.

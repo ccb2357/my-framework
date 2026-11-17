@@ -37,6 +37,9 @@ class ClientAuthController
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
         $request->session()->regenerateToken();
+        if (Auth::guard('web')->check()) {
+            $request->session()->put('web_auth_version', (int) Auth::guard('web')->user()->auth_version);
+        }
 
         return response()->json(['user' => $this->resource($user)], 201);
     }
@@ -48,6 +51,9 @@ class ClientAuthController
         abort_unless(Auth::guard('web')->attempt(['email' => $data['email'], 'password' => $data['password'], 'is_push_test' => false]), 401);
         $request->session()->regenerate();
         $request->session()->regenerateToken();
+        if (Auth::guard('web')->check()) {
+            $request->session()->put('web_auth_version', (int) Auth::guard('web')->user()->auth_version);
+        }
 
         return response()->json(['user' => $this->resource(Auth::guard('web')->user())]);
     }

@@ -42,3 +42,7 @@ Rota `/` do domínio `admin.<domínio>`, arquivo `admin/src/pages/HelloDashboard
 A Hello pública oferece Entrar e Criar conta. `/entrar/` e `/cadastro/` usam `access.vue`; `/conta/` usa `account.vue` e exige sessão verificada no servidor. Cadastro pede nome, e-mail, senha e confirmação; libera acesso imediato, sem confirmação por e-mail. A conta mostra nome/e-mail e Sair. Usuário autenticado é redirecionado dos formulários para a conta.
 
 Sessão é consultada ao entrar e ao recuperar foco/conexão. Falha ou offline não mantêm identidade como verificada. Senhas e formulários de acesso não são persistidos; campos preenchidos bloqueiam atualização da PWA. Erros são acessíveis e controlados, sem exibir respostas técnicas.
+
+## Esqueci minha senha
+
+Nas duas interfaces, o login oferece Esqueci minha senha. `/esqueci-senha/` recebe e-mail e retorna mensagem genérica; `/redefinir-senha/` recebe o fragmento do e-mail e pede nova senha/confirmar. PWA usa rotas e campos Framework7; admin usa Card/Input/Label/Button shadcn e navegação por links próprios, sem Framework7. Sucesso orienta voltar ao login; não autentica automaticamente. Link inválido permite solicitar outro. Credenciais/token não entram no rascunho; PWA bloqueia atualização enquanto o fluxo estiver pendente.

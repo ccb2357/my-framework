@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "0.9.0-auth.3",
-  "stage": "admin-auth",
+  "foundationVersion": "0.10.0-auth.4",
+  "stage": "password-recovery",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -63,7 +63,7 @@
     "guard": "web",
     "registration": true,
     "emailVerification": false,
-    "passwordReset": false
+    "passwordReset": true
   },
   "adminAuth": {
     "guard": "admin",
@@ -72,6 +72,13 @@
     "creation": "admin:create",
     "publicRegistration": false,
     "singleAdministrator": true,
-    "passwordReset": false
+    "passwordReset": true
+  },
+  "recovery": {
+    "smtp": "central",
+    "tokenExpiryMinutes": 60,
+    "singleUse": true,
+    "separateBrokers": true,
+    "autoLogin": false
   }
 }

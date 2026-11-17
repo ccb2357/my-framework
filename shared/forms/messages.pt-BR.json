@@ -13,5 +13,8 @@
   "passwordMax": "A senha é muito longa. Use uma senha mais curta.",
   "confirmationRequired": "Confirme a senha.",
   "confirmationMismatch": "As senhas não coincidem.",
-  "passwordInvalid": "A senha contém caracteres inválidos."
+  "passwordInvalid": "A senha contém caracteres inválidos.",
+  "recoverySent": "Se houver uma conta com esse e-mail, você receberá as instruções de recuperação.",
+  "resetDone": "Senha redefinida. Entre com a nova senha.",
+  "resetInvalid": "Link inválido, expirado ou já utilizado. Solicite outro."
 }

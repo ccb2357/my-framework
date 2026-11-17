@@ -14,6 +14,7 @@
         <f7-block>
           <div v-if="message" role="alert"><p>{{ message }}</p><ul v-if="serverErrors.length"><li v-for="error in serverErrors" :key="error">{{ error }}</li></ul></div>
           <div class="app-actions"><f7-button type="submit" fill preloader :loading="busy" :disabled="busy" :aria-disabled="busy" :tabindex="busy ? -1 : 0">{{ registration ? 'Criar conta' : 'Entrar' }}</f7-button><f7-button outline href="/" :disabled="busy" :aria-disabled="busy">Voltar à Hello</f7-button></div>
+          <p v-if="!registration" class="app-note"><f7-link href="/esqueci-senha/">Esqueci minha senha</f7-link></p>
           <p class="app-note"><f7-link :href="registration ? '/entrar/' : '/cadastro/'">{{ registration ? 'Já tenho uma conta' : 'Quero criar uma conta' }}</f7-link></p>
         </f7-block>
       </form>

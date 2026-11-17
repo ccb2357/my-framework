@@ -26,6 +26,9 @@ class AdminAuthController
         abort_unless(Auth::guard('admin')->attempt(['id' => 1, 'email' => $data['email'], 'password' => $data['password']]), 401);
         $request->session()->regenerate();
         $request->session()->regenerateToken();
+        if (Auth::guard('admin')->check()) {
+            $request->session()->put('admin_auth_version', (int) Auth::guard('admin')->user()->auth_version);
+        }
 
         return response()->json(['user' => $this->resource(Auth::guard('admin')->user())]);
     }

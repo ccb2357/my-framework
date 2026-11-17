@@ -41,7 +41,7 @@ docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
 
 O executor usa docker run --rm (etapas 2 e 5); não cadastrar serviço de bootstrap no Compose.
 
-Antes de executar o bootstrap, aplique **todos os quatro itens** abaixo para o ambiente **local** e o projeto **pwa-framework**. Não duplique entradas que já estejam corretas. Os trechos abaixo refletem a configuração central e o mapeamento deste ambiente; confira-os antes de aplicar. O restante do guia usa exemplos, que devem ser adaptados ao projeto.
+Antes de executar o bootstrap, aplique **todos os quatro itens** abaixo para o ambiente **local** e o projeto **meu-projeto**. Não duplique entradas que já estejam corretas. Os trechos abaixo refletem a configuração central e o mapeamento deste ambiente; confira-os antes de aplicar. O restante do guia usa exemplos, que devem ser adaptados ao projeto.
 
 ### 3.1 Serviços Node no Compose existente
 
@@ -49,36 +49,36 @@ Arquivo de destino: `C:\var\www\infra\docker-compose.yml`. Acrescentar o serviç
 
 ```yaml
 services:
-    pwa-framework-node:
+    meu-projeto-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: C:/var/www/pwa-framework/frontend
+              source: C:/var/www/meu-projeto/frontend
               target: /app
             - type: bind
-              source: C:/var/www/pwa-framework/shared
+              source: C:/var/www/meu-projeto/shared
               target: /shared
               read_only: true
-            - pwa_framework_node_modules:/app/node_modules
+            - meu_projeto_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5180:5173"
         networks:
             - infra_network
         profiles:
             - dev
-    pwa-framework-admin-node:
+    meu-projeto-admin-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: C:/var/www/pwa-framework/admin
+              source: C:/var/www/meu-projeto/admin
               target: /app
             - type: bind
-              source: C:/var/www/pwa-framework/shared
+              source: C:/var/www/meu-projeto/shared
               target: /shared
               read_only: true
-            - pwa_framework_admin_node_modules:/app/node_modules
+            - meu_projeto_admin_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5182:5173"
         networks:
@@ -92,7 +92,7 @@ services:
 No mesmo Compose, localizar `services.php-fpm.volumes` e acrescentar somente a linha abaixo. Preservar os mounts atuais; não criar outro serviço PHP nem substituir sua lista de volumes.
 
 ```yaml
-- pwa_framework_vendor:/var/www/pwa-framework/backend/vendor
+- meu_projeto_vendor:/var/www/meu-projeto/backend/vendor
 ```
 
 ### 3.3 Declaração dos volumes ao final do Compose
@@ -101,12 +101,12 @@ No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz,
 
 ```yaml
 volumes:
-    pwa_framework_vendor:
-        name: pwa_framework_vendor
-    pwa_framework_node_modules:
-        name: pwa_framework_node_modules
-    pwa_framework_admin_node_modules:
-        name: pwa_framework_admin_node_modules
+    meu_projeto_vendor:
+        name: meu_projeto_vendor
+    meu_projeto_node_modules:
+        name: meu_projeto_node_modules
+    meu_projeto_admin_node_modules:
+        name: meu_projeto_admin_node_modules
 ```
 
 ### 3.4 Sites Nginx
@@ -114,11 +114,11 @@ volumes:
 No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. A PWA usa `frontend/dist` e o admin usa `admin/dist`; ambos encaminham rotas técnicas ao mesmo Laravel. O admin não possui PWA. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
 
 ```nginx
-# PWA FOUNDATION: pwa-framework
+# PWA FOUNDATION: meu-projeto
 server {
     listen 80;
-    server_name pwa-framework.localhost;
-    root "/var/www/pwa-framework/frontend/dist";
+    server_name meu-projeto.localhost;
+    root "/var/www/meu-projeto/frontend/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -133,8 +133,8 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/pwa-framework/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/pwa-framework/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
@@ -142,11 +142,11 @@ server {
     location / { try_files $uri $uri/ /index.html; }
 }
 
-# ADMIN FOUNDATION: pwa-framework
+# ADMIN FOUNDATION: meu-projeto
 server {
     listen 80;
-    server_name admin.pwa-framework.localhost;
-    root "/var/www/pwa-framework/admin/dist";
+    server_name admin.meu-projeto.localhost;
+    root "/var/www/meu-projeto/admin/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -162,8 +162,8 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/pwa-framework/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/pwa-framework/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
@@ -251,7 +251,7 @@ Após extrair a atualização, repita o bootstrap da etapa 5. Não precisa alter
 docker compose exec -it -w /var/www/meu-projeto/backend php-fpm php artisan admin:create admin@example.com --name="Administrador"
 ```
 
-Informe e confirme a senha no terminal (mínimo 8 caracteres); ela não aparece enquanto digita. O e-mail será o login da conta, independente dos clientes e do VAPID. O comando cria somente um administrador e recusa outra criação sem alterar a conta existente. Não há cadastro público. Recuperação de senha por e-mail vem na próxima etapa.
+Informe e confirme a senha no terminal (mínimo 8 caracteres); ela não aparece enquanto digita. O e-mail será o login da conta, independente dos clientes e do VAPID. O comando cria somente um administrador e recusa outra criação sem alterar a conta existente. Não há cadastro público. A recuperação por e-mail exige o SMTP da seção abaixo.
 
 1. Abra o domínio administrativo e entre. Confira nome/e-mail, recarregue e teste **Sair**; a Dashboard deve voltar ao login.
 2. Confira campos vazios, senha incorreta e limite de tentativas.
@@ -259,6 +259,30 @@ Informe e confirme a senha no terminal (mínimo 8 caracteres); ela não aparece 
 4. Execute a suíte Laravel da seção **Verificações e testes**, no MySQL testing.
 
 Se alterar o frontend administrativo, gere o build com `vite.cmd build` na pasta admin; no Vite dev, basta salvar. O bootstrap publica ambos os builds. Cookies/CSRF administrativos são próprios, sem preencher outro .env.
+
+### Recuperação de senha por e-mail
+
+No `.env.foundation`, configure o remetente. Exemplo Gmail:
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SCHEME=smtp
+SMTP_USER=seu-email@gmail.com
+SMTP_PASS="senha_de_app_do_google"
+SMTP_FROM_ADDRESS=seu-email@gmail.com
+SMTP_FROM_NAME="Nome do aplicativo"
+```
+
+Gmail exige **senha de app**, gerada com verificação em duas etapas ativa; não use a senha normal da conta. Para outro servidor, use seus dados SMTP. `smtp` na porta 587 usa STARTTLS; `smtps` atende TLS direto, normalmente 465. Host vazio desabilita envio. Nome/remetente vazios derivam nome do projeto/SMTP_USER.
+
+1. Repita o bootstrap da etapa 5 e aplique **Atualizar aplicativo**, se aparecer na PWA. Não preencher outros .env nem reconstruir o executor.
+2. No login da PWA, clique **Esqueci minha senha**, informe o e-mail de uma conta existente e abra o e-mail recebido (confira Spam). O endereço SMTP é o remetente; o destinatário é a conta que recupera a senha.
+3. Abra o link, informe/confirme nova senha e entre novamente. A senha anterior e o mesmo link não devem funcionar mais. O link expira em 60 minutos; reenvio após 60 segundos substitui o anterior.
+4. Repita no login administrativo. A alteração deve afetar somente a conta dessa interface, mesmo se cliente/admin usarem o mesmo e-mail. Sessões antigas da conta alterada são encerradas; a outra área permanece conectada.
+5. Execute a suíte Laravel da seção **Verificações e testes** no MySQL testing.
+
+Links usam os domínios configurados da PWA/admin; o servidor SMTP deve ser acessível pelo PHP-FPM. Não há worker/Cron adicional. A mensagem de solicitação é genérica e não comprova entrega. Se não receber, confira Spam, dados SMTP e saída de rede; falhas geram somente o código `password-recovery-mail-unavailable` no log privado. Reabrir o link do e-mail se recarregar a tela de redefinição. Testing não envia e-mails reais.
 
 ## 7. Desenvolvimento com Vite (opcional)
 

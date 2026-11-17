@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\RecoveryUserProvider;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -25,6 +26,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Auth::provider('recovery-clients', fn ($app, $config) => new RecoveryUserProvider($app['hash'], $config['model']));
+        foreach (['client', 'admin'] as $area) {
+            foreach (['forgot' => 5, 'reset' => 10] as $action => $max) {
+                RateLimiter::for($area.'-password-'.$action, fn (Request $r) => [Limit::perMinute($max)->by($area.'-'.$action.'-ip:'.$r->ip()), Limit::perMinute($max)->by($area.'-'.$action.':'.hash('sha256', is_string($r->input('email')) ? strtolower(trim($r->input('email'))) : ''))]);
+            }
+        }
         RateLimiter::for('admin-login', function (Request $request) {
             $email = is_string($request->input('email')) ? strtolower(trim($request->input('email'))) : '';
 

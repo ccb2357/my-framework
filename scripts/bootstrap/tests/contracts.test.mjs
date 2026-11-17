@@ -225,3 +225,15 @@ test('backend admin context is derived from central without admitting client por
   assert.equal(env.SESSION_DOMAIN,'null');
  } finally { await fs.rm(root,{recursive:true,force:true}); }
 });
+
+
+test('SMTP stays private, requires valid configuration and never enables real mail in testing',async()=>{
+ assert.throws(()=>config({SMTP_HOST:'smtp.gmail.com',SMTP_USER:'sender@gmail.com',SMTP_PASS:''}));
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'smtp-private-'));
+ try {
+  const c=config({SMTP_HOST:'smtp.gmail.com',SMTP_USER:'sender@gmail.com',SMTP_PASS:'PRIVATE-SMTP'});c.backend=root+'/backend';await synchronizeEnvs(c);
+  const real=await fs.readFile(c.backend+'/.env','utf8'),testing=await fs.readFile(c.backend+'/.env.testing','utf8');
+  assert.match(real,/MAIL_MAILER="smtp"/);assert.match(real,/MAIL_PASSWORD="PRIVATE-SMTP"/);assert.match(testing,/MAIL_MAILER="array"/);assert.doesNotMatch(testing,/PRIVATE-SMTP/);
+  assert.doesNotMatch(JSON.stringify(publicConfiguration(c))+JSON.stringify(adminPublicConfiguration(c)),/PRIVATE-SMTP|sender@gmail.com/);
+ }finally{await fs.rm(root,{recursive:true,force:true});}
+});

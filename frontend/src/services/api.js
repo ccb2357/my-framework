@@ -5,11 +5,11 @@ const readCookie = name => {
   const raw = (globalThis.document?.cookie || '').split('; ').find(part => part.startsWith(name + '='));
   try { return raw ? decodeURIComponent(raw.slice(name.length + 1)) : ''; } catch { return ''; }
 };
-export async function apiRequest(path, { method = 'GET', json, signal, fetcher = globalThis.fetch } = {}) {
+export async function apiRequest(path, { method = 'GET', json, signal, csrfRefresh = false, fetcher = globalThis.fetch } = {}) {
   if (!path.startsWith('/api/v1/') || path.startsWith('//')) throw new ApiError('Rota de API inválida.');
   const headers = { Accept: 'application/json' };
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
-    if (!readCookie('XSRF-TOKEN')) {
+    if (csrfRefresh || !readCookie('XSRF-TOKEN')) {
       const csrf = await fetcher('/sanctum/csrf-cookie', { credentials: 'include', cache: 'no-store', signal });
       if (!csrf.ok) throw new ApiError('Não foi possível iniciar a sessão.', csrf.status);
     }

@@ -2,7 +2,7 @@ export class AdminApiError extends Error {
   constructor(status = 0, errors = {}) { super('Não foi possível concluir a operação.'); this.status = status; this.errors = errors; }
 }
 export async function adminRequest(path, { method = 'GET', json, fetcher = globalThis.fetch } = {}) {
-  if (!['me', 'login', 'logout'].includes(path)) throw new AdminApiError();
+  if (!['me', 'login', 'logout', 'forgot-password', 'reset-password'].includes(path)) throw new AdminApiError();
   const headers = { Accept: 'application/json' };
   if (method !== 'GET') {
     const csrf = await fetcher('/api/v1/admin/auth/csrf-cookie', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
@@ -17,7 +17,7 @@ export async function adminRequest(path, { method = 'GET', json, fetcher = globa
   if (!response.ok) {
     const errors = {};
     if (response.status === 422 && response.headers.get('content-type')?.includes('application/json')) {
-      try { const body = await response.json(); for (const name of ['email', 'password']) if (Array.isArray(body?.errors?.[name])) errors[name] = body.errors[name].filter(value => typeof value === 'string').map(value => value.slice(0,300)).slice(0,2); } catch { /* No raw diagnostic is exposed. */ }
+      try { const body = await response.json(); for (const name of ['email', 'password', 'password_confirmation']) if (Array.isArray(body?.errors?.[name])) errors[name] = body.errors[name].filter(value => typeof value === 'string').map(value => value.slice(0,300)).slice(0,2); } catch { /* No raw diagnostic is exposed. */ }
     }
     throw new AdminApiError(response.status, errors);
   }
