@@ -1,6 +1,6 @@
 # Instalação — PWA Framework
 
-**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Se os dois serviços Node já têm o bind `/shared` da etapa 3.1, repita apenas o bootstrap da etapa 5. Caso contrário, acrescente-o e valide o Compose conforme a etapa 4. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada. Esta atualização não exige novos serviços nem recriação do administrador.
+**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Se os dois serviços Node já têm o bind `/shared` da etapa 2.1, repita apenas o bootstrap da etapa 5. Caso contrário, acrescente-o e valide o Compose conforme a etapa 4. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada. Esta atualização não exige novos serviços nem recriação do administrador.
 
 ## 1. Preparar a pasta e a configuração
 
@@ -45,20 +45,11 @@ Os exemplos deste guia usam:
 
 Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas da PWA e do admin, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
 
-## 2. Construir a imagem do executor
-
-No **Prompt de Comando (CMD)**:
-
-```cmd
-cd /d C:\var\www\infra
-docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
-```
-
 <!-- BEGIN FOUNDATION INSTALL INFRA -->
 
-## 3. Preparar serviços Node, mount, volumes e sites
+## 2. Preparar serviços Node, mount, volumes e sites
 
-### 3.1 Serviços Node no Compose existente
+### 2.1 Serviços Node no Compose existente
 
 Arquivo de destino: `C:\var\www\infra\docker-compose.yml`.
 
@@ -102,7 +93,7 @@ services:
             - dev
 ```
 
-### 3.2 Mount vendor no PHP-FPM existente
+### 2.2 Mount vendor no PHP-FPM existente
 
 No mesmo Compose, localizar `services.php-fpm.volumes` e acrescentar somente a linha abaixo. Preservar os mounts atuais; não criar outro serviço PHP nem substituir sua lista de volumes.
 
@@ -110,7 +101,7 @@ No mesmo Compose, localizar `services.php-fpm.volumes` e acrescentar somente a l
 - meu_projeto_vendor:/var/www/meu-projeto/backend/vendor
 ```
 
-### 3.3 Declaração dos volumes ao final do Compose
+### 2.3 Declaração dos volumes ao final do Compose
 
 No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`.
 
@@ -124,7 +115,7 @@ volumes:
         name: meu_projeto_admin_node_modules
 ```
 
-### 3.4 Sites Nginx
+### 2.4 Sites Nginx
 
 No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. A PWA usa `frontend/dist` e o admin usa `admin/dist`; ambos encaminham rotas técnicas ao mesmo Laravel. O admin não possui PWA. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
 
@@ -189,7 +180,7 @@ server {
 
 <!-- END FOUNDATION INSTALL INFRA -->
 
-## 4. Validar e aplicar a infraestrutura
+## 3. Validar e aplicar a infraestrutura
 
 Entre na pasta da infraestrutura e valide o Compose:
 
@@ -199,6 +190,15 @@ docker compose --profile dev config --quiet
 ```
 
 A validação `config --quiet` não mostra nada quando está correta.
+
+## 4. Construir a imagem do executor
+
+No **Prompt de Comando (CMD)**:
+
+```cmd
+cd /d C:\var\www\infra
+docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
+```
 
 ## 5. Executar o bootstrap
 
@@ -214,7 +214,7 @@ Quando o comando terminar e o prompt voltar, execute separadamente:
 echo %ERRORLEVEL%
 ```
 
-O código esperado ao concluir esta etapa é **0**. Se retornar **2**, ainda existe alguma pendência: leia a lista exibida, confira as alterações da etapa 3, aplique-as conforme a etapa 4 e repita este comando. Não é necessário refazer as etapas que já estiverem corretas. Código **1** indica erro; envie a mensagem para análise.
+O código esperado ao concluir esta etapa é **0**. Se retornar **2**, ainda existe alguma pendência: leia a lista exibida, confira as alterações da etapa 2, aplique-as conforme a etapa 3 e repita este comando. Não é necessário refazer as etapas que já estiverem corretas. Código **1** indica erro; envie a mensagem para análise.
 
 ## 6. Conferir o resultado
 
