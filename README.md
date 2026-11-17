@@ -163,3 +163,19 @@ Para incorporar atualizações, comparar a base de origem com a desejada, seleci
 Produção usa `.env.foundation` próprio (`APP_ENV=production`, PRODUCTION_URL HTTPS), certificado real e bootstrap com --force para migrations; --force não autoriza alteração automática de infraestrutura ou operações destrutivas. Preservar APP_KEY/dados/volumes. Validar as jornadas; evidência local não homologa a VPS.
 
 Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, retenção/acesso e recuperação testados. Publicar assets antes do HTML/worker, manter clientes antigos compatíveis com API/banco e separar rollback de código de recuperação de dados. Não presumir migration reversa segura. Procedimentos concretos no [manual](instalacao-pwa-framework.md#vps-e-atualizações).
+
+<!-- BEGIN FOUNDATION IDENTITY -->
+| Campo | Valor |
+| --- | --- |
+| Projeto | PWA Framework |
+| Slug | pwa-framework |
+| Ambiente | local |
+| URL | http://pwa-framework.localhost |
+| Dev / preview | 5180 / 5181 |
+| Serviço / Compose | pwa-framework-node / infra |
+| Volumes | pwa_framework_vendor, pwa_framework_node_modules |
+| Bancos | pwa_framework, pwa_framework_test |
+| Admin | http://admin.pwa-framework.localhost |
+| Admin dev / preview | 5182 / 5183 |
+| Fundação | 0.11.1-auth.5 |
+<!-- END FOUNDATION IDENTITY -->

@@ -47,44 +47,48 @@ Você configura somente esse arquivo. O bootstrap gera os arquivos internos do L
 
 <!-- BEGIN FOUNDATION INSTALL INFRA -->
 
-## 2. Preparar serviços Node, mount, volumes e sites
+## 3. Preparar serviços Node, mount, volumes e sites
 
-### 2.1 Serviços Node no Compose existente
+O executor usa docker run --rm (etapas 2 e 5); não cadastrar serviço de bootstrap no Compose.
 
-Arquivo de destino: `C:\var\www\infra\docker-compose.yml`.
+Antes de executar o bootstrap, aplique **todos os quatro itens** abaixo para o ambiente **local** e o projeto **pwa-framework**. Não duplique entradas que já estejam corretas. Os trechos abaixo refletem a configuração central e o mapeamento deste ambiente; confira-os antes de aplicar. O restante do guia usa exemplos, que devem ser adaptados ao projeto.
+
+### 3.1 Serviços Node no Compose existente
+
+Arquivo de destino: `C:\var\www\infra\docker-compose.yml`. Acrescentar o serviço ao `services` existente, sem duplicar essa chave. Inicie o Vite somente após executar o bootstrap e instalar as dependências, conforme a etapa 7.
 
 ```yaml
 services:
-    meu-projeto-node:
+    pwa-framework-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: C:/var/www/meu-projeto/frontend
+              source: C:/var/www/pwa-framework/frontend
               target: /app
             - type: bind
-              source: C:/var/www/meu-projeto/shared
+              source: C:/var/www/pwa-framework/shared
               target: /shared
               read_only: true
-            - meu_projeto_node_modules:/app/node_modules
+            - pwa_framework_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5180:5173"
         networks:
             - infra_network
         profiles:
             - dev
-    meu-projeto-admin-node:
+    pwa-framework-admin-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: C:/var/www/meu-projeto/admin
+              source: C:/var/www/pwa-framework/admin
               target: /app
             - type: bind
-              source: C:/var/www/meu-projeto/shared
+              source: C:/var/www/pwa-framework/shared
               target: /shared
               read_only: true
-            - meu_projeto_admin_node_modules:/app/node_modules
+            - pwa_framework_admin_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5182:5173"
         networks:
@@ -93,38 +97,38 @@ services:
             - dev
 ```
 
-### 2.2 Mount vendor no PHP-FPM existente
+### 3.2 Mount vendor no PHP-FPM existente
 
 No mesmo Compose, localizar `services.php-fpm.volumes` e acrescentar somente a linha abaixo. Preservar os mounts atuais; não criar outro serviço PHP nem substituir sua lista de volumes.
 
 ```yaml
-- meu_projeto_vendor:/var/www/meu-projeto/backend/vendor
+- pwa_framework_vendor:/var/www/pwa-framework/backend/vendor
 ```
 
-### 2.3 Declaração dos volumes ao final do Compose
+### 3.3 Declaração dos volumes ao final do Compose
 
-No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`.
+No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`. Se o bloco ainda não existir, criá-lo. O mount do passo anterior e esta declaração são necessários.
 
 ```yaml
 volumes:
-    meu_projeto_vendor:
-        name: meu_projeto_vendor
-    meu_projeto_node_modules:
-        name: meu_projeto_node_modules
-    meu_projeto_admin_node_modules:
-        name: meu_projeto_admin_node_modules
+    pwa_framework_vendor:
+        name: pwa_framework_vendor
+    pwa_framework_node_modules:
+        name: pwa_framework_node_modules
+    pwa_framework_admin_node_modules:
+        name: pwa_framework_admin_node_modules
 ```
 
-### 2.4 Sites Nginx
+### 3.4 Sites Nginx
 
 No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. A PWA usa `frontend/dist` e o admin usa `admin/dist`; ambos encaminham rotas técnicas ao mesmo Laravel. O admin não possui PWA. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
 
 ```nginx
-# PWA FOUNDATION: meu-projeto
+# PWA FOUNDATION: pwa-framework
 server {
     listen 80;
-    server_name meu-projeto.localhost;
-    root "/var/www/meu-projeto/frontend/dist";
+    server_name pwa-framework.localhost;
+    root "/var/www/pwa-framework/frontend/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -139,20 +143,20 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
-
+        fastcgi_param SCRIPT_FILENAME "/var/www/pwa-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/pwa-framework/backend/public";
+        
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
     location / { try_files $uri $uri/ /index.html; }
 }
 
-# ADMIN FOUNDATION: meu-projeto
+# ADMIN FOUNDATION: pwa-framework
 server {
     listen 80;
-    server_name admin.meu-projeto.localhost;
-    root "/var/www/meu-projeto/admin/dist";
+    server_name admin.pwa-framework.localhost;
+    root "/var/www/pwa-framework/admin/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -168,9 +172,9 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
-
+        fastcgi_param SCRIPT_FILENAME "/var/www/pwa-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/pwa-framework/backend/public";
+        
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
