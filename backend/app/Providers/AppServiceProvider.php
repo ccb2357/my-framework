@@ -25,6 +25,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('admin-login', function (Request $request) {
+            $email = is_string($request->input('email')) ? strtolower(trim($request->input('email'))) : '';
+
+            return [Limit::perMinute(20)->by('admin-login-ip:'.$request->ip()), Limit::perMinute(5)->by('admin-login:'.hash('sha256', $email.'|'.$request->ip()))];
+        });
+        foreach (['admin-csrf' => 30, 'admin-read' => 60, 'admin-logout' => 10] as $name => $attempts) {
+            RateLimiter::for($name, fn (Request $request) => Limit::perMinute($attempts)->by($name.':'.$request->ip()));
+        }
         RateLimiter::for('client-login', function (Request $request) {
             $email = is_string($request->input('email')) ? strtolower(trim($request->input('email'))) : '';
 

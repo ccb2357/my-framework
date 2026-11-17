@@ -27,7 +27,7 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, L
 - **Web Push:** múltiplos dispositivos, preferência da conta, fila, revogação, retentativas e clique seguro, com VAPID por aplicativo/ambiente.
 - **API e testes:** Laravel/Sanctum, sessão/CSRF, diagnósticos HTTP/JSON, isolamento do banco testing e testes automatizados.
 
-Clientes têm cadastro público, login/logout e área protegida na PWA, com acesso imediato, sem confirmação de e-mail. Autenticação administrativa e recuperação de senha seguem o [plano de implementação](plano-sprints-admin-autenticacao.md). Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
+Clientes têm cadastro público, login/logout e área protegida na PWA, com acesso imediato, sem confirmação de e-mail. O admin tem login/logout independentes, conta criada por comando e Dashboard protegida. Recuperação de senha segue o [plano de implementação](plano-sprints-admin-autenticacao.md). Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
 
 ## Stack
 
@@ -185,5 +185,5 @@ Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, reten�
 | Bancos | pwa_framework, pwa_framework_test |
 | Admin | http://admin.pwa-framework.localhost |
 | Admin dev / preview | 5182 / 5183 |
-| Fundação | 0.8.0-auth.2 |
+| Fundação | 0.9.0-auth.3 |
 <!-- END FOUNDATION IDENTITY -->

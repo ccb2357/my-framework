@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { app } from '@/lib/config';
 import DemoForm from '@/components/DemoForm.vue';
 import { fetchStatus } from '@/services/status';
+defineProps({ administrator: { type: Object, required: true }, busy: Boolean });
+defineEmits(['logout']);
 const state = ref('loading');
 let request;
 async function refresh() {
@@ -37,14 +39,14 @@ onBeforeUnmount(() => {
     <header class="border-b bg-card">
       <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-5">
         <span class="font-semibold tracking-tight">{{ app.name }}</span>
-        <Badge variant="secondary">Administrativo</Badge>
+        <div class="flex items-center gap-3"><Badge variant="secondary">Administrativo</Badge><Button type="button" variant="outline" :disabled="busy" @click="$emit('logout')">Sair</Button></div>
       </div>
     </header>
     <main class="mx-auto max-w-6xl space-y-8 px-6 py-10">
       <div class="space-y-2">
         <p class="text-sm font-medium text-muted-foreground">Painel administrativo</p>
         <h1 class="text-3xl font-semibold tracking-tight">Hello Dashboard</h1>
-        <p class="max-w-2xl text-muted-foreground">Sua estrutura administrativa está preparada para receber as funcionalidades do projeto.</p>
+        <p class="max-w-2xl text-muted-foreground">Olá, {{ administrator.name }}. Você está na área protegida administrativa.</p>
       </div>
       <div class="grid gap-6 md:grid-cols-2">
         <Card>
@@ -65,7 +67,7 @@ onBeforeUnmount(() => {
             <CardDescription>Vue e shadcn-vue com Tailwind, em uma aplicação independente da PWA.</CardDescription>
           </CardHeader>
           <CardContent class="space-y-3 text-sm text-muted-foreground">
-            <p>Esta página confirma a instalação. O login administrativo será entregue na etapa de autenticação.</p>
+            <p>{{ administrator.email }}</p>
             <p>As funcionalidades do produto serão construídas a partir desta estrutura.</p>
           </CardContent>
         </Card>

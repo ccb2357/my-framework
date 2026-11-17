@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "0.8.0-auth.2",
-  "stage": "client-auth",
+  "foundationVersion": "0.9.0-auth.3",
+  "stage": "admin-auth",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -63,7 +63,15 @@
     "guard": "web",
     "registration": true,
     "emailVerification": false,
-    "passwordReset": false,
-    "adminAuth": false
+    "passwordReset": false
+  },
+  "adminAuth": {
+    "guard": "admin",
+    "model": "Administrator",
+    "table": "administrators",
+    "creation": "admin:create",
+    "publicRegistration": false,
+    "singleAdministrator": true,
+    "passwordReset": false
   }
 }

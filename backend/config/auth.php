@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Administrator;
 use App\Models\User;
 
 return [
@@ -38,6 +39,7 @@ return [
     */
 
     'guards' => [
+        'admin' => ['driver' => 'session', 'provider' => 'administrators'],
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
@@ -62,6 +64,7 @@ return [
     */
 
     'providers' => [
+        'administrators' => ['driver' => 'eloquent', 'model' => Administrator::class],
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),

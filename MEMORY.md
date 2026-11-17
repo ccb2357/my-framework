@@ -1,29 +1,25 @@
 # Estado da fundação
 
-## Entrega atual — Sprint 2
+## Entrega atual — Sprint 3
 
-PWA com cadastro público, login, logout e Minha conta protegida; acesso imediato sem confirmação de e-mail. Hello e demonstrações preservadas. Conta de teste push não autentica pelo login de clientes. Admin permanece com Hello pública; autenticação administrativa e recuperação pertencem às próximas etapas.
+Login/logout administrativos e Hello Dashboard protegida em admin/, com controles shadcn-vue existentes e validação compartilhada. Conta única em administrators/ID 1, guard admin/provider próprio; admin:create solicita senha oculta/confirmada e recusa repetição sem sobrescrever dados. Sem cadastro administrativo público, senha fixa, recuperação ou novos perfis.
 
-Backend usa sessão web, CSRF, rotação de sessão/token, restrição de host/origem, limites independentes e respostas privadas/controladas. Senhas são hash; campos privilegiados são ignorados. Logout invalida sessão e revoga somente o vínculo push atual. Identidade fica em memória; formulários de acesso bloqueiam atualização e não persistem credenciais. Mensagens/limites reutilizam shared/forms, sem compartilhar layout/CSS.
+Host/origens limitados ao admin; cookie de sessão com sufixo _admin, CSRF XSRF-ADMIN-TOKEN e armazenamento separado. Configuração/bindings restaurados após o pipeline administrativo. Sessão de cliente não autentica admin e vice-versa; logout não afeta a outra sessão nem dispositivos push de clientes. UI só monta Dashboard após checagem real, sem persistir senha/token/identidade. Admin continua sem PWA/Framework7/push.
 
-Nenhuma dependência ou infraestrutura nova. Versões exatas e lockfiles preservados. Bootstrap publica o código e limpa caches pela operação existente.
+Bootstrap deriva contexto administrativo, aplica migrations e publica builds; não cria conta automaticamente. Sem mudança de dependências/lockfiles, serviços ou blocos Nginx. Vite.cmd gerados pelo ambiente não integram o pacote de atualização. Manual concentra instalação/criação/validação.
 
-## Evidências desta entrega
+## Aceite anterior
 
-- 35 testes PHP sem integração MySQL: 271 assertions; sessão/CSRF, contexto, validação, rate limits e regressões push/status. Pint aprovado.
-- 35 testes PWA e 8 admin aprovados, com JustValidate real em DOM simulado e renderização dos componentes oficiais Framework7.
-- Lint e builds reais das duas interfaces aprovados; PWA com manifest/worker e admin sem recursos PWA.
-- 37 testes bootstrap aprovados; Engine/Compose/HTTP são simulados.
-- Cinco testes novos de persistência/autenticação MySQL entregues, não executados neste ambiente. TestingDatabaseGuard preservado; nenhum SQLite substitui a integração.
+Responsável validou instalação e Sprint 1.1. Sprint 2: cadastro/login/logout, redirecionamento, limites e validação testados localmente; suíte real MySQL com 47 testes/367 assertions aprovada. Correções de navegação/posição dos erros incluídas.
 
-## Correção após uso local
+## Verificações atuais
 
-Links de conta/retorno usam anchors oficiais Framework7: type=button removia href e impedia navegação. Teste de renderização agora confere os links reais para entrar, cadastrar, conta e Hello. No Vite dev, push informa uso pelo build e não consulta APIs protegidas; teste cobre montagem/atualização/eventos. Favicon explícito evita a consulta ausente a favicon.ico. Lint, 33 testes PWA e build/check:pwa aprovados após a correção. Uma resposta 401 de auth/me antes do login continua sendo esperada e tratada como visitante.
+- 39 testes PHP sem integração MySQL aprovados, 329 assertions; cookies/CSRF reais, providers de contas simulados e regressões anteriores. Pint aprovado e verify-admin.php com sintaxe válida.
+- 13 testes admin e 35 PWA aprovados; validação com JustValidate/componentes oficiais em DOM simulado, sessão, respostas controladas e Dashboard oculta antes de verificar acesso.
+- Lint/builds reais das duas interfaces aprovados; check:pwa válido, build administrativo sem Framework7/worker/manifest.
+- 38 testes bootstrap aprovados; Engine/Compose/HTTP de infraestrutura simulados. Contexto administrativo derivado sem admitir portas da PWA. Sete SDD e links locais conferidos; manifests/lockfiles preservados.
+- Quatro testes MySQL novos entregues para comando/senha/conta única e sessões reais separadas; não executados aqui. TestingDatabaseGuard preservado. Sem homologação visual em navegador real, Windows/Docker, aparelhos ou VPS nesta entrega.
 
-Mensagens de cadastro/login movidas para o slot info, dentro de item-input-wrap, abaixo dos campos; antes estavam fora de item-inner. Dois testes adicionais montam componentes/roteador reais em DOM simulado, clicam no submit vazio e conferem mensagens e aria-invalid. Após a correção: 35 testes PWA, lint e build/check:pwa aprovados. Pacotes não incluem mais os vite.cmd derivados por ambiente; o bootstrap os gera, preservando os atalhos existentes ao extrair atualizações.
+## Próximo passo
 
-## Aceite e próximo passo
-
-Responsável confirmou instalação dos cinco endereços na Sprint 1 e validou a Sprint 1.1 localmente. Para aceitar a Sprint 2: repetir o bootstrap, aplicar a atualização da PWA, conferir cadastro/recarregamento/logout/login e executar a suíte completa no MySQL testing conforme instalacao-pwa-framework.md. Não houve validação visual em navegador real, Windows/Docker, aparelho ou VPS nesta entrega.
-
-Após esse aceite: Sprint 3, conta administrativa separada por comando, login/logout e Hello Dashboard protegida. Recuperação por e-mail na Sprint 4. Compras, assinaturas e Capacitor continuam fora deste ciclo.
+Aplicar o pacote, repetir bootstrap, criar administrador e seguir o manual para login/logout e sessões simultâneas. Executar suíte completa em MySQL testing; testes HTTP com providers simulados não substituem persistência real. Após esse aceite: Sprint 4, recuperação de senha por e-mail para clientes/admin. Compras, assinaturas e Capacitor permanecem fora deste ciclo.

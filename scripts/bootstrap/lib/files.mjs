@@ -37,6 +37,7 @@ export async function synchronizeEnvs(c) {
     APP_NAME: c.PROJECT_NAME, APP_ENV: c.APP_ENV, APP_DEBUG: c.APP_ENV === 'local' ? 'true' : 'false', APP_URL: c.appUrl,
     APP_LOCALE: c.APP_LOCALE, APP_FALLBACK_LOCALE: c.APP_LOCALE, APP_TIMEZONE: c.APP_TIMEZONE,
     DB_URL: 'null', DB_SOCKET: '', DB_CONNECTION: 'mysql', DB_HOST: c.DB_HOST, DB_PORT: c.DB_PORT, DB_DATABASE: c.DB_DATABASE, DB_USERNAME: c.DB_USERNAME, DB_PASSWORD: c.DB_PASSWORD,
+    ADMIN_URL: c.adminUrl, ADMIN_STATEFUL_DOMAINS: c.APP_ENV === 'production' ? new URL(c.adminUrl).host : [new URL(c.adminUrl).host, 'localhost:' + c.ADMIN_DEV_PORT, '127.0.0.1:' + c.ADMIN_DEV_PORT, 'localhost:' + c.ADMIN_PREVIEW_PORT, '127.0.0.1:' + c.ADMIN_PREVIEW_PORT].join(','),
     SESSION_DRIVER: 'file', SESSION_LIFETIME: c.SESSION_LIFETIME, SESSION_ENCRYPT: 'false', SESSION_COOKIE: c.sessionCookie, SESSION_DOMAIN: 'null',
     SESSION_SECURE_COOKIE: c.APP_ENV === 'production' ? 'true' : 'false', SESSION_HTTP_ONLY: 'true', SESSION_SAME_SITE: 'lax',
     SANCTUM_STATEFUL_DOMAINS: c.stateful, CACHE_STORE: 'file', QUEUE_CONNECTION: 'database',

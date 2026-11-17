@@ -224,12 +224,12 @@ O código esperado ao concluir esta etapa é **0**. Se retornar **2**, ainda exi
 O bootstrap verifica as dependências, a configuração, os bancos, as migrations e a comunicação com o backend. Código **0** confirma backend, builds PWA/admin e arquivos/cabeçalhos HTTP no Nginx. Confira:
 
 - [Hello/PWA](http://meu-projeto.localhost/)
-- [Hello Dashboard administrativa](http://admin.meu-projeto.localhost/)
+- [Login/Dashboard administrativa](http://admin.meu-projeto.localhost/)
 - [Status do backend e banco](http://meu-projeto.localhost/status)
 - [Mesmo diagnóstico em JSON](http://meu-projeto.localhost/api/v1/status)
 - [Verificação básica do Laravel](http://meu-projeto.localhost/up)
 
-**Nesta etapa o admin tem uma página de instalação pública; ainda não tem login.** A PWA e o admin devem mostrar backend/banco OK. Nos dois formulários demonstrativos, confira campos vazios, e-mail inválido e celular completo; as mensagens devem ser iguais, com o visual de cada interface.
+O endereço administrativo abre o login. Crie a conta conforme abaixo; após entrar, PWA e Dashboard devem mostrar backend/banco OK. Os formulários demonstrativos mantêm máscaras/mensagens comuns e visuais separados.
 
 Com o Vite parado, abra a Hello pelo domínio do projeto. Teste instalação pelo botão/menu, offline após o primeiro carregamento e retorno da conexão. API/banco não podem manter OK offline. Código 0 não comprova instalação, funcionamento em aparelho ou recebimento push.
 
@@ -243,7 +243,22 @@ Após atualizar os arquivos, repita o bootstrap da etapa 5 e aplique **Atualizar
 3. Entre novamente. Confira também senha incorreta, e-mail já cadastrado e campos inválidos.
 4. Execute a suíte Laravel da seção **Verificações e testes**, no banco testing.
 
-O admin continua com Hello pública. Login administrativo e recuperação de senha vêm nas próximas etapas.
+### Criar e acessar o administrador
+
+Após extrair a atualização, repita o bootstrap da etapa 5. Não precisa alterar Compose/Nginx nem reconstruir a imagem do executor. Na pasta infra, execute (adapte meu-projeto ao nome da sua pasta):
+
+```cmd
+docker compose exec -it -w /var/www/meu-projeto/backend php-fpm php artisan admin:create admin@example.com --name="Administrador"
+```
+
+Informe e confirme a senha no terminal (mínimo 8 caracteres); ela não aparece enquanto digita. O e-mail será o login da conta, independente dos clientes e do VAPID. O comando cria somente um administrador e recusa outra criação sem alterar a conta existente. Não há cadastro público. Recuperação de senha por e-mail vem na próxima etapa.
+
+1. Abra o domínio administrativo e entre. Confira nome/e-mail, recarregue e teste **Sair**; a Dashboard deve voltar ao login.
+2. Confira campos vazios, senha incorreta e limite de tentativas.
+3. Mantenha cliente e admin conectados, inclusive nas portas Vite respectivas. Saia de um e recarregue o outro: ele deve continuar conectado. Repita no sentido inverso.
+4. Execute a suíte Laravel da seção **Verificações e testes**, no MySQL testing.
+
+Se alterar o frontend administrativo, gere o build com `vite.cmd build` na pasta admin; no Vite dev, basta salvar. O bootstrap publica ambos os builds. Cookies/CSRF administrativos são próprios, sem preencher outro .env.
 
 ## 7. Desenvolvimento com Vite (opcional)
 

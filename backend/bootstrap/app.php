@@ -1,12 +1,18 @@
 <?php
 
 use App\Http\Controllers\StatusController;
+use App\Http\Middleware\AdminContext;
+use App\Http\Middleware\AdminCsrf;
+use App\Http\Middleware\AdminStartSession;
 use App\Http\Middleware\ClientAuthContext;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -18,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function (): void {
+            Route::middleware([AdminContext::class, EncryptCookies::class, AddQueuedCookiesToResponse::class, AdminStartSession::class, AdminCsrf::class, SubstituteBindings::class])->group(__DIR__.'/../routes/admin.php');
             // No web/api session middleware: database failure must remain a controlled 503.
             Route::get('/status', [StatusController::class, 'html'])->name('foundation.status.html');
             Route::get('/api/v1/status', [StatusController::class, 'json'])->name('foundation.status.json');
@@ -29,9 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request, Throwable $exception) => $request->is('api/*') || $request->expectsJson());
-        $exceptions->dontReportWhen(fn (Throwable $error) => (request()->is('api/v1/push/*') || request()->is('api/v1/auth/*')));
+        $exceptions->dontReportWhen(fn (Throwable $error) => (request()->is('api/v1/push/*') || request()->is('api/v1/auth/*') || request()->is('api/v1/admin/*')));
         $exceptions->render(function (Throwable $error, Request $request) {
-            if ($request->is('api/v1/auth/*')) {
+            if ($request->is('api/v1/auth/*') || $request->is('api/v1/admin/*')) {
                 $status = $error instanceof ValidationException ? 422 : ($error instanceof AuthenticationException ? 401 : ($error instanceof HttpExceptionInterface ? $error->getStatusCode() : 500));
                 $body = ['message' => match ($status) {
                     401 => 'E-mail ou senha inválidos, ou sessão encerrada.', 403 => 'Acesso negado.', 404 => 'Não encontrado.', 409 => 'Já existe uma sessão ativa. Saia dela antes de entrar em outra conta.', 419 => 'Sessão expirada. Recarregue a página e tente novamente.', 422 => 'Confira os campos informados.', 429 => 'Muitas tentativas. Aguarde antes de repetir.', default => 'Não foi possível concluir a operação.'

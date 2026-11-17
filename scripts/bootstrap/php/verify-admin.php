@@ -40,6 +40,8 @@ try {
     foreach (['/sw.js', '/manifest.webmanifest', '/offline.html', '/assets/__foundation_missing__.js', '/.env', '/index.php'] as $path) {
         $request($path, in_array($path, ['/.env'], true) ? 403 : 404);
     }
+    $request('/api/v1/admin/auth/me', 401);
+    $request('/api/v1/auth/me', 403);
     [$headers, $body] = $request('/api/v1/status');
     $status = json_decode($body, true, 32, JSON_THROW_ON_ERROR);
     if (($status['status'] ?? null) !== 'ok' || ($status['checks']['application'] ?? null) !== 'ok' || ($status['checks']['database'] ?? null) !== 'ok' || ! preg_match('/Content-Type:[^\r\n]*application\/json/i', $headers)) {

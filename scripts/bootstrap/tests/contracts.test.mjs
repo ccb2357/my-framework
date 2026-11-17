@@ -210,3 +210,18 @@ test('npm manifests pin direct versions and lockfiles agree, including shared fo
   }
   for (const name of ['imask', 'just-validate']) assert.equal(manifests[0].dependencies[name], manifests[1].dependencies[name]);
 });
+
+test('backend admin context is derived from central without admitting client ports or exposing secrets', async () => {
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'admin-context-'));
+ try {
+  const c=config({ ADMIN_DEV_PORT:'5182', ADMIN_PREVIEW_PORT:'5183' }); c.backend=root+'/backend';
+  await synchronizeEnvs(c);
+  const { parseDotenv }=await import('../lib/config.mjs');
+  const env=parseDotenv(await fs.readFile(c.backend+'/.env','utf8'));
+  assert.equal(env.ADMIN_URL,c.adminUrl);
+  assert.ok(env.ADMIN_STATEFUL_DOMAINS.includes('localhost:5182'));
+  assert.ok(!env.ADMIN_STATEFUL_DOMAINS.includes('localhost:5176'));
+  assert.ok(!env.ADMIN_STATEFUL_DOMAINS.includes('localhost:5177'));
+  assert.equal(env.SESSION_DOMAIN,'null');
+ } finally { await fs.rm(root,{recursive:true,force:true}); }
+});
