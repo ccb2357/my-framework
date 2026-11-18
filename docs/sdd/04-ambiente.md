@@ -4,7 +4,7 @@ O [guia de instalação](../../instalacao-pwa-framework.md) concentra os comando
 
 ## Configuração central
 
-A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e as configurações públicas `frontend/.foundation.public.json`, `admin/.foundation.public.json` e `website/.foundation.public.json`; não criar `.env` frontend nem editar derivados. Preservar opções próprias do produto e APP_KEY válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
+A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e as configurações públicas `pwa/.foundation.public.json`, `admin/.foundation.public.json` e `website/.foundation.public.json`; não criar `.env` na PWA nem editar derivados. Preservar opções próprias do produto e APP_KEY válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
 
 | Campos | Contrato |
 | --- | --- |
@@ -29,7 +29,7 @@ Reutilizar Compose/rede/PHP-FPM/Nginx/MySQL existentes. Antes de analisar ou alt
 
 Imagem `pwa-foundation-bootstrap:0.1.0`, construída de `scripts/bootstrap/Dockerfile`, executada por docker run --rm com bind dos projetos, socket Docker e rede existente. Sem serviço de bootstrap no Compose, atalhos foundation.cmd/sh, dockerd interno ou runtime no host. O executor usa suas próprias dependências em /opt/foundation.
 
-Descoberta por labels Compose e mounts reais; preservar projeto/diretório/arquivos Compose e mapear caminhos host↔contêiner, inclusive Docker Desktop. Compose dentro do executor é somente leitura/validação. PHP usa docker exec; instalações frontend e verificação real de portas usam contêineres temporários. Alterações na infraestrutura são aplicadas manualmente pelo responsável, sem substituir recursos de outros sites.
+Descoberta por labels Compose e mounts reais; preservar projeto/diretório/arquivos Compose e mapear caminhos host↔contêiner, inclusive Docker Desktop. Compose no executor valida a infraestrutura; a única ativação automática autorizada é o serviço website após build, sem dependências. PHP usa docker exec; instalações frontend e verificação real de portas usam contêineres temporários. Alterações na infraestrutura são aplicadas manualmente pelo responsável, sem substituir recursos de outros sites.
 
 Bootstrap valida configuração/infra, gera blocos do guia, prepara env/chaves/permissões restritas ao projeto, instala pelos lockfiles quando necessário, confere conexão/plataforma, executa app:sync, compila e verifica backend/PWA pelo Nginx. Cria somente bancos ausentes quando autorizado pela conta; não executa fresh/reset/seeders; alterações de esquema seguem as migrations versionadas. Falha interrompe sem anunciar sucesso parcial.
 
@@ -37,7 +37,7 @@ Códigos: **0** backend/build/HTTP verificados; **1** erro; **2** integração m
 
 ## Acesso e build
 
-Nginx serve `frontend/dist`; /api, /sanctum, /up e /status seguem Laravel, sem fallback SPA. PHP externo/dotfiles bloqueados; HTML/manifest/worker sem cache imutável e assets com hash/cache longo. Vite dev tem HMR, proxy técnico e nenhum worker; prévia usa PREVIEW_PORT. ADB encaminha a porta do host ao Android; só o build oferece instalação/offline. Produção exige HTTPS público e certificado válido.
+Nginx serve `pwa/dist`; /api, /sanctum, /up e /status seguem Laravel, sem fallback SPA. PHP externo/dotfiles bloqueados; HTML/manifest/worker sem cache imutável e assets com hash/cache longo. Vite dev tem HMR, proxy técnico e nenhum worker; prévia usa PREVIEW_PORT. ADB encaminha a porta do host ao Android; só o build oferece instalação/offline. Produção exige HTTPS público e certificado válido.
 
 ## Testes
 
@@ -65,8 +65,8 @@ SMTP_HOST vazio desabilita e-mail. SMTP_PORT (587 padrão), SMTP_SCHEME (smtp/ST
 
 Central: `WEBSITE_LOCAL_DOMAIN`, `WEBSITE_PRODUCTION_URL` e `WEBSITE_DEV_PORT` (5184). Domínio vazio deriva `website.<domínio da PWA>`; não renomear domínios existentes automaticamente. Para website no domínio principal, configure explicitamente os três endereços, por exemplo website `dominio.com.br`, PWA `app.dominio.com.br`, admin `admin.dominio.com.br`. Em local, campos de produção permanecem vazios. Cinco portas de host distintas; website SSR usa 3000 somente na rede Docker.
 
-Serviço `<slug>-website-node`, perfil `website`, `node:22-alpine` atualizado (Node ≥22.22.3 na linha 22), bind apenas `website/` em `/app`, volume `<base>_website_node_modules` e restart `unless-stopped`. Sem socket Docker, central privado ou credenciais. Não recebe shared até a integração dos formulários. Desenvolvimento publica somente 127.0.0.1:WEBSITE_DEV_PORT:3000 em execução temporária, sem interromper o runtime.
+Serviço `<slug>-website-node`, perfil `website`, `node:22-bookworm-slim` atualizado (Node ≥22.22.3 na linha 22), bind apenas `website/` em `/app`, volume `<base>_website_node_modules` e restart `unless-stopped`. Instalação/build e runtime do website usam a mesma imagem Debian; a identidade da imagem integra o marcador de dependências para reinstalar módulos nativos ao migrar de Alpine. Sem socket Docker, central privado ou credenciais. Não recebe shared até a integração dos formulários. Desenvolvimento publica somente 127.0.0.1:WEBSITE_DEV_PORT:3000 em execução temporária, sem interromper o runtime.
 
-Bootstrap exige integração Compose/Nginx, instala via lockfile e compila Nuxt. Website ainda inativo/desatualizado retorna 2 com o comando para recriar apenas seu serviço; repetir bootstrap verifica HTML SSR/buildId/no-store pelo Nginx (HTTPS público validado em produção). Nenhum serviço compartilhado é recriado automaticamente. Artefatos e releases são gerados por ambiente e não entram no Git/pacote. Execução `nuxt.cmd build` requer reinício do runtime; o dev usa HMR.
+Bootstrap exige integração Compose/Nginx, instala via lockfile e compila Nuxt. Website inativo/desatualizado é iniciado/recriado automaticamente na mesma execução, preservando a identidade Compose e os volumes. Só esse serviço é alvo de up --no-deps --no-build --force-recreate; PHP, Nginx, MySQL e demais serviços não são reiniciados. Falha de ativação/HTTP encerra com código 1. O bootstrap aguarda HTML SSR/buildId/no-store pelo Nginx (HTTPS público validado em produção); versão já acessível não sofre reinício. Configuração Compose/Nginx ausente continua pendência manual com código 2. Artefatos e releases são gerados por ambiente e não entram no Git/pacote. Após `nuxt.cmd build`, repetir bootstrap para ativar/conferir; o dev usa HMR.
 
 A versão deste ciclo é preliminar; `completeFoundation=false` enquanto faltarem as etapas do website. Código 0 verifica os contratos entregues, não declara a loja ou autenticação integrada prontas.

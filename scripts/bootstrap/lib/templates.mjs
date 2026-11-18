@@ -40,7 +40,7 @@ ${[c.vendorVolume, c.modulesVolume, c.adminModulesVolume, c.websiteModulesVolume
 }
 export function websiteServiceSnippet(c, d) {
   return `    ${c.websiteService}:
-        image: node:22-alpine
+        image: node:22-bookworm-slim
         working_dir: /app
         command: ["node", "scripts/start.mjs"]
         restart: unless-stopped
@@ -193,7 +193,7 @@ export function installationInfra(c, d) {
     'No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`.',
     '```yaml\n' + volumes + '\n```',
     '### 2.4 Sites Nginx',
-    'No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\\var\\www\\infra\\nginx\\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. PWA: `frontend/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.',
+    'No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\\var\\www\\infra\\nginx\\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. PWA: `pwa/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.',
     '```nginx\n' + (nginxSnippet(c) + '\n' + nginxSnippet(c, true) + '\n' + websiteNginxSnippet(c)).trimEnd() + '\n```',
     '<!-- END FOUNDATION INSTALL INFRA -->',
   ].join('\n\n');

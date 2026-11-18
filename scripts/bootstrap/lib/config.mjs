@@ -116,7 +116,7 @@ export function validate(input, root) {
   c.vendorVolume = c.base + '_vendor'; c.modulesVolume = c.base + '_node_modules';
   c.shared = path.join(root, 'shared'); c.admin = path.join(root, 'admin'); c.adminNodeService = c.PROJECT_SLUG + '-admin-node'; c.adminModulesVolume = c.base + '_admin_node_modules';
   c.website = path.join(root, 'website'); c.websiteService = c.PROJECT_SLUG + '-website-node'; c.websiteModulesVolume = c.base + '_website_node_modules';
-  c.backend = path.join(root, 'backend'); c.frontend = path.join(root, 'frontend');
+  c.backend = path.join(root, 'backend'); c.frontend = path.join(root, 'pwa');
   c.sessionCookie = c.base + '_session';
   const origins = c.APP_ENV === 'production' ? [new URL(c.appUrl).host] : [c.LOCAL_DOMAIN, ...['localhost', '127.0.0.1', c.LOCAL_DOMAIN].flatMap(h => [`${h}:${c.DEV_PORT}`, `${h}:${c.PREVIEW_PORT}`])];
   c.stateful = [...new Set(origins)].join(',');

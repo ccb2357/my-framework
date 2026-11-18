@@ -11,15 +11,15 @@ const entry = fileURLToPath(new URL('../index.mjs', import.meta.url));
 const runtime = process.env.FOUNDATION_RUNTIME_PACKAGE || fileURLToPath(new URL('../executor/package.json', import.meta.url));
 const example = parseCentral(await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8'));
 // Deterministic Engine/Compose simulation; never connects to or mutates a real Docker Engine.
-async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4', guideCrlf = false, adminBuildFailure = false, adminHttpFailure = false, missingAdmin = false, missingShared = false, websiteBuildFailure = false, websiteHttpFailure = false, missingWebsite = false } = {}) {
+async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4', guideCrlf = false, adminBuildFailure = false, adminHttpFailure = false, missingAdmin = false, missingShared = false, websiteBuildFailure = false, websiteHttpFailure = false, missingWebsite = false, websiteActivationFailure = false, websiteStartupFailures = 0 } = {}) {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'foundation flow with spaces-'));
   const projects = tmp + '/projects', root = projects + '/product-a';
-  await fs.mkdir(root + '/backend', { recursive: true }); await fs.mkdir(root + '/frontend'); await fs.mkdir(root + '/admin'); await fs.mkdir(root + '/website'); await fs.mkdir(projects + '/infra'); await fs.mkdir(tmp + '/bin');
+  await fs.mkdir(root + '/backend', { recursive: true }); await fs.mkdir(root + '/pwa'); await fs.mkdir(root + '/admin'); await fs.mkdir(root + '/website'); await fs.mkdir(projects + '/infra'); await fs.mkdir(tmp + '/bin');
   const guide = await fs.readFile(new URL('../../../instalacao-pwa-framework.md', import.meta.url), 'utf8');
   await fs.writeFile(root + '/instalacao-pwa-framework.md', guideCrlf ? guide.replace(/\r?\n/g, '\r\n') : guide);
   await fs.writeFile(projects + '/infra/docker-compose.yml', '# fixture'); await fs.writeFile(root + '/backend/composer.lock', '{}');
-  await fs.writeFile(root + '/frontend/package.json', JSON.stringify({ scripts: { dev: 'vite', build: 'vite build' } }));
-  await fs.writeFile(root + '/frontend/package-lock.json', '{}');
+  await fs.writeFile(root + '/pwa/package.json', JSON.stringify({ scripts: { dev: 'vite', build: 'vite build' } }));
+  await fs.writeFile(root + '/pwa/package-lock.json', '{}');
   await fs.writeFile(root + '/admin/package.json', JSON.stringify({ scripts: { dev: 'vite', build: 'vite build' } }));
   await fs.writeFile(root + '/admin/package-lock.json', '{}');
   await fs.writeFile(root + '/website/package.json', JSON.stringify({ scripts: { dev: 'nuxt dev', build: 'nuxt build' } }));
@@ -33,15 +33,15 @@ async function fixture({ pending = false, production = false, desktop = false, h
   const labels = service => ({ 'com.docker.compose.service': service, 'com.docker.compose.project': 'shared-infra', 'com.docker.compose.project.config_files': composeHostRoot + '/infra/docker-compose.yml', 'com.docker.compose.project.working_dir': composeHostRoot + '/infra', 'com.docker.compose.oneoff': 'False' });
   const php = { Id: 'php-id', Config: { Labels: labels('php-fpm') }, State: { Running: true }, Mounts: [...mounts, ...(!pending ? [{ Type: 'volume', Name: c.vendorVolume, Destination: c.backend + '/vendor' }] : [])], NetworkSettings: { Networks: { infra_network: {} }, Ports: {} } };
   const nginx = { Id: 'nginx-id', Config: { Labels: labels('nginx') }, State: { Running: true }, Mounts: mounts, NetworkSettings: { Networks: { infra_network: {} }, Ports: {} } };
-  const config = { services: { 'php-fpm': { volumes: [{ type: 'volume', source: c.vendorVolume, target: c.backend + '/vendor' }] }, [c.nodeService]: { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/frontend', target: '/app' }, { type: 'volume', source: c.modulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.DEV_PORT), host_ip: '127.0.0.1' }] } }, volumes: { [c.vendorVolume]: { name: c.vendorVolume }, [c.modulesVolume]: { name: c.modulesVolume } } };
+  const config = { services: { 'php-fpm': { volumes: [{ type: 'volume', source: c.vendorVolume, target: c.backend + '/vendor' }] }, [c.nodeService]: { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/pwa', target: '/app' }, { type: 'volume', source: c.modulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.DEV_PORT), host_ip: '127.0.0.1' }] } }, volumes: { [c.vendorVolume]: { name: c.vendorVolume }, [c.modulesVolume]: { name: c.modulesVolume } } };
   config.volumes[c.adminModulesVolume] = { name: c.adminModulesVolume };
   if (!missingAdmin) config.services[c.adminNodeService] = { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/admin', target: '/app' }, { type: 'volume', source: c.adminModulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.ADMIN_DEV_PORT), host_ip: '127.0.0.1' }] };
   for (const service of Object.values(config.services)) {
     if (service.image === 'node:22-alpine' && !missingShared) service.volumes.push({ type: 'bind', source: '/srv/apps/product-a/shared', target: '/shared', read_only: true });
   }
   config.volumes[c.websiteModulesVolume] = { name: c.websiteModulesVolume };
-  if (!missingWebsite) config.services[c.websiteService] = { image: 'node:22-alpine', working_dir: '/app', command: ['node', 'scripts/start.mjs'], profiles: ['website'], environment: { NODE_ENV: 'production', NITRO_HOST: '0.0.0.0', NITRO_PORT: '3000' }, networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/website', target: '/app' }, { type: 'volume', source: c.websiteModulesVolume, target: '/app/node_modules' }] };
-  const data = { websiteBuildFailure, websiteHttpFailure, websiteInstalls: 0, websiteBuilds: 0, websiteMarker: '', websiteBuildId: '', adminBuildFailure, adminHttpFailure, adminInstalls: 0, adminBuilds: 0, adminMarker: '', php, nginx, config, site: pending ? '' : nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c), marker: '', installs: 0, syncs: 0, calls: [], httpFailure, npmMarker: '', npmInstalls: 0, npmFailure, builds: 0, buildFailure, pwaFailure, frontendNode };
+  if (!missingWebsite) config.services[c.websiteService] = { image: 'node:22-bookworm-slim', working_dir: '/app', command: ['node', 'scripts/start.mjs'], profiles: ['website'], environment: { NODE_ENV: 'production', NITRO_HOST: '0.0.0.0', NITRO_PORT: '3000' }, networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/website', target: '/app' }, { type: 'volume', source: c.websiteModulesVolume, target: '/app/node_modules' }] };
+  const data = { websiteActivationFailure, websiteStartupFailures, websiteActivations: 0, websiteLiveBuildId: '', websiteActivationInputs: [], websiteBuildFailure, websiteHttpFailure, websiteInstalls: 0, websiteBuilds: 0, websiteMarker: '', websiteBuildId: '', adminBuildFailure, adminHttpFailure, adminInstalls: 0, adminBuilds: 0, adminMarker: '', php, nginx, config, site: pending ? '' : nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c), marker: '', installs: 0, syncs: 0, calls: [], httpFailure, npmMarker: '', npmInstalls: 0, npmFailure, builds: 0, buildFailure, pwaFailure, frontendNode };
   const dataFile = tmp + '/fake-engine.json'; await fs.writeFile(dataFile, JSON.stringify(data));
   const fake = `#!${process.execPath}
 import fs from 'node:fs';
@@ -50,6 +50,7 @@ const stdin=()=>fs.readFileSync(0,'utf8');
 if(a[0]==='version')out='"fixture"';
 else if(a[0]==='compose'&&a.includes('version'))out='2.40.3';
 else if(a[0]==='compose'&&a.includes('config'))out=JSON.stringify(data.config);
+else if(a[0]==='compose'&&a.includes('up')){data.websiteActivations++;data.websiteActivationInputs.push(JSON.parse(stdin()));if(data.websiteActivationFailure){process.exitCode=55;process.stderr.write('PRIVATE-ACTIVATION');}else data.websiteLiveBuildId=data.websiteBuildId;}
 else if(a[0]==='ps')out=a.some(x=>x.includes('service=php-fpm'))?'php-id':'php-id nginx-id';
 else if(a[0]==='inspect')out=JSON.stringify(a.slice(1).map(x=>x==='php-id'?data.php:data.nginx));
 else if(a[0]==='run'){
@@ -80,7 +81,7 @@ else if(a[0]==='exec'){
  else if(a.some(x=>x.endsWith('databases.php'))){stdin();out='{"status":"ok"}';}
  else if(a.some(x=>x.endsWith('verify-runtime.php')))stdin();
  else if(a.some(x=>x.endsWith('verify-pwa.php'))){stdin();out=JSON.stringify({status:data.pwaFailure?'error':'ok',checks:{simulation:'ok'}});if(data.pwaFailure)process.exitCode=1;}
- else if(a.some(x=>x.endsWith('verify-website.php'))){stdin();out=JSON.stringify({status:data.websiteHttpFailure?'error':'ok',checks:{simulation:'ok'}});if(data.websiteHttpFailure)process.exitCode=1;}
+ else if(a.some(x=>x.endsWith('verify-website.php'))){stdin();const failed=data.websiteHttpFailure||data.websiteLiveBuildId!==data.websiteBuildId||data.websiteStartupFailures>0;if(data.websiteLiveBuildId&&data.websiteStartupFailures>0)data.websiteStartupFailures--;out=JSON.stringify({status:failed?'error':'ok',checks:{simulation:'ok'}});if(failed)process.exitCode=1;}
  else if(a.some(x=>x.endsWith('verify-admin.php'))){stdin();out=JSON.stringify({status:data.adminHttpFailure?'error':'ok',checks:{simulation:'ok'}});if(data.adminHttpFailure)process.exitCode=1;}
  else if(a.some(x=>x.endsWith('verify-http.php'))){stdin();out=data.httpFailure?JSON.stringify({status:'error',reason:'csrf-token-missing',path:'/sanctum/csrf-cookie',http_status:204,curl_errno:0,origin_index:3,body:'PRIVATE-BODY'}):'{"status":"ok","checks":{"simulation":"ok"}}';if(data.httpFailure){process.exitCode=1;process.stderr.write('PRIVATE-STDERR');}}
  else if(a.includes('-r')){
@@ -132,7 +133,7 @@ test('Desktop mount and Windows labels discover the same Compose and reach the p
     const data = await f.data();
     assert.equal(data.installs, 0);
     assert.ok(data.calls.some(a => a[0] === 'compose' && a.includes('config')));
-    assert.match(await fs.readFile(f.root + '/instalacao-pwa-framework.md', 'utf8'), /C:\/var\/www\/product-a\/frontend/);
+    assert.match(await fs.readFile(f.root + '/instalacao-pwa-framework.md', 'utf8'), /C:\/var\/www\/product-a\/pwa/);
     await assert.rejects(fs.access(f.root + '/backend/.env'));
   } finally { await f.cleanup(); }
 });
@@ -148,11 +149,14 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     assert.equal(await fs.readFile(guidePath, 'utf8'), guide);
     assert.equal((guide.match(/<!-- BEGIN FOUNDATION INSTALL INFRA -->/g) || []).length, 1);
     const data = await f.data(); assert.equal(data.installs, 1); assert.equal(data.syncs, 2); assert.equal(data.npmInstalls, 1); assert.equal(data.adminInstalls, 1); assert.equal(data.adminBuilds, 2); assert.equal(data.websiteInstalls, 1); assert.equal(data.websiteBuilds, 1);
+    assert.ok(data.calls.filter(a => a[0] === 'run' && a.some(x => x.includes('_website_node_modules'))).every(a => a.includes('node:22-bookworm-slim')));
     const runs = data.calls.filter(a => a[0] === 'run' && (a.includes('build') || a.includes('ci')));
     assert.ok(runs.every(a => a.some(x => x.includes('target=/shared,readonly'))));
     assert.ok(data.calls.some(a => a[0] === 'run' && a.includes('--publish') && a.includes('infra_network')));
     const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '1.1.0-website.1'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
-    assert.ok(!data.calls.some(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))));
+    assert.equal(data.websiteActivations, 1);
+    assert.ok(data.calls.filter(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))).every(a => a.includes('up') && a.includes('--no-deps') && a.includes('--no-build') && a.at(-1) === 'product-a-website-node'));
+    assert.ok(data.websiteActivationInputs.every(x => Object.keys(x.services).join() === 'product-a-website-node'));
     assert.doesNotMatch(first.stdout + first.stderr + second.stdout + second.stderr, /fixture\$special/);
   } finally { await f.cleanup(); }
 });
@@ -242,12 +246,41 @@ test('website missing integration and failed build cannot announce success', asy
     const f = await fixture(options);
     try {
       const result = await f.invoke();
-      assert.equal(result.code, options.websiteBuildFailure ? 1 : 2, result.stdout + result.stderr);
+      assert.equal(result.code, options.missingWebsite ? 2 : 1, result.stdout + result.stderr);
       assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE-WEBSITE|Website: http/);
       const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8'));
       assert.equal(state.completeFoundation, false);
       if (options.missingWebsite) { assert.equal((await f.data()).installs, 0); await assert.rejects(fs.access(f.root + '/backend/.env')); }
-      if (options.websiteHttpFailure) assert.match(result.stderr, /up -d --no-deps --force-recreate product-a-website-node/);
+      if (options.websiteHttpFailure) { assert.match(result.stderr, /não respondeu com o build esperado/); assert.equal((await f.data()).websiteActivations, 1); }
     } finally { await f.cleanup(); }
   }
+});
+
+test('website starts once, waits for readiness, then recreates only for a changed build', async () => {
+  const f = await fixture({ websiteStartupFailures: 2 });
+  try {
+    const first = await f.invoke(); assert.equal(first.code, 0, first.stdout + first.stderr);
+    assert.equal((await f.data()).websiteActivations, 1);
+    const second = await f.invoke(); assert.equal(second.code, 0, second.stdout + second.stderr);
+    assert.equal((await f.data()).websiteActivations, 1);
+    await fs.writeFile(f.root + '/website/changed.js', 'export const changed = true;');
+    const third = await f.invoke(); assert.equal(third.code, 0, third.stdout + third.stderr);
+    const data = await f.data(); assert.equal(data.websiteActivations, 2); assert.equal(data.websiteBuilds, 2);
+    assert.equal(data.websiteInstalls, 1);
+    for (const call of data.calls.filter(a => a[0] === 'compose' && a.includes('up'))) {
+      assert.equal(call.at(-1), 'product-a-website-node');
+      assert.ok(call.includes('--no-deps')); assert.ok(call.includes('--no-build'));
+      assert.ok(!call.includes('--remove-orphans'));
+    }
+  } finally { await f.cleanup(); }
+});
+test('website activation failure stops without exposing raw output or reporting success', async () => {
+  const f = await fixture({ websiteActivationFailure: true });
+  try {
+    const result = await f.invoke(); assert.equal(result.code, 1);
+    assert.match(result.stderr, /Ativação do serviço website/);
+    assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE-ACTIVATION|Website: http/);
+    assert.equal((await f.data()).websiteActivations, 1);
+    assert.equal(JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')).phase, 'failed');
+  } finally { await f.cleanup(); }
 });

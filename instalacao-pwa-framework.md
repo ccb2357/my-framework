@@ -1,5 +1,7 @@
 # Instalação — PWA Framework
 
+**Instalação existente:** pare o Vite e renomeie `frontend` para `pwa` antes de extrair esta atualização. Ajuste o bind Node e o `root` Nginx da PWA conforme a etapa 2, valide/recarregue o Nginx e repita o bootstrap. Preserve serviços, volumes e `.foundation-state.json`.
+
 ## 1. Preparar a pasta e a configuração
 
 Os exemplos usam `meu-projeto` em `C:\var\www`, com a pasta `infra` ao lado. Substitua nomes, caminhos, portas e rede pelos valores do seu `.env.foundation` e da infraestrutura.
@@ -53,48 +55,48 @@ Você configura somente esse arquivo. O bootstrap gera os arquivos internos do L
 
 ### 2.1 Serviços Node no Compose existente
 
-Arquivo de destino: `C:/var/www/infra/docker-compose.yml`.
+Arquivo de destino: `C:\var\www\infra\docker-compose.yml`.
 
 ```yaml
 services:
-    meu-projeto-node:
+    pwa-framework-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: C:/var/www/meu-projeto/frontend
+              source: C:/var/www/pwa-framework/pwa
               target: /app
             - type: bind
-              source: C:/var/www/meu-projeto/shared
+              source: C:/var/www/pwa-framework/shared
               target: /shared
               read_only: true
-            - meu_projeto_node_modules:/app/node_modules
+            - pwa_framework_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5180:5173"
         networks:
             - infra_network
         profiles:
             - dev
-    meu-projeto-admin-node:
+    pwa-framework-admin-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: C:/var/www/meu-projeto/admin
+              source: C:/var/www/pwa-framework/admin
               target: /app
             - type: bind
-              source: C:/var/www/meu-projeto/shared
+              source: C:/var/www/pwa-framework/shared
               target: /shared
               read_only: true
-            - meu_projeto_admin_node_modules:/app/node_modules
+            - pwa_framework_admin_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5182:5173"
         networks:
             - infra_network
         profiles:
             - dev
-    meu-projeto-website-node:
-        image: node:22-alpine
+    pwa-framework-website-node:
+        image: node:22-bookworm-slim
         working_dir: /app
         command: ["node", "scripts/start.mjs"]
         restart: unless-stopped
@@ -104,9 +106,9 @@ services:
             NITRO_PORT: 3000
         volumes:
             - type: bind
-              source: C:/var/www/meu-projeto/website
+              source: C:/var/www/pwa-framework/website
               target: /app
-            - meu_projeto_website_node_modules:/app/node_modules
+            - pwa_framework_website_node_modules:/app/node_modules
         expose:
             - "3000"
         networks:
@@ -120,7 +122,7 @@ services:
 No mesmo Compose, localizar `services.php-fpm.volumes` e acrescentar somente a linha abaixo. Preservar os mounts atuais; não criar outro serviço PHP nem substituir sua lista de volumes.
 
 ```yaml
-- meu_projeto_vendor:/var/www/meu-projeto/backend/vendor
+- pwa_framework_vendor:/var/www/pwa-framework/backend/vendor
 ```
 
 ### 2.3 Declaração dos volumes ao final do Compose
@@ -129,26 +131,26 @@ No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz,
 
 ```yaml
 volumes:
-    meu_projeto_vendor:
-        name: meu_projeto_vendor
-    meu_projeto_node_modules:
-        name: meu_projeto_node_modules
-    meu_projeto_admin_node_modules:
-        name: meu_projeto_admin_node_modules
-    meu_projeto_website_node_modules:
-        name: meu_projeto_website_node_modules
+    pwa_framework_vendor:
+        name: pwa_framework_vendor
+    pwa_framework_node_modules:
+        name: pwa_framework_node_modules
+    pwa_framework_admin_node_modules:
+        name: pwa_framework_admin_node_modules
+    pwa_framework_website_node_modules:
+        name: pwa_framework_website_node_modules
 ```
 
 ### 2.4 Sites Nginx
 
-No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. PWA: `frontend/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
+No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. PWA: `pwa/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
 
 ```nginx
-# PWA FOUNDATION: meu-projeto
+# PWA FOUNDATION: pwa-framework
 server {
     listen 80;
-    server_name meu-projeto.localhost;
-    root "/var/www/meu-projeto/frontend/dist";
+    server_name pwa-framework.localhost;
+    root "/var/www/pwa-framework/pwa/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -163,8 +165,8 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/pwa-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/pwa-framework/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
@@ -172,11 +174,11 @@ server {
     location / { try_files $uri $uri/ /index.html; }
 }
 
-# ADMIN FOUNDATION: meu-projeto
+# ADMIN FOUNDATION: pwa-framework
 server {
     listen 80;
-    server_name admin.meu-projeto.localhost;
-    root "/var/www/meu-projeto/admin/dist";
+    server_name admin.pwa-framework.localhost;
+    root "/var/www/pwa-framework/admin/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -192,8 +194,8 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/pwa-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/pwa-framework/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
@@ -201,10 +203,10 @@ server {
     location / { try_files $uri $uri/ /index.html; }
 }
 
-# WEBSITE FOUNDATION: meu-projeto
+# WEBSITE FOUNDATION: pwa-framework
 server {
     listen 80;
-    server_name website.meu-projeto.localhost;
+    server_name website.pwa-framework.localhost;
     charset utf-8;
     resolver 127.0.0.11 valid=10s ipv6=off;
     location ~ /\. { deny all; }
@@ -213,14 +215,14 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/pwa-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/pwa-framework/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
     location / {
-        set $website_upstream meu-projeto-website-node:3000;
+        set $website_upstream pwa-framework-website-node:3000;
         proxy_pass http://$website_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -268,15 +270,7 @@ echo %ERRORLEVEL%
 
 O código esperado ao concluir esta etapa é **0**. Se retornar **2**, ainda existe alguma pendência: leia a lista exibida, confira as alterações da etapa 2, aplique-as conforme a etapa 3 e repita este comando. Não é necessário refazer as etapas que já estiverem corretas. Código **1** indica erro; envie a mensagem para análise.
 
-### Ativar o website
-
-Após o build, se o bootstrap pedir, execute na pasta infra e repita o bootstrap:
-
-```cmd
-docker compose --profile website up -d --no-deps --force-recreate meu-projeto-website-node
-```
-
-Abra [http://website.meu-projeto.localhost](http://website.meu-projeto.localhost). Nuxt permanece em execução; login/loja ainda não incluídos.
+O bootstrap compila, inicia/atualiza o website e confere o acesso automaticamente.
 
 ## 6. Conferir o resultado
 
@@ -334,7 +328,7 @@ Aguarde **60 segundos** antes de solicitar outro e-mail de recuperação para a 
 ### PWA — CMD
 
 ```cmd
-cd /d C:\var\www\meu-projeto\frontend
+cd /d C:\var\www\meu-projeto\pwa
 vite.cmd dev
 ```
 
@@ -343,7 +337,7 @@ Acesso: [http://localhost:5180](http://localhost:5180) (`DEV_PORT`). Encerrar: *
 Build:
 
 ```cmd
-cd /d C:\var\www\meu-projeto\frontend
+cd /d C:\var\www\meu-projeto\pwa
 vite.cmd build
 ```
 
@@ -370,18 +364,14 @@ cd /d C:\var\www\meu-projeto\website
 nuxt.cmd dev
 ```
 
-Acesso: [http://localhost:5184](http://localhost:5184) (`WEBSITE_DEV_PORT`). Encerrar: **Ctrl+C**.
+**Desenvolvimento:** [http://localhost:5184](http://localhost:5184) (`WEBSITE_DEV_PORT`); alterações aparecem ao salvar. Mantenha o terminal aberto; encerre com **Ctrl+C**.
 
-Build:
+**Domínio do website:** mostra o build publicado e não muda ao salvar. Para atualizá-lo, repita o bootstrap da etapa 5; ele recompila e ativa a nova versão.
+
+Build manual (opcional):
 
 ```cmd
 nuxt.cmd build
-```
-
-Depois, na pasta infra:
-
-```cmd
-docker compose --profile website up -d --no-deps --force-recreate meu-projeto-website-node
 ```
 
 ### Mensagens e máscaras
@@ -417,7 +407,7 @@ Os exemplos abaixo usam `DEV_PORT=5180`, `PREVIEW_PORT=5181` e o serviço `meu-p
 
 `vite.cmd dev` usa a **DEV_PORT (5180)**. Nesse modo, o service worker fica desativado e **o botão de instalar a PWA não aparece**.
 
-1. Na pasta frontend, execute e mantenha o terminal aberto:
+1. Na pasta pwa, execute e mantenha o terminal aberto:
 
 ```cmd
 vite.cmd dev
@@ -433,7 +423,7 @@ C:\tools\platform-tools\adb.exe reverse tcp:5180 tcp:5180
 
 ### Instalar a PWA e testar offline
 
-Use o **build na PREVIEW_PORT (5181)**. O bootstrap da etapa 5 já gera o build; se alterou o frontend depois, execute `vite.cmd build` na pasta frontend antes de continuar.
+Use o **build na PREVIEW_PORT (5181)**. O bootstrap da etapa 5 já gera o build; se alterou a PWA depois, execute `vite.cmd build` na pasta pwa antes de continuar.
 
 1. Na pasta infra, execute e mantenha o terminal aberto:
 
@@ -491,7 +481,7 @@ Testes do bootstrap:
 docker run --rm --workdir /var/www/infra --mount "type=bind,source=C:\var\www,target=/var/www" --entrypoint node pwa-foundation-bootstrap:0.1.0 --test /var/www/meu-projeto/scripts/bootstrap/tests/contracts.test.mjs /var/www/meu-projeto/scripts/bootstrap/tests/orchestration.test.mjs
 ```
 
-Testes do frontend, na pasta infra:
+Testes da PWA, na pasta infra:
 
 ```cmd
 docker compose --profile dev run --rm --no-deps meu-projeto-node npm test
@@ -509,7 +499,7 @@ Website — build e testes SSR:
 docker compose --profile website run --rm --no-deps meu-projeto-website-node npm run check
 ```
 
-Após esse build, recrie somente o serviço website com o comando acima.
+Após esse build, repita o bootstrap para ativar e conferir o website.
 
 Esperado: todos os testes passando e nenhuma falha de formatação.
 

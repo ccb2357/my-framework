@@ -14,7 +14,7 @@
     "node": "22-alpine",
     "dotenv": "16.6.1"
   },
-  "frontend": {
+  "pwa": {
     "framework7": "9.2.0",
     "framework7-vue": "9.2.0",
     "vue": "3.5.45",
@@ -86,6 +86,7 @@
     "node": ">=22.22.3 <23",
     "ssr": true,
     "pwa": false,
-    "authentication": "pending"
+    "authentication": "pending",
+    "image": "node:22-bookworm-slim"
   }
 }

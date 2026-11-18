@@ -1,6 +1,6 @@
 # Arquitetura
 
-PWA em `frontend/`, admin em `admin/`, website Nuxt em `website/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-pwa-framework.md).
+PWA em `pwa/`, admin em `admin/`, website Nuxt em `website/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-pwa-framework.md).
 
 ## Organização
 
@@ -16,7 +16,7 @@ Rotas HTTP do backend:
 
 | Área | Responsabilidade |
 | --- | --- |
-| `frontend/src/main.js`, `App.vue`, `routes.js` | Inicialização Vue/Framework7, componentes, estilos e roteamento oficial F7. JavaScript/script setup; sem roteador paralelo dentro da PWA. |
+| `pwa/src/main.js`, `App.vue`, `routes.js` | Inicialização Vue/Framework7, componentes, estilos e roteamento oficial F7. JavaScript/script setup; sem roteador paralelo dentro da PWA. |
 | `src/pages/`, `components/` | Páginas e composições reutilizáveis; APIs Core quando necessárias ao componente oficial. |
 | `src/services/`, `forms/`, `css/` | HTTP/CSRF/erros, máscaras/validação e tokens/layout compartilhados. Destruir instâncias/listeners sem duplicação. |
 | `admin/` | Vue/shadcn-vue/Tailwind; componentes locais JavaScript, configuração pública própria, Vite/lockfile/volume/build isolados. Login e Hello Dashboard protegida; sem PWA. |
@@ -29,7 +29,7 @@ Sessão Laravel/Sanctum com cookies host-only, nome por projeto, CSRF e origens/
 
 ## PWA e publicação
 
-Fonte única `frontend/src/sw.js`, Workbox injectManifest e registro `virtual:pwa-register` em modo prompt, desativado no Vite dev. Precache somente público; API/sessão/CSRF/status nunca recebem cache ou fallback HTML. Shell offline para rotas conhecidas; demais navegações públicas recebem offline.html. Cache isolado por origem/escopo.
+Fonte única `pwa/src/sw.js`, Workbox injectManifest e registro `virtual:pwa-register` em modo prompt, desativado no Vite dev. Precache somente público; API/sessão/CSRF/status nunca recebem cache ou fallback HTML. Shell offline para rotas conhecidas; demais navegações públicas recebem offline.html. Cache isolado por origem/escopo.
 
 `pwa/manager.js` controla instalação, conexão e atualização. Novos formulários integram `draftGuard`: aba alterada não recarrega por ativação externa. Confirmação salva campos conhecidos da Hello em sessionStorage por projeto/aba, por até 24h; falha de armazenamento mantém a aba. Isso não implementa persistência/sincronização de registros offline.
 
@@ -37,7 +37,7 @@ Build com staging validado por `check-pwa.mjs`; `publish-build.mjs` publica asse
 
 ## Fronteira PWA/admin
 
-PWA/admin possuem dois projetos Vite, serviços Node e dist próprios. Seus dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e frontend/; ambos importam apenas a lógica neutra em shared/forms/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir as três interfaces.
+PWA/admin possuem dois projetos Vite, serviços Node e dist próprios. Seus dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e pwa/; ambos importam apenas a lógica neutra em shared/forms/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir as três interfaces.
 
 Clientes possuem cadastro imediato e sessão web. Admin tem área protegida e conta única criada por comando, com guard/provider e sessão próprios. Não ampliar SESSION_DOMAIN para compartilhar cookies. Nenhuma compra, assinatura integra este ciclo.
 
@@ -69,6 +69,6 @@ Reset não cria sessão; altera somente a senha/hash, remember_token e auth_vers
 
 `website/` é uma terceira aplicação Nuxt, com dependências/lockfile próprios. Nuxt Router atende páginas públicas, enquanto `backend/routes/website.php` permanece reservado a futuros endpoints Laravel; não renderiza as páginas Nuxt. Nginx encaminha `/` ao `<slug>-website-node:3000` e rotas técnicas ao PHP-FPM; resolver Docker dinâmico evita exigir que o website esteja ativo ao carregar o Nginx.
 
-Bootstrap gera somente configuração pública permitida: nome, slug, locale, URLs públicas e buildId. Nuxt nunca recebe `.env.foundation`, credenciais ou diretórios do backend. Build `node-server` cria release em `.releases/`, publica um ponteiro apenas após sucesso e conserva as anteriores. O runtime carrega uma release fixa ao iniciar; novo build exige recriar somente o serviço website. Rollback automático/limpeza de releases não implementados.
+Bootstrap gera somente configuração pública permitida: nome, slug, locale, URLs públicas e buildId. Nuxt nunca recebe `.env.foundation`, credenciais ou diretórios do backend. Build `node-server` cria release em `.releases/`, publica um ponteiro apenas após sucesso e conserva as anteriores. O runtime carrega uma release fixa ao iniciar; o bootstrap confere o build pelo Nginx e inicia/recria exclusivamente o website quando necessário, com --no-deps e sem build de imagens. A ativação preserva projeto/arquivos Compose e resolve seus binds no host por um override de volumes via stdin, sem arquivo Compose adicional. HTTP é consultado com espera limitada antes do sucesso. Rollback automático/limpeza de releases não implementados.
 
 Website sem manifest/service worker e sem sessão nesta etapa. Configuração pública não inclui URL técnica do proxy. Autenticação atual PWA/admin continua host-only; não habilitar cookies compartilhados antecipadamente. Login integrado será tratado com CSRF/origens na Sprint 3.

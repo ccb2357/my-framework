@@ -6,7 +6,7 @@ try {
     $config = json_decode(stream_get_contents(STDIN), true, 32, JSON_THROW_ON_ERROR);
     $base = $config['environment'] === 'production' ? $config['url'] : $config['target'];
     $handle = curl_init(rtrim($base, '/').'/');
-    curl_setopt_array($handle, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_HTTPHEADER => ['Host: '.parse_url($config['url'], PHP_URL_HOST)], CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 20, CURLOPT_FOLLOWLOCATION => false, CURLOPT_SSL_VERIFYPEER => true, CURLOPT_SSL_VERIFYHOST => 2]);
+    curl_setopt_array($handle, [CURLOPT_RETURNTRANSFER => true, CURLOPT_HEADER => true, CURLOPT_HTTPHEADER => ['Host: '.parse_url($config['url'], PHP_URL_HOST)], CURLOPT_CONNECTTIMEOUT => 2, CURLOPT_TIMEOUT => 5, CURLOPT_FOLLOWLOCATION => false, CURLOPT_SSL_VERIFYPEER => true, CURLOPT_SSL_VERIFYHOST => 2]);
     $response = curl_exec($handle);
     $code = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
     curl_close($handle);

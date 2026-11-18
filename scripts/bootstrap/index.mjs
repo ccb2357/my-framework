@@ -5,7 +5,7 @@ import { FoundationError, requireThat, httpFailure } from './lib/errors.mjs';
 import { docker, jsonOutput } from './lib/process.mjs';
 import { discover, infraProblems, phpExec, checkPorts } from './lib/docker.mjs';
 import { installFrontend, buildFrontend, installAdmin, buildAdmin } from './lib/frontend.mjs';
-import { prepareWebsite } from './lib/website.mjs';
+import { prepareWebsite, activateWebsite } from './lib/website.mjs';
 import { generate, siteApplied } from './lib/templates.mjs';
 import { identity, checkIdentity, hash, readOptional, writeAtomic, synchronizeEnvs } from './lib/files.mjs';
 let lock, stateFile, state;
@@ -96,14 +96,8 @@ try {
   state.phase = 'website-build'; await save();
   const websiteBuild = await prepareWebsite(c, d);
   state.websiteBuild = websiteBuild.buildId; state.websiteLock = websiteBuild.lock;
-  const verifyWebsite = await docker(['exec', '-i', '--workdir', c.backend, d.php.Id, 'php', path.join(c.root, 'scripts/bootstrap/php/verify-website.php')], {
-    input: JSON.stringify({ url: c.websiteUrl, target: c.NGINX_INTERNAL_URL, environment: c.APP_ENV, buildId: websiteBuild.buildId }), label: 'HTTP website', allowFailure: true,
-  });
-  let websiteEvidence; try { websiteEvidence = JSON.parse(verifyWebsite.stdout); } catch { /* Controlled pending state. */ }
-  if (verifyWebsite.code !== 0 || websiteEvidence?.status !== 'ok') {
-    state.pending = ['Iniciar/recriar somente ' + c.websiteService + ' conforme o manual e repetir o bootstrap.']; await save();
-    throw new FoundationError('Website compilado. Na pasta infra, execute: docker compose --profile website up -d --no-deps --force-recreate ' + c.websiteService + '. Depois repita o bootstrap. Se persistir, confira o serviço/Nginx.', 2);
-  }
+  state.phase = 'website-activation'; await save();
+  const websiteEvidence = await activateWebsite(c, d, websiteBuild.buildId);
   state.websiteChecks = websiteEvidence.checks;
   state.phase = 'interfaces-ready'; state.lastExitCode = 0; state.phpVersion = version; state.composerLock = hash(lockfile); state.frontendBuild = build.buildId; state.verifiedAt = new Date().toISOString(); state.checks = { ...evidence.checks, pwa: pwaEvidence.checks, admin: adminEvidence.checks };
   state.completeFoundation = false; state.pending = []; state.manualChecks = ['Conferir instalação e acesso nas três interfaces', 'Conferir SMTP e recuperação das duas contas', 'Concluir as sprints restantes do website']; await save();

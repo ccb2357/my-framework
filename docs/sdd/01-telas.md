@@ -2,7 +2,7 @@
 
 ## Hello
 
-Rota `/`, arquivo `frontend/src/pages/hello.vue`. Demonstra a base instalada e pode ser substituída pela página inicial do produto. Nome/identidade vêm da configuração central; os dados do formulário são apenas demonstrativos.
+Rota `/`, arquivo `pwa/src/pages/hello.vue`. Demonstra a base instalada e pode ser substituída pela página inicial do produto. Nome/identidade vêm da configuração central; os dados do formulário são apenas demonstrativos.
 
 | Recurso | Comportamento |
 | --- | --- |
@@ -21,7 +21,7 @@ Rota `/`, arquivo `frontend/src/pages/hello.vue`. Demonstra a base instalada e p
 
 ## Outras rotas
 
-`frontend/src/pages/transition.vue` atende `/transition/cover-v/`, `/transition/dive/`, `/transition/fade/` e `/transition/parallax/`, com retorno nativo. Identificadores Framework7: `f7-cover-v`, `f7-dive`, `f7-fade` e `f7-parallax`.
+`pwa/src/pages/transition.vue` atende `/transition/cover-v/`, `/transition/dive/`, `/transition/fade/` e `/transition/parallax/`, com retorno nativo. Identificadores Framework7: `f7-cover-v`, `f7-dive`, `f7-fade` e `f7-parallax`.
 
 `/status` é HTML técnico independente do Vite; `/api/v1/status` fornece o mesmo diagnóstico em JSON e `/up` verifica a aplicação. Contratos em [05-api.md](05-api.md).
 

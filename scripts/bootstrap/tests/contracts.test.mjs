@@ -1,3 +1,4 @@
+import { websiteActivation } from '../lib/website.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -36,6 +37,9 @@ test('environment and identity cannot fall back silently', () => {
   assert.throws(() => config({ APP_ENV: 'staging' }));
   assert.throws(() => config({ PROJECT_SLUG: 'other' }));
   assert.equal(config().nodeService, 'pwa-teste-node');
+  assert.equal(config().frontend, '/var/www/pwa-teste/pwa');
+  assert.equal(config().modulesVolume, 'pwa_teste_node_modules');
+  checkIdentity({ identity: { slug: 'pwa-teste', root: '/var/www/pwa-teste', database: 'pwa_teste', testDatabase: 'pwa_teste_test', vendor: 'pwa_teste_vendor', modules: 'pwa_teste_node_modules' } }, config());
 });
 test('production requires HTTPS origin and derives secure stateful host', () => {
   assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'http://example.com' }));
@@ -70,7 +74,7 @@ test('Docker Desktop mount aliases match Windows Compose labels without escaping
   const mapping = mappedPaths({ Mounts: [{ Type: 'bind', Source: source, Destination: '/var/www' }] }, config());
   assert.equal(mapping.toInternal('C:\\var\\www\\infra\\docker-compose.yml'), '/var/www/infra/docker-compose.yml');
   assert.equal(mapping.toInternal(source + '/infra/docker-compose.yml'), '/var/www/infra/docker-compose.yml');
-  assert.equal(mapping.toHost('/var/www/pwa-teste/frontend'), 'C:\\var\\www\\pwa-teste\\frontend');
+  assert.equal(mapping.toHost('/var/www/pwa-teste/pwa'), 'C:\\var\\www\\pwa-teste\\pwa');
   assert.equal(sameHost(source, 'C:\\var\\www'), true);
   assert.equal(sameHost('C:\\var\\www', source), true);
   assert.equal(sameHost(source, 'D:\\var\\www'), false);
@@ -104,12 +108,13 @@ test('generated infrastructure is credential-free and restricted to the clone', 
   const snippets = composeSnippet(c, d) + nginxSnippet(c);
   assert.doesNotMatch(snippets, /UNIQUE-SECRET/);
   assert.match(snippets, /pwa_teste_vendor/); assert.match(snippets, /127\.0\.0\.1:5176:5173/);
-  assert.match(snippets, /C:\/var\/www\/pwa-teste\/frontend/);
+  assert.match(snippets, /C:\/var\/www\/pwa-teste\/pwa/);
 });
 test('Nginx validation checks actual config rather than marker alone', () => {
   const c = config(); assert.equal(siteApplied('# PWA FOUNDATION: pwa-teste', c), false);
   assert.equal(siteApplied(nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c), c), true);
   assert.equal(siteApplied(nginxSnippet(c).replace('php-fpm:9000', 'wrong:9000'), c), false);
+  assert.equal(siteApplied((nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c)).replace('/pwa/dist', '/frontend/dist'), c), false);
 });
 test('Windows shortcut preserves shared Compose identity and exit code', () => {
   const output = viteCmd(config(), d); assert.match(output, /-p infra/); assert.match(output, /%~dp0/); assert.match(output, /exit \/b %errorlevel%/);
@@ -143,7 +148,7 @@ test('public config excludes credentials and keeps proxy details out of the brow
 
 test('PWA Nginx separates backend routes, mutable entrypoints and immutable assets', () => {
   const site = nginxSnippet(config());
-  assert.match(site, /root "\/var\/www\/pwa-teste\/frontend\/dist"/);
+  assert.match(site, /root "\/var\/www\/pwa-teste\/pwa\/dist"/);
   assert.match(site, /api\|sanctum\|up\|status/);
   assert.match(site, /internal;/); assert.match(site, /SCRIPT_FILENAME "\/var\/www\/pwa-teste\/backend\/public\/index.php"/);
   assert.match(site, /location = \/sw.js[^}]+no-cache/);
@@ -174,7 +179,7 @@ test('admin public config and Nginx exclude PWA resources and private credential
   assert.match(site, /root "\/var\/www\/pwa-teste\/admin\/dist"/);
   assert.match(site, /location = \/sw.js \{ return 404; \}/);
   assert.match(site, /location = \/manifest.webmanifest \{ return 404; \}/);
-  assert.doesNotMatch(site, /Service-Worker-Allowed|frontend\/dist/);
+  assert.doesNotMatch(site, /Service-Worker-Allowed|pwa\/dist/);
   assert.match(site, /backend\/public\/index.php/);
   assert.equal(siteApplied(nginxSnippet(c), c), false);
   assert.equal(siteApplied(nginxSnippet(c) + site + websiteNginxSnippet(c), c), true);
@@ -185,7 +190,7 @@ test('admin public config and Nginx exclude PWA resources and private credential
 
 test('npm manifests pin direct versions and lockfiles agree, including shared form libraries', async () => {
   const manifests = [];
-  for (const directory of ['frontend', 'admin', 'scripts/bootstrap/executor', 'website']) {
+  for (const directory of ['pwa', 'admin', 'scripts/bootstrap/executor', 'website']) {
     const base = new URL('../../../' + directory + '/', import.meta.url);
     const manifest = JSON.parse(await fs.readFile(new URL('package.json', base), 'utf8'));
     const lock = JSON.parse(await fs.readFile(new URL('package-lock.json', base), 'utf8'));
@@ -238,9 +243,28 @@ test('website has a distinct origin, exact ports and public-only generated confi
   assert.match(site, /resolver 127.0.0.11/);
   assert.match(site, /pwa-teste-website-node:3000/);
   assert.match(site, /proxy_pass http:\/\/\$website_upstream/);
-  assert.doesNotMatch(site, /frontend\/dist|admin\/dist/);
+  assert.doesNotMatch(site, /pwa\/dist|admin\/dist/);
   const shortcut = nuxtCmd(c, d);
   assert.match(shortcut, /-e NODE_ENV=development -p 127.0.0.1:5184:3000/);
   assert.match(shortcut, /--profile website/);
   assert.match(shortcut, /exit \/b %errorlevel%/);
+});
+
+test('website activation preserves Compose identity and resolves only its binds on the host', () => {
+  const c = config();
+  const discovery = { ...d, prefix: ['compose', '-p', 'infra', '-f', '/var/www/infra/docker-compose.yml', '--profile', 'website'], config: { services: { [c.websiteService]: { volumes: [
+    { type: 'bind', source: '../pwa-teste/website', target: '/app' },
+    { type: 'volume', source: c.websiteModulesVolume, target: '/app/node_modules' },
+  ] } } } };
+  const result = websiteActivation(c, discovery);
+  assert.deepEqual(result.argv.slice(0, discovery.prefix.length), discovery.prefix);
+  assert.deepEqual(result.argv.slice(discovery.prefix.length), ['-f', '-', 'up', '-d', '--no-deps', '--no-build', '--force-recreate', c.websiteService]);
+  const model = JSON.parse(result.input);
+  assert.deepEqual(Object.keys(model.services), [c.websiteService]);
+  assert.equal(model.services[c.websiteService].volumes[0].source, 'C:\\var\\www\\pwa-teste\\website');
+  assert.equal(model.services[c.websiteService].volumes[1].source, c.websiteModulesVolume);
+  const special = { ...discovery, hostDir: 'C:\\apps$private\\infra' };
+  assert.match(JSON.parse(websiteActivation(c, special).input).services[c.websiteService].volumes[0].source, /apps\$\$private/);
+  const linux = { ...discovery, hostDir: '/srv/apps/infra' };
+  assert.equal(JSON.parse(websiteActivation(c, linux).input).services[c.websiteService].volumes[0].source, '/srv/apps/pwa-teste/website');
 });

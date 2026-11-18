@@ -8,20 +8,20 @@ export function frontendCommand(c, d, command) {
     '--mount', `type=bind,source=${d.mapping.toHost(c.frontend)},target=/app`,
     '--mount', `type=bind,source=${d.mapping.toHost(c.shared)},target=/shared,readonly`,
     '--mount', `type=volume,source=${c.modulesVolume},target=/app/node_modules`,
-    '--env', 'npm_config_cache=/tmp/npm-cache', 'node:22-alpine', ...command];
+    '--env', 'npm_config_cache=/tmp/npm-cache', c.nodeImage || 'node:22-alpine', ...command];
 }
 export async function installFrontend(c, d) {
-  const label = c.websiteMode ? 'website' : c.administrative ? 'admin' : 'frontend';
+  const label = c.websiteMode ? 'website' : c.administrative ? 'admin' : 'PWA';
   const packageJson = await fs.readFile(path.join(c.frontend, 'package.json'), 'utf8');
   const lock = await fs.readFile(path.join(c.frontend, 'package-lock.json'), 'utf8');
   const manifest = JSON.parse(packageJson);
   requireThat(manifest.scripts?.dev && manifest.scripts?.build, 'Frontend precisa dos scripts dev e build.');
-  const fingerprint = hash(packageJson + '\n' + lock + '\nnode22-include-dev');
+  const fingerprint = hash(packageJson + '\n' + lock + '\nnode22-include-dev' + (c.websiteMode ? '\n' + c.nodeImage : ''));
   const inspect = `const fs=require('node:fs');const p='node_modules/.foundation-lock';process.stdout.write(JSON.stringify({nodeVersion:process.versions.node,marker:fs.existsSync(p)?fs.readFileSync(p,'utf8').trim():'',metadata:fs.existsSync('node_modules/${c.websiteMode ? 'nuxt' : 'vite'}/package.json')&&fs.existsSync('node_modules/${c.websiteMode ? 'nuxt' : c.administrative ? 'reka-ui' : 'framework7-vue'}/package.json')}));`;
   const state = jsonOutput(await docker(frontendCommand(c, d, ['node', '-e', inspect]), { label: 'Estado efetivo node_modules' }), 'Estado node_modules');
   const version = String(state.nodeVersion || '').split('.').map(Number);
   requireThat(version[0] === 22 && version[1] >= 13, 'Frontend exige Node 22.13 ou superior na linha 22. Atualize a imagem node:22-alpine antes de repetir.');
-  if (c.websiteMode) requireThat(version[0] === 22 && (version[1] > 22 || (version[1] === 22 && version[2] >= 3)), 'Website Nuxt exige Node 22.22.3 ou superior na linha 22. Atualize node:22-alpine.');
+  if (c.websiteMode) requireThat(version[0] === 22 && (version[1] > 22 || (version[1] === 22 && version[2] >= 3)), 'Website Nuxt exige Node 22.22.3 ou superior na linha 22. Atualize a imagem Node do website.');
   if (state.marker === fingerprint && state.metadata) { console.log(`Dependências ${label} inalteradas; instalação preservada.`); return fingerprint; }
   console.log(`Instalando dependências ${label} pelo package-lock.json.`);
   await docker(frontendCommand(c, d, ['npm', 'ci', '--include=dev', '--no-audit', '--no-fund']), { label: `Instalação ${label} npm ci`, timeout: 900000 });
@@ -29,7 +29,7 @@ export async function installFrontend(c, d) {
   return fingerprint;
 }
 export async function buildFrontend(c, d) {
-  console.log('Compilando frontend e verificando os artefatos PWA.');
+  console.log('Compilando PWA e verificando seus artefatos.');
   await docker(frontendCommand(c, d, ['npm', 'run', 'build']), { label: 'Build PWA', timeout: 900000 });
   const result = jsonOutput(await docker(frontendCommand(c, d, ['node', 'scripts/check-pwa.mjs', '--json']), { label: 'Artefatos PWA' }), 'Artefatos PWA');
   requireThat(typeof result.buildId === 'string' && /^[a-z0-9.-]+$/.test(result.buildId) && Array.isArray(result.files) && result.files.length > 0, 'Build PWA sem identificação/arquivos válidos.');

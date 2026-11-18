@@ -1,10 +1,10 @@
 # Design system
 
-**PWA (`frontend/`):** usar a aparência nativa do Framework7 Vue; a Hello é a referência de composição. Controles oficiais diretamente, sem biblioteca de estilos adicional ou wrappers equivalentes. Novas variações globais exigem aprovação e atualização deste contrato.
+**PWA (`pwa/`):** usar a aparência nativa do Framework7 Vue; a Hello é a referência de composição. Controles oficiais diretamente, sem biblioteca de estilos adicional ou wrappers equivalentes. Novas variações globais exigem aprovação e atualização deste contrato.
 
 ## Estilos e layout
 
-Importação única em `frontend/src/main.js`: CSS Framework7 → Framework7 Icons → `css/tokens.css` → `css/app.css`. Fonte Nunito variável local em `public/fonts/`, com licença e fallback de sistema. Cor do manifest não altera a identidade CSS.
+Importação única em `pwa/src/main.js`: CSS Framework7 → Framework7 Icons → `css/tokens.css` → `css/app.css`. Fonte Nunito variável local em `public/fonts/`, com licença e fallback de sistema. Cor do manifest não altera a identidade CSS.
 
 | Base compartilhada | Regra |
 | --- | --- |
@@ -31,7 +31,7 @@ A página `offline.html` é a exceção técnica mínima em HTML, com fonte loca
 
 ## Administrativo
 
-Lucide 1.72.0 está disponível como dependência própria do admin, na mesma versão da PWA. Importar somente os ícones usados de `lucide`; não importar componentes/estilos de frontend/. Ícones decorativos usam aria-hidden; ações por ícone exigem nome acessível.
+Lucide 1.72.0 está disponível como dependência própria do admin, na mesma versão da PWA. Importar somente os ícones usados de `lucide`; não importar componentes/estilos de pwa/. Ícones decorativos usam aria-hidden; ações por ícone exigem nome acessível.
 
 `admin/` usa shadcn-vue (componentes locais em src/components/ui), Reka UI e Tailwind 4 com Preflight. Importação somente em admin/src/main.js → style.css; aliases e gerador JavaScript em components.json/jsconfig.json. Tema neutral/new-york com variáveis CSS próprias, fonte de sistema e layout desktop com adaptação básica. Botões têm foco visível, estados disabled/loading e status com texto. Incorporar componentes oficiais conforme uso real. Nunca importar tokens, CSS ou componentes entre as duas interfaces. Regras visuais Framework7 acima pertencem exclusivamente à PWA.
 
@@ -39,7 +39,7 @@ Lucide 1.72.0 está disponível como dependência própria do admin, na mesma ve
 
 Mensagens pt-BR em `shared/forms/messages.pt-BR.json`, máscaras em `masks.js` e regras JustValidate em `rules.js`. `contact-form.js` reúne o ciclo neutro da demonstração: instâncias próprias, aria-invalid/aria-describedby, preservação de ajuda e limpeza. Bibliotecas são injetadas pelos adaptadores locais. PWA mantém classes/controles Framework7; admin usa Input/Label/Button shadcn e containers próprios. Nenhum CSS cruza as interfaces. Máscara móvel usa DDD e 11 dígitos; IMask formata, JustValidate informa erros. Não comprova existência do telefone. Regras do servidor continuam obrigatórias.
 
-Os formulários de acesso usam ListInput/Button oficiais Framework7 e `frontend/src/forms/auth.js`. Mensagens e limites vêm de `shared/forms/messages.pt-BR.json` e `auth-policy.json`; `rules.js` valida sem definir layout. Adaptadores mantêm aria-invalid/aria-describedby e destroem validadores ao sair. O admin não importa esses componentes.
+Os formulários de acesso usam ListInput/Button oficiais Framework7 e `pwa/src/forms/auth.js`. Mensagens e limites vêm de `shared/forms/messages.pt-BR.json` e `auth-policy.json`; `rules.js` valida sem definir layout. Adaptadores mantêm aria-invalid/aria-describedby e destroem validadores ao sair. O admin não importa esses componentes.
 
 Login administrativo usa componentes existentes shadcn-vue Input/Label/Button/Card, rótulos e erros sob os campos, aria-invalid/aria-describedby, senha autocomplete=current-password e envio protegido contra reentrada. Regras/mensagens JustValidate vêm de shared/forms; componentes e adaptador permanecem no admin. Dashboard mantém o visual existente e acrescenta identificação/Sair; não carregar dados antes de conferir a sessão.
 
@@ -47,4 +47,4 @@ Recuperação reutiliza mensagens/regras em shared/forms e recovery.js (adaptado
 
 ## Website Nuxt
 
-`website/app/assets/css/main.css` contém os tokens/Tailwind próprios; componentes shadcn-vue JavaScript em `website/app/components/ui/`. Não importar CSS/componentes de `admin/` ou `frontend/`. Hello usa layout responsivo simples, link de salto, HTML semântico e foco visível nos links/botões. Lucide 1.72.0 renderiza SVG sem alterar DOM gerenciado pelo Vue. Novos formulários reutilizarão somente lógica neutra de `shared/forms/`; integração prevista na Sprint 2.
+`website/app/assets/css/main.css` contém os tokens/Tailwind próprios; componentes shadcn-vue JavaScript em `website/app/components/ui/`. A descoberta automática Nuxt considera somente `.vue`; arquivos `index.js` são exports explícitos. Não importar CSS/componentes de `admin/` ou `pwa/`. Hello usa layout responsivo simples, link de salto, HTML semântico e foco visível nos links/botões. Lucide 1.72.0 renderiza SVG sem alterar DOM gerenciado pelo Vue. Novos formulários reutilizarão somente lógica neutra de `shared/forms/`; integração prevista na Sprint 2.

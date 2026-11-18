@@ -46,9 +46,9 @@ test('PWA adapter uses shared messages and preserves accessibility on correction
 test('editing shared messages changes the PWA build identity', async () => {
   const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
   const { buildIdentity } = await import('../../scripts/build-config.mjs');
-  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'shared-pwa-id-')), app = tmp + '/frontend';
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'shared-pwa-id-')), app = tmp + '/pwa';
   try {
-    for (const dir of ['frontend/src', 'frontend/public', 'frontend/scripts', 'shared/forms']) await fs.mkdir(tmp + '/' + dir, { recursive: true });
+    for (const dir of ['pwa/src', 'pwa/public', 'pwa/scripts', 'shared/forms']) await fs.mkdir(tmp + '/' + dir, { recursive: true });
     for (const file of ['index.html', 'package-lock.json', 'vite.config.js']) await fs.writeFile(app + '/' + file, 'fixture');
     const messages = tmp + '/shared/forms/messages.pt-BR.json'; await fs.writeFile(messages, '{"required":"A"}');
     const before = buildIdentity(app, {}); await fs.writeFile(messages, '{"required":"B"}');

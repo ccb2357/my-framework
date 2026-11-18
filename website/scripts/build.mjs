@@ -17,4 +17,4 @@ await fs.access(path.join(directory, 'public'));
 const manifest = path.join(root, '.foundation-build.json');
 await fs.writeFile(manifest + '.tmp', JSON.stringify({ buildId: config.buildId, release }) + '\n');
 await fs.rename(manifest + '.tmp', manifest);
-console.log('Website compilado: ' + config.buildId + '. Reinicie somente seu serviço website para publicar.');
+console.log('Website compilado: ' + config.buildId + '. O bootstrap ativa o website automaticamente; após build manual, repita o bootstrap.');

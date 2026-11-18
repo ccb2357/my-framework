@@ -86,7 +86,7 @@ export function infraProblems(c, d) {
   const website = services[c.websiteService];
   if (!website) problems.push(`Adicionar serviço ${c.websiteService}.`);
   else {
-    if (website.image !== 'node:22-alpine' || website.working_dir !== '/app' || JSON.stringify(website.command) !== JSON.stringify(['node', 'scripts/start.mjs'])) problems.push(`Corrigir imagem/comando de ${c.websiteService}.`);
+    if (website.image !== 'node:22-bookworm-slim' || website.working_dir !== '/app' || JSON.stringify(website.command) !== JSON.stringify(['node', 'scripts/start.mjs'])) problems.push(`Corrigir imagem/comando de ${c.websiteService}.`);
     if (!website.profiles?.includes('website') || !Object.hasOwn(website.networks || {}, c.DOCKER_NETWORK)) problems.push(`Corrigir perfil/rede de ${c.websiteService}.`);
     if (!website.volumes?.some(v => v.type === 'bind' && v.target === '/app' && sameHost(resolveBind(v.source, d), d.mapping.toHost(c.website)))) problems.push(`Corrigir bind mount de ${c.websiteService}.`);
     if (!website.volumes?.some(v => v.type === 'volume' && v.target === '/app/node_modules' && v.source === c.websiteModulesVolume)) problems.push(`Corrigir node_modules exclusivo de ${c.websiteService}.`);

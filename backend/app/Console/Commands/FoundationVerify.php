@@ -116,7 +116,7 @@ class FoundationVerify extends Command
             throw new RuntimeException('identity-incomplete');
         }
         $files = [];
-        foreach (['.env.foundation', 'backend/.env', 'backend/.env.testing', 'backend/composer.lock', 'backend/vendor/.foundation-lock', 'frontend/package-lock.json', 'frontend/.foundation.public.json', 'frontend/vite.cmd', 'frontend/dist/index.html'] as $name) {
+        foreach (['.env.foundation', 'backend/.env', 'backend/.env.testing', 'backend/composer.lock', 'backend/vendor/.foundation-lock', 'pwa/package-lock.json', 'pwa/.foundation.public.json', 'pwa/vite.cmd', 'pwa/dist/index.html'] as $name) {
             if (! is_file($root.'/'.$name)) {
                 throw new RuntimeException('file-missing');
             }

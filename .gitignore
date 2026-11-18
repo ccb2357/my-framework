@@ -11,9 +11,9 @@ backend/.env.testing
 !backend/.env.testing.example
 **/vendor/
 **/node_modules/
-frontend/dist/
-frontend/test-results/
-frontend/playwright-report/
+pwa/dist/
+pwa/test-results/
+pwa/playwright-report/
 backend/storage/logs/*
 backend/storage/framework/cache/*
 backend/storage/framework/sessions/*
@@ -28,9 +28,9 @@ Thumbs.db
 **/.phpunit.result.cache
 
 # Saída pública derivada do central por ambiente
-frontend/.foundation.public.json
+pwa/.foundation.public.json
 
-frontend/.dist-build/
+pwa/.dist-build/
 **/*.publishing
 
 # Referência privada do aceite local

@@ -3,8 +3,10 @@ import path from 'node:path';
 import { frontendCommand, installFrontend } from './frontend.mjs';
 import { docker, jsonOutput } from './process.mjs';
 import { hash } from './files.mjs';
+import { resolveBind } from './docker.mjs';
+import { setTimeout } from 'node:timers/promises';
 import { requireThat } from './errors.mjs';
-export function websiteContext(c) { return { ...c, frontend: c.website, modulesVolume: c.websiteModulesVolume, websiteMode: true }; }
+export function websiteContext(c) { return { ...c, frontend: c.website, modulesVolume: c.websiteModulesVolume, websiteMode: true, nodeImage: 'node:22-bookworm-slim' }; }
 export async function websiteBuildId(c) {
   const parts = [c.PROJECT_NAME, c.PROJECT_SLUG, c.APP_LOCALE, c.websiteUrl, c.appUrl];
   async function collect(directory) {
@@ -30,4 +32,39 @@ export async function prepareWebsite(c, d) {
   }
   requireThat(build?.buildId === c.websiteBuildId, 'Build website inválido.');
   return { lock, buildId: build.buildId };
+}
+
+export function websiteActivation(c, d) {
+  // Preserve the discovered Compose stack. Resolve binds against its HOST directory,
+  // not the executor's /var/www path (important for relative mounts on Windows).
+  const volumes = (d.config.services[c.websiteService].volumes || []).map(volume => {
+    if (volume.type !== 'bind') return volume;
+    return { ...volume, source: resolveBind(volume.source, d).replaceAll('$', () => '$$') };
+  });
+  return {
+    argv: [...d.prefix, '-f', '-', 'up', '-d', '--no-deps', '--no-build', '--force-recreate', c.websiteService],
+    input: JSON.stringify({ services: { [c.websiteService]: { volumes } } }),
+  };
+}
+async function websiteEvidence(c, d, buildId) {
+  const result = await docker(['exec', '-i', '--workdir', c.backend, d.php.Id, 'php', path.join(c.root, 'scripts/bootstrap/php/verify-website.php')], {
+    input: JSON.stringify({ url: c.websiteUrl, target: c.NGINX_INTERNAL_URL, environment: c.APP_ENV, buildId }), label: 'HTTP website', allowFailure: true,
+  });
+  try {
+    const evidence = JSON.parse(result.stdout);
+    return result.code === 0 && evidence.status === 'ok' ? evidence : null;
+  } catch { return null; }
+}
+export async function activateWebsite(c, d, buildId) {
+  const current = await websiteEvidence(c, d, buildId);
+  if (current) return current;
+  console.log('Iniciando/atualizando somente o serviço website.');
+  const activation = websiteActivation(c, d);
+  await docker(activation.argv, { input: activation.input, cwd: d.directory, label: 'Ativação do serviço website', timeout: 300000 });
+  for (let attempt = 0; attempt < 8; attempt++) {
+    if (attempt) await setTimeout(1000);
+    const evidence = await websiteEvidence(c, d, buildId);
+    if (evidence) return evidence;
+  }
+  requireThat(false, 'Website não respondeu com o build esperado após iniciar. Confira o serviço website e o Nginx; nenhum outro serviço foi reiniciado.');
 }
