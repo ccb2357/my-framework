@@ -8,4 +8,4 @@ Instalação e operação: [guia da raiz](../../instalacao-pwa-framework.md). Ve
 
 ## Website
 
-Website independente em `website/`: Nuxt 4.6.4, Vue, Tailwind, shadcn-vue e Lucide; Hello pública com SSR, sem instalação/offline. Compartilha Laravel/MySQL, não componentes/CSS. O website usa domínio próprio e servidor Node permanente; PWA/admin mantêm seus builds atuais. Autenticação integrada website/PWA e formulários comuns ainda pendentes; admin permanece separado. Loja e conteúdo comercial pertencem ao produto. Plano em [sprints-website.md](../../sprints-website.md).
+Website independente em `website/`: Nuxt 4.6.4, Vue, Tailwind, shadcn-vue e Lucide; Hello pública com SSR, sem instalação/offline. Compartilha Laravel/MySQL, não componentes/CSS. O website usa domínio próprio e servidor Node permanente; PWA/admin mantêm seus builds atuais. Formulários reutilizam `shared/forms/` com visuais próprios. Autenticação integrada website/PWA ainda pendente; admin permanece separado. Loja e conteúdo comercial pertencem ao produto. Plano em [sprints-website.md](../../sprints-website.md).

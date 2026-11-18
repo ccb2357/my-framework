@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "1.1.0-website.1",
-  "stage": "website-structure",
+  "foundationVersion": "1.1.0-website.2",
+  "stage": "website-forms",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -52,7 +52,12 @@
     "imask": "7.6.1",
     "just-validate": "4.3.0",
     "messages": "pt-BR",
-    "css": false
+    "css": false,
+    "applications": [
+      "pwa",
+      "admin",
+      "website"
+    ]
   },
   "clientAuth": {
     "guard": "web",
@@ -87,6 +92,10 @@
     "ssr": true,
     "pwa": false,
     "authentication": "pending",
-    "image": "node:22-bookworm-slim"
+    "image": "node:22-bookworm-slim",
+    "imask": "7.6.1",
+    "just-validate": "4.3.0",
+    "@vueuse/core": "15.0.0",
+    "sharedForms": true
   }
 }

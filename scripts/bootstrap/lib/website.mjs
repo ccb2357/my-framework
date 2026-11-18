@@ -18,6 +18,7 @@ export async function websiteBuildId(c) {
     }
   }
   await collect(c.website);
+  await collect(path.join(c.shared, 'forms'));
   return 'website-' + hash(parts.join('\n')).slice(0, 16);
 }
 export async function prepareWebsite(c, d) {

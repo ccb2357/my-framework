@@ -27,6 +27,11 @@ test('production server renders Hello, styles and icons without JavaScript and h
     assert.match(response.headers.get('cache-control'), /no-store/);
     const html = await response.text();
     assert.match(html, /<h1[^>]*>Hello Website<\/h1>/);
+    assert.ok(html.includes('website-demo-email'));
+    assert.ok(html.includes('website-demo-phone'));
+    assert.match(html, /<fieldset[^>]*disabled/);
+    assert.ok(html.includes('Ative o JavaScript'));
+    assert.doesNotMatch(html, /document is not defined|window is not defined/);
     assert.match(html, /<svg[^>]*[\s\S]*<circle/);
     assert.ok(html.includes(buildId));
     assert.ok(html.includes(config.pwaUrl));
@@ -48,8 +53,8 @@ test('public configuration ignores unknown fields and website owns its dependenc
   assert.deepEqual(Object.keys(config).sort(), ['buildId', 'locale', 'name', 'pwaUrl', 'slug', 'websiteUrl']);
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url)));
   assert.ok(!pkg.dependencies.framework7);
-  assert.ok(!pkg.dependencies.imask);
-  assert.ok(!pkg.dependencies['just-validate']);
+  assert.equal(pkg.dependencies.imask, '7.6.1');
+  assert.equal(pkg.dependencies['just-validate'], '4.3.0');
   for (const version of Object.values({ ...pkg.dependencies, ...pkg.devDependencies })) assert.match(version, /^\d+\.\d+\.\d+$/);
 });
 

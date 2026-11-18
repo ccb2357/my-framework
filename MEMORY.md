@@ -1,13 +1,9 @@
 # Memória do projeto
 
-Base: PWA Framework 1.1.0-website.1. Website Nuxt SSR/Hello, Tailwind/shadcn-vue/Lucide próprios; PWA/admin e autenticação preservados. Plano em sprints-website.md.
+Base: PWA Framework 1.1.0-website.2. Interfaces: pwa/ (Framework7), admin/ (shadcn-vue) e website/ (Nuxt SSR). Serviços/volumes/bancos preservados após a renomeação da PWA. Responsável confirmou bootstrap e website via Nginx no Windows; VPS/HTTPS não validados.
 
-Build Alpine falhou no parser Rollup/Nitro; website passou a Node 22 Debian em build/runtime, com reinstalação dos módulos nativos. Responsável confirmou funcionamento local após ativação manual. Nuxt descobre somente componentes .vue.
+Website usa Node 22 Debian; bootstrap compila, ativa somente seu serviço quando necessário e confere HTTP. Dev usa polling de 300 ms; confirmação específica do HMR no Windows permanece pendente.
 
-Bootstrap agora ativa exclusivamente o website quando o build esperado não está acessível e aguarda HTTP na mesma execução. Mantém Compose/Nginx manuais e preserva os demais serviços. Validação: 43 testes do bootstrap com Engine/HTTP simulados, Pint do verificador PHP e merge de binds Windows/Linux no Compose real aprovados; ativação automática Docker/Windows ainda depende de confirmação real.
+Sprint 2: IMask 7.6.1/JustValidate 4.3.0 próprios no website, DemoForm com componentes locais e lógica de shared/forms. Inicialização DOM após montagem, cancelamento/descarte ao sair e nenhum envio/persistência. Shared montado somente leitura no website; hash do build inclui forms. Configuração central continua única. Validação local: npm ci e árvore de dependências consistentes; build Nuxt SSR; 3 testes SSR/publicação e 3 testes DOM do website; 44 testes do bootstrap (Engine/HTTP simulados), 37 da PWA e 18 do admin aprovados. Ainda falta o aceite do formulário no Docker/Windows; nenhuma migração ou autenticação foi alterada.
 
-Responsável confirmou o bootstrap concluído e o website servido pelo Nginx após alinhar WEBSITE_LOCAL_DOMAIN; desenvolvimento usa nuxt.cmd dev/5184, domínio usa o build.
-
-Diretório da PWA renomeado de frontend/ para pwa/. Caminhos de bootstrap, build, Nginx/Compose, ignore, verificações e documentação atualizados; serviços, volumes, bancos, domínios e identidade de estado preservados. Renomeação validada localmente com lint, 37 testes/build PWA, 43 testes do bootstrap e sintaxe/Pint do verificador PHP. Migração Docker/Windows ainda precisa de confirmação real.
-
-Próximo passo: aplicar os caminhos novos na infraestrutura e seguir a Sprint 2 de formulários. Login integrado somente na Sprint 3; VPS/HTTPS não validados.
+Próximo passo: validar formulário vazio/inválido/válido e navegação no Windows. Sprint 3 fará autenticação integrada website/PWA, mantendo admin isolado.

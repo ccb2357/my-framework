@@ -89,6 +89,7 @@ export function infraProblems(c, d) {
     if (website.image !== 'node:22-bookworm-slim' || website.working_dir !== '/app' || JSON.stringify(website.command) !== JSON.stringify(['node', 'scripts/start.mjs'])) problems.push(`Corrigir imagem/comando de ${c.websiteService}.`);
     if (!website.profiles?.includes('website') || !Object.hasOwn(website.networks || {}, c.DOCKER_NETWORK)) problems.push(`Corrigir perfil/rede de ${c.websiteService}.`);
     if (!website.volumes?.some(v => v.type === 'bind' && v.target === '/app' && sameHost(resolveBind(v.source, d), d.mapping.toHost(c.website)))) problems.push(`Corrigir bind mount de ${c.websiteService}.`);
+    if (!website.volumes?.some(v => v.type === 'bind' && v.target === '/shared' && v.read_only === true && sameHost(resolveBind(v.source, d), d.mapping.toHost(c.shared)))) problems.push(`Adicionar mount shared → /shared somente leitura em ${c.websiteService}.`);
     if (!website.volumes?.some(v => v.type === 'volume' && v.target === '/app/node_modules' && v.source === c.websiteModulesVolume)) problems.push(`Corrigir node_modules exclusivo de ${c.websiteService}.`);
     if (String(website.environment?.NITRO_PORT) !== '3000' || website.environment?.NITRO_HOST !== '0.0.0.0' || website.environment?.NODE_ENV !== 'production') problems.push(`Corrigir ambiente runtime de ${c.websiteService}.`);
   }

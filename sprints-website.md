@@ -15,4 +15,4 @@ Toda sprint atualiza README, SDD pertinente, manual conciso e MEMORY. Catálogo,
 
 ## Estado
 
-Sprint 1 implementada; build SSR e testes automatizados locais registrados em MEMORY. Instalação real no Docker/Windows e domínio ainda dependem da validação do responsável. Sprints 2–6 pendentes. Nenhuma autenticação foi alterada nesta etapa.
+Sprints 1 e 2 implementadas: website SSR e formulário demonstrativo usando a lógica comum. Dependências próprias e visual separado; autenticação ainda não alterada. Verificações e limites em MEMORY.md. Sprints 3–6 pendentes; confirmar formulário no Docker/Windows antes de avançar.

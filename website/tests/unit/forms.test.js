@@ -1,0 +1,65 @@
+import { test, expect, vi, afterEach } from 'vitest';
+import { createApp, nextTick } from 'vue';
+import DemoForm from '../../app/components/DemoForm.vue';
+import { initDemoForm } from '../../app/forms/demo.js';
+import { messages } from '@shared/forms/rules.js';
+let dispose;
+afterEach(() => { dispose?.(); dispose = undefined; document.body.innerHTML = ''; });
+function fixture() {
+  document.body.innerHTML = '<form novalidate><input id="website-demo-email" aria-describedby="help"><div data-email-errors></div><input id="website-demo-phone" type="text"><div data-phone-errors></div></form>';
+  const form = document.querySelector('form');
+  return { form, email: form.querySelector('#website-demo-email'), phone: form.querySelector('#website-demo-phone'), submit: () => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) };
+}
+test('website uses shared required/invalid messages, mask and cleanup with its own libraries', async () => {
+  const f = fixture(), success = vi.fn(), values = [];
+  const controller = await initDemoForm(f.form, success, value => values.push(value)); dispose = () => controller.destroy();
+  f.submit();
+  await vi.waitFor(() => expect(f.email.getAttribute('aria-invalid')).toBe('true'));
+  expect(f.form.querySelector('[data-email-errors]').textContent).toBe(messages.emailRequired);
+  expect(f.form.querySelector('[data-phone-errors]').textContent).toBe(messages.phoneRequired);
+  expect(f.email.getAttribute('aria-describedby')).toBe('help website-demo-email-error');
+  f.email.value = 'invalid'; f.phone.value = '11'; f.phone.dispatchEvent(new Event('input', { bubbles: true })); f.submit();
+  await vi.waitFor(() => expect(f.form.textContent).toContain(messages.emailInvalid));
+  expect(f.form.textContent).toContain(messages.phoneIncomplete);
+  f.email.value = 'teste@example.test'; f.phone.value = '11999999999'; f.phone.dispatchEvent(new Event('input', { bubbles: true })); f.submit();
+  await vi.waitFor(() => expect(success).toHaveBeenCalledOnce());
+  expect(f.phone.value).toBe('(11) 99999-9999');
+  expect(values.at(-1)).toBe('(11) 99999-9999');
+  expect(f.email.getAttribute('aria-describedby')).toBe('help');
+  controller.destroy(); controller.destroy();
+  expect(f.email.hasAttribute('aria-invalid')).toBe(false);
+  expect(f.email.getAttribute('aria-describedby')).toBe('help');
+  expect(f.form.querySelector('.just-validate-error-label')).toBeNull();
+  f.submit(); await nextTick(); expect(success).toHaveBeenCalledOnce();
+});
+test('website Vue form starts disabled, retains the formatted value and never submits data', async () => {
+  const requests = vi.spyOn(globalThis, 'fetch');
+  const container = document.createElement('div'); document.body.append(container);
+  const app = createApp(DemoForm); app.mount(container);
+  dispose = () => { app.unmount(); requests.mockRestore(); };
+  expect(container.querySelector('fieldset').disabled).toBe(true);
+  await vi.waitFor(() => expect(container.querySelector('fieldset').disabled).toBe(false));
+  const email = container.querySelector('#website-demo-email'), phone = container.querySelector('#website-demo-phone');
+  email.value = 'teste@example.test'; email.dispatchEvent(new Event('input', { bubbles: true }));
+  phone.value = '11999999999'; phone.dispatchEvent(new Event('input', { bubbles: true }));
+  await nextTick(); await nextTick();
+  expect(phone.value).toBe('(11) 99999-9999');
+  expect(phone.dataset.slot).toBe('input');
+  container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await vi.waitFor(() => expect(container.textContent).toContain('Campos válidos. Nenhum dado foi salvo ou enviado.'));
+  expect(requests).not.toHaveBeenCalled();
+  email.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
+  expect(container.textContent).not.toContain('Campos válidos.');
+  dispose(); dispose = undefined;
+  expect(container.querySelector('form')).toBeNull();
+});
+test('an unmounted form is not bound when asynchronous library loading completes', async () => {
+  const f = fixture(), success = vi.fn();
+  let active = true;
+  const pending = initDemoForm(f.form, success, undefined, () => active);
+  active = false; f.form.remove();
+  expect(await pending).toBeNull();
+  expect(f.email.hasAttribute('aria-invalid')).toBe(false);
+  expect(f.form.querySelector('.just-validate-error-label')).toBeNull();
+  f.submit(); expect(success).not.toHaveBeenCalled();
+});

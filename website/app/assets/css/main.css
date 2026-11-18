@@ -48,3 +48,11 @@
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; font-family: ui-sans-serif, system-ui, sans-serif; }
 }
+
+@layer base {
+  input:focus, input:focus-visible, select:focus, select:focus-visible, textarea:focus, textarea:focus-visible {
+    outline: none;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-ring-offset-shadow: 0 0 #0000;
+  }
+}

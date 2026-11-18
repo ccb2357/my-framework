@@ -52,6 +52,10 @@ export function websiteServiceSnippet(c, d) {
             - type: bind
               source: ${yamlPath(d.mapping.toHost(c.website))}
               target: /app
+            - type: bind
+              source: ${yamlPath(d.mapping.toHost(c.shared))}
+              target: /shared
+              read_only: true
             - ${c.websiteModulesVolume}:/app/node_modules
         expose:
             - "3000"
@@ -169,7 +173,7 @@ export async function generate(c, d) {
   await writeAtomic(guidePath, guide.replace(infraBlock, () => installationInfra(c, d)));
   const file = path.join(c.frontend, 'vite.cmd');
   await writeAtomic(file, viteCmd(c, d));
-  const summary = `<!-- BEGIN FOUNDATION IDENTITY -->\n| Campo | Valor |\n| --- | --- |\n| Projeto | ${c.PROJECT_NAME.replaceAll('|', '\\|')} |\n| Slug | ${c.PROJECT_SLUG} |\n| Ambiente | ${c.APP_ENV} |\n| URL | ${c.appUrl} |\n| Dev / preview | ${c.DEV_PORT} / ${c.PREVIEW_PORT} |\n| Serviço / Compose | ${c.nodeService} / ${d.project} |\n| Volumes | ${c.vendorVolume}, ${c.modulesVolume} |\n| Bancos | ${c.DB_DATABASE}, ${c.DB_TEST_DATABASE} |\n| Admin | ${c.adminUrl} |\n| Admin dev / preview | ${c.ADMIN_DEV_PORT} / ${c.ADMIN_PREVIEW_PORT} |\n| Website | ${c.websiteUrl} |\n| Website dev | ${c.WEBSITE_DEV_PORT} |\n| Fundação | 1.1.0-website.1 |\n<!-- END FOUNDATION IDENTITY -->`;
+  const summary = `<!-- BEGIN FOUNDATION IDENTITY -->\n| Campo | Valor |\n| --- | --- |\n| Projeto | ${c.PROJECT_NAME.replaceAll('|', '\\|')} |\n| Slug | ${c.PROJECT_SLUG} |\n| Ambiente | ${c.APP_ENV} |\n| URL | ${c.appUrl} |\n| Dev / preview | ${c.DEV_PORT} / ${c.PREVIEW_PORT} |\n| Serviço / Compose | ${c.nodeService} / ${d.project} |\n| Volumes | ${c.vendorVolume}, ${c.modulesVolume} |\n| Bancos | ${c.DB_DATABASE}, ${c.DB_TEST_DATABASE} |\n| Admin | ${c.adminUrl} |\n| Admin dev / preview | ${c.ADMIN_DEV_PORT} / ${c.ADMIN_PREVIEW_PORT} |\n| Website | ${c.websiteUrl} |\n| Website dev | ${c.WEBSITE_DEV_PORT} |\n| Fundação | 1.1.0-website.2 |\n<!-- END FOUNDATION IDENTITY -->`;
   const readmePath = path.join(c.root, 'README.md'), readme = await readOptional(readmePath);
   const block = /<!-- BEGIN FOUNDATION IDENTITY -->[\s\S]*?<!-- END FOUNDATION IDENTITY -->/;
   await writeAtomic(readmePath, block.test(readme) ? readme.replace(block, () => summary) : readme.trimEnd() + '\n\n' + summary + '\n');

@@ -43,4 +43,4 @@ Nas duas interfaces, o login oferece Esqueci minha senha. `/esqueci-senha/` rece
 
 ## Hello Website
 
-`website/app/pages/index.vue`, rota `/` no domínio do website. Layout em `app/layouts/default.vue`, página pública SSR com título, descrição e link para a PWA. Botão shadcn-vue local e ícone Lucide renderizado em SVG tanto no servidor quanto no cliente. Sem formulário, sessão, indicadores comerciais ou PWA nesta etapa. Rotas desconhecidas retornam 404.
+`website/app/pages/index.vue`, rota `/` no domínio do website. Layout em `app/layouts/default.vue`, página pública SSR com título, descrição e link para a PWA. Botão shadcn-vue local e ícone Lucide renderizado em SVG tanto no servidor quanto no cliente. Inclui DemoForm.vue com e-mail e celular obrigatórios, máscara (00) 00000-0000, erros pt-BR acessíveis e confirmação local. Campos são renderizados em SSR, desabilitados até inicializar as bibliotecas no navegador; falha mantém o formulário desabilitado. Sem envio, persistência, sessão, indicadores comerciais ou PWA nesta etapa. Rotas desconhecidas retornam 404.

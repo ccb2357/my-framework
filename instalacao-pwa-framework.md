@@ -1,6 +1,6 @@
 # Instalação — PWA Framework
 
-**Instalação existente:** pare o Vite e renomeie `frontend` para `pwa` antes de extrair esta atualização. Ajuste o bind Node e o `root` Nginx da PWA conforme a etapa 2, valide/recarregue o Nginx e repita o bootstrap. Preserve serviços, volumes e `.foundation-state.json`.
+**Pasta antiga:** se ainda usa `frontend/`, pare o Vite e renomeie `frontend` para `pwa` antes de extrair esta atualização. Ajuste o bind Node e o `root` Nginx da PWA conforme a etapa 2, valide/recarregue o Nginx e repita o bootstrap. Preserve serviços, volumes e `.foundation-state.json`.
 
 ## 1. Preparar a pasta e a configuração
 
@@ -108,6 +108,10 @@ services:
             - type: bind
               source: C:/var/www/pwa-framework/website
               target: /app
+            - type: bind
+              source: C:/var/www/pwa-framework/shared
+              target: /shared
+              read_only: true
             - pwa_framework_website_node_modules:/app/node_modules
         expose:
             - "3000"
@@ -374,6 +378,10 @@ Build manual (opcional):
 nuxt.cmd build
 ```
 
+### Atualizar o website com formulários
+
+Acrescente o bind `shared` ao serviço website, se ausente, conforme a etapa 2.1 e repita o bootstrap da etapa 5. Na Hello, teste **Validar formulário** vazio e depois com e-mail/celular válidos; nenhum dado é enviado ou salvo.
+
 ### Mensagens e máscaras
 
 Arquivos compartilhados em `shared/forms/`:
@@ -382,7 +390,7 @@ Arquivos compartilhados em `shared/forms/`:
 - `masks.js`: máscaras.
 - `rules.js`: regras.
 
-Após alterar, gere os dois builds. Na PWA instalada, aceite a atualização.
+Após alterar, repita o bootstrap da etapa 5 para publicar nas três interfaces. Em desenvolvimento, mantenha o dev aberto; na PWA instalada, aceite a atualização.
 
 ## Android por USB
 

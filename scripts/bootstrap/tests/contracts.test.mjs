@@ -1,3 +1,4 @@
+import { websiteBuildId } from '../lib/website.mjs';
 import { websiteActivation } from '../lib/website.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -203,7 +204,7 @@ test('npm manifests pin direct versions and lockfiles agree, including shared fo
     }
     manifests.push(manifest);
   }
-  for (const name of ['imask', 'just-validate']) assert.equal(manifests[0].dependencies[name], manifests[1].dependencies[name]);
+  for (const name of ['imask', 'just-validate']) { assert.equal(manifests[0].dependencies[name], manifests[1].dependencies[name]); assert.equal(manifests[0].dependencies[name], manifests[3].dependencies[name]); }
 });
 
 test('backend admin context is derived from central without admitting client ports or exposing secrets', async () => {
@@ -267,4 +268,19 @@ test('website activation preserves Compose identity and resolves only its binds 
   assert.match(JSON.parse(websiteActivation(c, special).input).services[c.websiteService].volumes[0].source, /apps\$\$private/);
   const linux = { ...discovery, hostDir: '/srv/apps/infra' };
   assert.equal(JSON.parse(websiteActivation(c, linux).input).services[c.websiteService].volumes[0].source, '/srv/apps/pwa-teste/website');
+});
+
+test('website build identity includes shared form sources but not private root files', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'website-shared-id-'));
+  try {
+    await fs.mkdir(root + '/website'); await fs.mkdir(root + '/shared/forms', { recursive: true });
+    await fs.writeFile(root + '/website/package.json', '{}');
+    await fs.writeFile(root + '/shared/forms/messages.pt-BR.json', '{"required":"A"}');
+    const c = { ...config(), website: root + '/website', shared: root + '/shared' };
+    const before = await websiteBuildId(c);
+    await fs.writeFile(root + '/shared/forms/messages.pt-BR.json', '{"required":"B"}');
+    const after = await websiteBuildId(c); assert.notEqual(after, before);
+    await fs.writeFile(root + '/.env.foundation', 'DB_PASSWORD=PRIVATE-IGNORED');
+    assert.equal(await websiteBuildId(c), after);
+  } finally { await fs.rm(root, { recursive: true, force: true }); }
 });

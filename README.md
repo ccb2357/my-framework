@@ -15,13 +15,13 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, w
 
 **[Instalação e operação](instalacao-pwa-framework.md)** · **[Especificação técnica](docs/sdd/00-visao.md)** · **[Regras de desenvolvimento](RULES.md)**
 
-Versão: **1.1.0-website.1**. Website SSR inicial; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
+Versão: **1.1.0-website.2**. Website SSR e formulários compartilhados; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
 
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/)
 
 ## Recursos
 
-- **Website independente:** Nuxt SSR em `website/`, Tailwind/shadcn-vue e Lucide próprios; serviço Node permanente, sem PWA. Hello pública, ainda sem autenticação ou loja.
+- **Website independente:** Nuxt SSR em `website/`, Tailwind/shadcn-vue e Lucide próprios; serviço Node permanente, sem PWA. Hello pública com formulário demonstrativo; ainda sem autenticação ou loja.
 - **Admin independente:** Vue/shadcn-vue/Tailwind em `admin/`, subdomínio e build próprios; sem misturar componentes ou estilos com a PWA.
 
 - **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations, publica os builds PWA/admin e compila/ativa o website automaticamente.
@@ -39,7 +39,7 @@ Clientes têm cadastro público, login/logout e área protegida na PWA, com aces
 | --- | --- |
 | Interface | Vue 3.5.45 · Framework7/framework7-vue 9.2.0 · JavaScript/SFC/Composition API |
 | Estilos e ícones | CSS/grid Framework7 · tokens próprios · Nunito local · Framework7 Icons 5.0.5 · Lucide 1.72.0 |
-| Formulários compartilhados | IMask 7.6.1 · JustValidate 4.3.0 nas duas interfaces; mensagens/máscaras/regras em `shared/forms/`; validação também obrigatória no backend |
+| Formulários compartilhados | IMask 7.6.1 · JustValidate 4.3.0 nas três interfaces; mensagens/máscaras/regras em `shared/forms/`; validação também obrigatória no backend |
 | Build e PWA | Vite 8.3.4 · plugin-vue 6.0.11 · vite-plugin-pwa 2.0.0 · Workbox 7.4.1/injectManifest |
 | Website | Node 22 Debian · Nuxt 4.6.4 · Vue 3.5.45 · Tailwind 4.3.5 · shadcn-vue/JavaScript · Lucide 1.72.0 · SSR/Nitro |
 | Administrativo | Vue 3.5.45 · shadcn-vue/JavaScript · Reka UI 2.11.0 · Tailwind 4.3.5 · Lucide 1.72.0 · Vite 8.3.4 |
@@ -129,7 +129,7 @@ Um único worker em `pwa/src/sw.js` atende precache, offline e atualização con
 | `docs/sdd/`, `docs/telas/` | Contratos técnicos e referências visuais aprovadas |
 | `AGENTS.md`, `RULES.md`, `MEMORY.md` | Orientação, regras obrigatórias e registros específicos do projeto |
 
-O website não reutiliza componentes/CSS do admin ou da PWA. Formulários compartilhados e login integrado website/PWA pertencem às próximas etapas; o admin continua isolado.
+O website não reutiliza componentes/CSS do admin ou da PWA. As três interfaces reutilizam somente a lógica de `shared/forms/`, com dependências próprias. Login integrado website/PWA pertence à próxima etapa; o admin continua isolado.
 
 ## Convenções de desenvolvimento
 
@@ -161,7 +161,7 @@ Manter os sete documentos SDD enxutos; contratos no SDD, procedimentos no manual
 
 ## Qualidade e validação
 
-Lint, testes unitários/HTTP e builds verificam as duas interfaces e o bootstrap. A suíte Laravel separa integrações com MySQL testing; o guard de isolamento roda antes de qualquer preparação destrutiva. Resultados e limitações atuais ficam em [MEMORY.md](MEMORY.md).
+Testes unitários/HTTP e builds verificam as três interfaces e o bootstrap. A suíte Laravel separa integrações com MySQL testing; o guard de isolamento roda antes de qualquer preparação destrutiva. Resultados e limitações atuais ficam em [MEMORY.md](MEMORY.md).
 
 Engine/Compose simulados não comprovam Docker real. Testes DOM não homologam navegador/aparelho; instalação, offline, atualização e VPS exigem validação no ambiente correspondente. Playwright e referências visuais complementam os testes e dependem de aceite humano.
 
@@ -190,5 +190,5 @@ Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, reten�
 | Admin dev / preview | 5182 / 5183 |
 | Website | http://website.pwa-framework.localhost |
 | Website dev | 5184 |
-| Fundação | 1.1.0-website.1 |
+| Fundação | 1.1.0-website.2 |
 <!-- END FOUNDATION IDENTITY -->

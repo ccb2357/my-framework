@@ -1,11 +1,15 @@
+import { fileURLToPath } from 'node:url';
 import { defineNuxtConfig } from 'nuxt/config';
 import tailwindcss from '@tailwindcss/vite';
 import { readConfiguration } from './scripts/config.mjs';
 const publicConfig = readConfiguration();
+const root = fileURLToPath(new URL('.', import.meta.url));
+const shared = fileURLToPath(new URL('../shared', import.meta.url));
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-11-18',
   ssr: true,
+  alias: { '@shared': shared },
   components: [{ path: '~/components', extensions: ['.vue'] }],
   devtools: { enabled: false },
   css: ['~/assets/css/main.css'],
@@ -16,7 +20,7 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
     server: {
-      fs: { allow: [process.cwd()] },
+      fs: { allow: [root, shared] },
       watch: { usePolling: true, interval: 300, ignored: ['**/.releases/**', '**/.nuxt/**', '**/.output/**'] },
     },
   },
