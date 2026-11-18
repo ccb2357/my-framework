@@ -55,3 +55,7 @@ Em cada prefixo de autenticação (`/api/v1/auth` e `/api/v1/admin/auth`):
 Mesmos hosts/origens, CSRF e no-store/private da área. Senha segue o cadastro: mínimo 8 caracteres, até 72 bytes UTF-8. Brokers clients/administrators usam providers e tabelas distintos, mesmo para e-mails iguais. Tokens de 64 caracteres têm apenas hash no banco, expiram em 60 minutos e são consumidos sob transação/lock. Não autenticar automaticamente. Redefinição incrementa auth_version e troca remember_token; ClientSession/AdminSession rejeitam sessões antigas apenas daquela conta/área. APIs futuras devem usar essas proteções.
 
 SMTP vazio desabilita envio; nenhuma recuperação usa transporte log ou grava tokens nos logs. Resposta de solicitação não confirma entrega. Falha SMTP registra somente password-recovery-mail-unavailable e área, sem detalhes privados.
+
+## Website
+
+Hello Nuxt pública não acrescenta endpoints de negócio nem autenticação. `/api`, `/sanctum`, `/up` e `/status` permanecem no Laravel; APIs de cliente atuais rejeitam o host do website. `routes/website.php` está reservado para endpoints futuros; suas rotas não substituem o roteamento Nuxt. Contratos de sessão compartilhada serão definidos antes de habilitar login no website.

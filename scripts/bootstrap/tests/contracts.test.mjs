@@ -6,7 +6,7 @@ import path from 'node:path';
 import { parseCentral, validate, args, contained } from '../lib/config.mjs';
 import { mapPath, mappedPaths, infraProblems, sameHost } from '../lib/docker.mjs';
 import { managedEnv, synchronizeEnvs, appKey, checkIdentity, identity, writeAtomic } from '../lib/files.mjs';
-import { composeSnippet, nginxSnippet, siteApplied, viteCmd, publicConfiguration, adminPublicConfiguration } from '../lib/templates.mjs';
+import { composeSnippet, nginxSnippet, siteApplied, viteCmd, publicConfiguration, adminPublicConfiguration, websiteNginxSnippet, websitePublicConfiguration, nuxtCmd } from '../lib/templates.mjs';
 import { run } from '../lib/process.mjs';
 import { httpFailure } from '../lib/errors.mjs';
 const raw = await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8');
@@ -108,7 +108,7 @@ test('generated infrastructure is credential-free and restricted to the clone', 
 });
 test('Nginx validation checks actual config rather than marker alone', () => {
   const c = config(); assert.equal(siteApplied('# PWA FOUNDATION: pwa-teste', c), false);
-  assert.equal(siteApplied(nginxSnippet(c) + nginxSnippet(c, true), c), true);
+  assert.equal(siteApplied(nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c), c), true);
   assert.equal(siteApplied(nginxSnippet(c).replace('php-fpm:9000', 'wrong:9000'), c), false);
 });
 test('Windows shortcut preserves shared Compose identity and exit code', () => {
@@ -177,7 +177,7 @@ test('admin public config and Nginx exclude PWA resources and private credential
   assert.doesNotMatch(site, /Service-Worker-Allowed|frontend\/dist/);
   assert.match(site, /backend\/public\/index.php/);
   assert.equal(siteApplied(nginxSnippet(c), c), false);
-  assert.equal(siteApplied(nginxSnippet(c) + site, c), true);
+  assert.equal(siteApplied(nginxSnippet(c) + site + websiteNginxSnippet(c), c), true);
   const shortcut = viteCmd(c, d, true);
   assert.match(shortcut, /--service-ports pwa-teste-admin-node/);
   assert.doesNotMatch(shortcut, /--service-ports pwa-teste-node /);
@@ -185,7 +185,7 @@ test('admin public config and Nginx exclude PWA resources and private credential
 
 test('npm manifests pin direct versions and lockfiles agree, including shared form libraries', async () => {
   const manifests = [];
-  for (const directory of ['frontend', 'admin', 'scripts/bootstrap/executor']) {
+  for (const directory of ['frontend', 'admin', 'scripts/bootstrap/executor', 'website']) {
     const base = new URL('../../../' + directory + '/', import.meta.url);
     const manifest = JSON.parse(await fs.readFile(new URL('package.json', base), 'utf8'));
     const lock = JSON.parse(await fs.readFile(new URL('package-lock.json', base), 'utf8'));
@@ -226,4 +226,21 @@ test('SMTP stays private, requires valid configuration and never enables real ma
   assert.match(real,/MAIL_MAILER="smtp"/);assert.match(real,/MAIL_PASSWORD="PRIVATE-SMTP"/);assert.match(testing,/MAIL_MAILER="array"/);assert.doesNotMatch(testing,/PRIVATE-SMTP/);
   assert.doesNotMatch(JSON.stringify(publicConfiguration(c))+JSON.stringify(adminPublicConfiguration(c)),/PRIVATE-SMTP|sender@gmail.com/);
  }finally{await fs.rm(root,{recursive:true,force:true});}
+});
+
+test('website has a distinct origin, exact ports and public-only generated configuration', () => {
+  for (const changes of [{ WEBSITE_DEV_PORT: '5182' }, { WEBSITE_LOCAL_DOMAIN: input.LOCAL_DOMAIN }, { WEBSITE_LOCAL_DOMAIN: 'admin.pwa-teste.localhost' }, { APP_ENV: 'production', PRODUCTION_URL: 'https://example.com', WEBSITE_PRODUCTION_URL: 'http://shop.example.com' }]) assert.throws(() => config(changes));
+  const c = config({ DB_PASSWORD: 'PRIVATE-WEBSITE-SECRET', WEBSITE_LOCAL_DOMAIN: 'example.localhost' });
+  const output = websitePublicConfiguration({ ...c, websiteBuildId: 'website-fixture' });
+  assert.equal(output.websiteUrl, 'http://example.localhost');
+  assert.doesNotMatch(JSON.stringify(output), /PRIVATE|DB_|SMTP|proxy/);
+  const site = websiteNginxSnippet(c);
+  assert.match(site, /resolver 127.0.0.11/);
+  assert.match(site, /pwa-teste-website-node:3000/);
+  assert.match(site, /proxy_pass http:\/\/\$website_upstream/);
+  assert.doesNotMatch(site, /frontend\/dist|admin\/dist/);
+  const shortcut = nuxtCmd(c, d);
+  assert.match(shortcut, /-e NODE_ENV=development -p 127.0.0.1:5184:3000/);
+  assert.match(shortcut, /--profile website/);
+  assert.match(shortcut, /exit \/b %errorlevel%/);
 });

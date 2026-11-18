@@ -40,3 +40,7 @@ Sessão é consultada ao entrar e ao recuperar foco/conexão. Falha ou offline n
 ## Esqueci minha senha
 
 Nas duas interfaces, o login oferece Esqueci minha senha. `/esqueci-senha/` recebe e-mail e retorna mensagem genérica; `/redefinir-senha/` recebe o fragmento do e-mail e pede nova senha/confirmar. PWA usa rotas e campos Framework7; admin usa Card/Input/Label/Button shadcn e navegação por links próprios, sem Framework7. Sucesso orienta voltar ao login; não autentica automaticamente. Link inválido permite solicitar outro. Credenciais/token não entram no rascunho; PWA bloqueia atualização enquanto o fluxo estiver pendente.
+
+## Hello Website
+
+`website/app/pages/index.vue`, rota `/` no domínio do website. Layout em `app/layouts/default.vue`, página pública SSR com título, descrição e link para a PWA. Botão shadcn-vue local e ícone Lucide renderizado em SVG tanto no servidor quanto no cliente. Sem formulário, sessão, indicadores comerciais ou PWA nesta etapa. Rotas desconhecidas retornam 404.

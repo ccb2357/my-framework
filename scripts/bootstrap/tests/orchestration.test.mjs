@@ -6,15 +6,15 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { run } from '../lib/process.mjs';
 import { validate, parseCentral } from '../lib/config.mjs';
-import { nginxSnippet } from '../lib/templates.mjs';
+import { nginxSnippet, websiteNginxSnippet } from '../lib/templates.mjs';
 const entry = fileURLToPath(new URL('../index.mjs', import.meta.url));
 const runtime = process.env.FOUNDATION_RUNTIME_PACKAGE || fileURLToPath(new URL('../executor/package.json', import.meta.url));
 const example = parseCentral(await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8'));
 // Deterministic Engine/Compose simulation; never connects to or mutates a real Docker Engine.
-async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4', guideCrlf = false, adminBuildFailure = false, adminHttpFailure = false, missingAdmin = false, missingShared = false } = {}) {
+async function fixture({ pending = false, production = false, desktop = false, httpFailure = false, npmFailure = false, buildFailure = false, pwaFailure = false, frontendNode = '22.23.4', guideCrlf = false, adminBuildFailure = false, adminHttpFailure = false, missingAdmin = false, missingShared = false, websiteBuildFailure = false, websiteHttpFailure = false, missingWebsite = false } = {}) {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'foundation flow with spaces-'));
   const projects = tmp + '/projects', root = projects + '/product-a';
-  await fs.mkdir(root + '/backend', { recursive: true }); await fs.mkdir(root + '/frontend'); await fs.mkdir(root + '/admin'); await fs.mkdir(projects + '/infra'); await fs.mkdir(tmp + '/bin');
+  await fs.mkdir(root + '/backend', { recursive: true }); await fs.mkdir(root + '/frontend'); await fs.mkdir(root + '/admin'); await fs.mkdir(root + '/website'); await fs.mkdir(projects + '/infra'); await fs.mkdir(tmp + '/bin');
   const guide = await fs.readFile(new URL('../../../instalacao-pwa-framework.md', import.meta.url), 'utf8');
   await fs.writeFile(root + '/instalacao-pwa-framework.md', guideCrlf ? guide.replace(/\r?\n/g, '\r\n') : guide);
   await fs.writeFile(projects + '/infra/docker-compose.yml', '# fixture'); await fs.writeFile(root + '/backend/composer.lock', '{}');
@@ -22,6 +22,8 @@ async function fixture({ pending = false, production = false, desktop = false, h
   await fs.writeFile(root + '/frontend/package-lock.json', '{}');
   await fs.writeFile(root + '/admin/package.json', JSON.stringify({ scripts: { dev: 'vite', build: 'vite build' } }));
   await fs.writeFile(root + '/admin/package-lock.json', '{}');
+  await fs.writeFile(root + '/website/package.json', JSON.stringify({ scripts: { dev: 'nuxt dev', build: 'nuxt build' } }));
+  await fs.writeFile(root + '/website/package-lock.json', '{}');
   const values = { ...example, PROJECT_SLUG: 'product-a', LOCAL_DOMAIN: 'product-a.localhost', DB_DATABASE: 'product_a', DB_TEST_DATABASE: 'product_a_test', CONTAINER_PROJECTS_ROOT: projects, APP_ENV: production ? 'production' : 'local', PRODUCTION_URL: production ? 'https://example.com' : '', DB_PASSWORD: 'fixture$special #password' };
   await fs.writeFile(root + '/.env.foundation', Object.entries(values).map(([k, v]) => `${k}='${v}'`).join('\n'));
   const c = validate(values, root);
@@ -37,7 +39,9 @@ async function fixture({ pending = false, production = false, desktop = false, h
   for (const service of Object.values(config.services)) {
     if (service.image === 'node:22-alpine' && !missingShared) service.volumes.push({ type: 'bind', source: '/srv/apps/product-a/shared', target: '/shared', read_only: true });
   }
-  const data = { adminBuildFailure, adminHttpFailure, adminInstalls: 0, adminBuilds: 0, adminMarker: '', php, nginx, config, site: pending ? '' : nginxSnippet(c) + nginxSnippet(c, true), marker: '', installs: 0, syncs: 0, calls: [], httpFailure, npmMarker: '', npmInstalls: 0, npmFailure, builds: 0, buildFailure, pwaFailure, frontendNode };
+  config.volumes[c.websiteModulesVolume] = { name: c.websiteModulesVolume };
+  if (!missingWebsite) config.services[c.websiteService] = { image: 'node:22-alpine', working_dir: '/app', command: ['node', 'scripts/start.mjs'], profiles: ['website'], environment: { NODE_ENV: 'production', NITRO_HOST: '0.0.0.0', NITRO_PORT: '3000' }, networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/website', target: '/app' }, { type: 'volume', source: c.websiteModulesVolume, target: '/app/node_modules' }] };
+  const data = { websiteBuildFailure, websiteHttpFailure, websiteInstalls: 0, websiteBuilds: 0, websiteMarker: '', websiteBuildId: '', adminBuildFailure, adminHttpFailure, adminInstalls: 0, adminBuilds: 0, adminMarker: '', php, nginx, config, site: pending ? '' : nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c), marker: '', installs: 0, syncs: 0, calls: [], httpFailure, npmMarker: '', npmInstalls: 0, npmFailure, builds: 0, buildFailure, pwaFailure, frontendNode };
   const dataFile = tmp + '/fake-engine.json'; await fs.writeFile(dataFile, JSON.stringify(data));
   const fake = `#!${process.execPath}
 import fs from 'node:fs';
@@ -49,8 +53,14 @@ else if(a[0]==='compose'&&a.includes('config'))out=JSON.stringify(data.config);
 else if(a[0]==='ps')out=a.some(x=>x.includes('service=php-fpm'))?'php-id':'php-id nginx-id';
 else if(a[0]==='inspect')out=JSON.stringify(a.slice(1).map(x=>x==='php-id'?data.php:data.nginx));
 else if(a[0]==='run'){
+ const website=a.some(x=>x.includes('_website_node_modules'));
  const admin=a.some(x=>x.includes('_admin_node_modules'));
- if(admin){
+ if(website){
+  if(a.includes('ci'))data.websiteInstalls++;
+  else if(a.includes('build')){data.websiteBuilds++;if(data.websiteBuildFailure){process.exitCode=47;process.stderr.write('PRIVATE-WEBSITE-OUTPUT');}else data.websiteBuildId=JSON.parse(fs.readFileSync(process.env.WEBSITE_ROOT+'/.foundation.public.json')).buildId;}
+  else if(a.includes('scripts/check-build.mjs')){if(data.websiteBuildId)out=JSON.stringify({buildId:data.websiteBuildId});else process.exitCode=1;}
+  else if(a.includes('-e')){const code=a[a.indexOf('-e')+1];if(code.includes('JSON.stringify'))out=JSON.stringify({nodeVersion:data.frontendNode,marker:data.websiteMarker,metadata:!!data.websiteMarker});else if(code.includes('writeFileSync'))data.websiteMarker=stdin().trim();}
+ }else if(admin){
   if(a.includes('ci'))data.adminInstalls++;
   else if(a.includes('build')){data.adminBuilds++;if(data.adminBuildFailure){process.exitCode=46;process.stderr.write('PRIVATE-ADMIN-OUTPUT');}}
   else if(a.includes('scripts/check-build.mjs'))out=JSON.stringify({buildId:'admin-fixture',entry:'assets/admin-fixture.js',files:['index.html','assets/admin-fixture.js']});
@@ -70,6 +80,7 @@ else if(a[0]==='exec'){
  else if(a.some(x=>x.endsWith('databases.php'))){stdin();out='{"status":"ok"}';}
  else if(a.some(x=>x.endsWith('verify-runtime.php')))stdin();
  else if(a.some(x=>x.endsWith('verify-pwa.php'))){stdin();out=JSON.stringify({status:data.pwaFailure?'error':'ok',checks:{simulation:'ok'}});if(data.pwaFailure)process.exitCode=1;}
+ else if(a.some(x=>x.endsWith('verify-website.php'))){stdin();out=JSON.stringify({status:data.websiteHttpFailure?'error':'ok',checks:{simulation:'ok'}});if(data.websiteHttpFailure)process.exitCode=1;}
  else if(a.some(x=>x.endsWith('verify-admin.php'))){stdin();out=JSON.stringify({status:data.adminHttpFailure?'error':'ok',checks:{simulation:'ok'}});if(data.adminHttpFailure)process.exitCode=1;}
  else if(a.some(x=>x.endsWith('verify-http.php'))){stdin();out=data.httpFailure?JSON.stringify({status:'error',reason:'csrf-token-missing',path:'/sanctum/csrf-cookie',http_status:204,curl_errno:0,origin_index:3,body:'PRIVATE-BODY'}):'{"status":"ok","checks":{"simulation":"ok"}}';if(data.httpFailure){process.exitCode=1;process.stderr.write('PRIVATE-STDERR');}}
  else if(a.includes('-r')){
@@ -82,7 +93,7 @@ else if(a[0]==='exec'){
 fs.writeFileSync(file,JSON.stringify(data));process.stdout.write(out);
 `;
   await fs.writeFile(tmp + '/bin/docker', fake, { mode: 0o755 });
-  const invoke = async force => run(process.execPath, [entry, '--project', root, ...(force ? ['--force'] : [])], { allowFailure: true, env: { ...process.env, PATH: tmp + '/bin:' + process.env.PATH, FOUNDATION_RUNTIME_PACKAGE: runtime, FAKE_ENGINE_DATA: dataFile }, timeout: 30000 });
+  const invoke = async force => run(process.execPath, [entry, '--project', root, ...(force ? ['--force'] : [])], { allowFailure: true, env: { ...process.env, PATH: tmp + '/bin:' + process.env.PATH, FOUNDATION_RUNTIME_PACKAGE: runtime, FAKE_ENGINE_DATA: dataFile, WEBSITE_ROOT: root + '/website' }, timeout: 30000 });
   return { root, invoke, data: async () => JSON.parse(await fs.readFile(dataFile, 'utf8')), cleanup: () => fs.rm(tmp, { recursive: true, force: true }) };
 }
 test('preparation exits 2 before dependencies/env writes when effective infra is missing', async () => {
@@ -136,11 +147,11 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     const second = await f.invoke(); assert.equal(second.code, 0, second.stderr); assert.equal(await fs.readFile(f.root + '/backend/.env', 'utf8'), env);
     assert.equal(await fs.readFile(guidePath, 'utf8'), guide);
     assert.equal((guide.match(/<!-- BEGIN FOUNDATION INSTALL INFRA -->/g) || []).length, 1);
-    const data = await f.data(); assert.equal(data.installs, 1); assert.equal(data.syncs, 2); assert.equal(data.npmInstalls, 1); assert.equal(data.adminInstalls, 1); assert.equal(data.adminBuilds, 2);
+    const data = await f.data(); assert.equal(data.installs, 1); assert.equal(data.syncs, 2); assert.equal(data.npmInstalls, 1); assert.equal(data.adminInstalls, 1); assert.equal(data.adminBuilds, 2); assert.equal(data.websiteInstalls, 1); assert.equal(data.websiteBuilds, 1);
     const runs = data.calls.filter(a => a[0] === 'run' && (a.includes('build') || a.includes('ci')));
     assert.ok(runs.every(a => a.some(x => x.includes('target=/shared,readonly'))));
     assert.ok(data.calls.some(a => a[0] === 'run' && a.includes('--publish') && a.includes('infra_network')));
-    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, true); assert.equal(state.release, '1.0.0'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 2); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
+    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '1.1.0-website.1'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
     assert.ok(!data.calls.some(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))));
     assert.doesNotMatch(first.stdout + first.stderr + second.stdout + second.stderr, /fixture\$special/);
   } finally { await f.cleanup(); }
@@ -224,4 +235,19 @@ test('missing shared mounts stop before installs and both Node services receive 
     assert.equal((guide.match(/target: \/shared/g) || []).length, 2);
     assert.equal((guide.match(/read_only: true/g) || []).length, 2);
   } finally { await f.cleanup(); }
+});
+
+test('website missing integration and failed build cannot announce success', async () => {
+  for (const options of [{ missingWebsite: true }, { websiteBuildFailure: true }, { websiteHttpFailure: true }]) {
+    const f = await fixture(options);
+    try {
+      const result = await f.invoke();
+      assert.equal(result.code, options.websiteBuildFailure ? 1 : 2, result.stdout + result.stderr);
+      assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE-WEBSITE|Website: http/);
+      const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8'));
+      assert.equal(state.completeFoundation, false);
+      if (options.missingWebsite) { assert.equal((await f.data()).installs, 0); await assert.rejects(fs.access(f.root + '/backend/.env')); }
+      if (options.websiteHttpFailure) assert.match(result.stderr, /up -d --no-deps --force-recreate product-a-website-node/);
+    } finally { await f.cleanup(); }
+  }
 });

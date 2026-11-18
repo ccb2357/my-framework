@@ -44,3 +44,7 @@ Os formulários de acesso usam ListInput/Button oficiais Framework7 e `frontend/
 Login administrativo usa componentes existentes shadcn-vue Input/Label/Button/Card, rótulos e erros sob os campos, aria-invalid/aria-describedby, senha autocomplete=current-password e envio protegido contra reentrada. Regras/mensagens JustValidate vêm de shared/forms; componentes e adaptador permanecem no admin. Dashboard mantém o visual existente e acrescenta identificação/Sair; não carregar dados antes de conferir a sessão.
 
 Recuperação reutiliza mensagens/regras em shared/forms e recovery.js (adaptador recebe JustValidate local, sem CSS/componente compartilhado). Erros ficam abaixo dos inputs, com aria-invalid/aria-describedby e role=status; botão de envio fica indisponível durante a operação. Token é somente memória; não preencher campo oculto persistente nem capturar o link em telemetria.
+
+## Website Nuxt
+
+`website/app/assets/css/main.css` contém os tokens/Tailwind próprios; componentes shadcn-vue JavaScript em `website/app/components/ui/`. Não importar CSS/componentes de `admin/` ou `frontend/`. Hello usa layout responsivo simples, link de salto, HTML semântico e foco visível nos links/botões. Lucide 1.72.0 renderiza SVG sem alterar DOM gerenciado pelo Vue. Novos formulários reutilizarão somente lógica neutra de `shared/forms/`; integração prevista na Sprint 2.

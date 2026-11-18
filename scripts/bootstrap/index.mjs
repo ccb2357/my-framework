@@ -5,6 +5,7 @@ import { FoundationError, requireThat, httpFailure } from './lib/errors.mjs';
 import { docker, jsonOutput } from './lib/process.mjs';
 import { discover, infraProblems, phpExec, checkPorts } from './lib/docker.mjs';
 import { installFrontend, buildFrontend, installAdmin, buildAdmin } from './lib/frontend.mjs';
+import { prepareWebsite } from './lib/website.mjs';
 import { generate, siteApplied } from './lib/templates.mjs';
 import { identity, checkIdentity, hash, readOptional, writeAtomic, synchronizeEnvs } from './lib/files.mjs';
 let lock, stateFile, state;
@@ -18,7 +19,7 @@ try {
   const saved = await readOptional(stateFile, '{}');
   try { state = JSON.parse(saved); } catch { throw new FoundationError('Estado local inválido. Preserve-o para diagnóstico; não reinicialize identidade automaticamente.'); }
   checkIdentity(state, c);
-  state = { ...state, schema, identity: identity(c), release: '1.0.0', completeFoundation: false, startedAt: new Date().toISOString() };
+  state = { ...state, schema, identity: identity(c), release: '1.1.0-website.1', completeFoundation: false, startedAt: new Date().toISOString() };
   console.log(`Preparação de ${c.PROJECT_SLUG} (${c.APP_ENV}).`);
   const d = await discover(c);
   if (state.composeProject) requireThat(state.composeProject === d.project, 'Identidade da infraestrutura Compose mudou; revisar explicitamente.');
@@ -92,10 +93,23 @@ try {
   const adminEvidence = jsonOutput(verifyAdmin, 'HTTP admin');
   requireThat(verifyAdmin.code === 0 && adminEvidence.status === 'ok', 'Admin HTTP: confira build e bloco Nginx administrativo no guia.');
   state.adminBuild = adminBuild.buildId;
+  state.phase = 'website-build'; await save();
+  const websiteBuild = await prepareWebsite(c, d);
+  state.websiteBuild = websiteBuild.buildId; state.websiteLock = websiteBuild.lock;
+  const verifyWebsite = await docker(['exec', '-i', '--workdir', c.backend, d.php.Id, 'php', path.join(c.root, 'scripts/bootstrap/php/verify-website.php')], {
+    input: JSON.stringify({ url: c.websiteUrl, target: c.NGINX_INTERNAL_URL, environment: c.APP_ENV, buildId: websiteBuild.buildId }), label: 'HTTP website', allowFailure: true,
+  });
+  let websiteEvidence; try { websiteEvidence = JSON.parse(verifyWebsite.stdout); } catch { /* Controlled pending state. */ }
+  if (verifyWebsite.code !== 0 || websiteEvidence?.status !== 'ok') {
+    state.pending = ['Iniciar/recriar somente ' + c.websiteService + ' conforme o manual e repetir o bootstrap.']; await save();
+    throw new FoundationError('Website compilado. Na pasta infra, execute: docker compose --profile website up -d --no-deps --force-recreate ' + c.websiteService + '. Depois repita o bootstrap. Se persistir, confira o serviço/Nginx.', 2);
+  }
+  state.websiteChecks = websiteEvidence.checks;
   state.phase = 'interfaces-ready'; state.lastExitCode = 0; state.phpVersion = version; state.composerLock = hash(lockfile); state.frontendBuild = build.buildId; state.verifiedAt = new Date().toISOString(); state.checks = { ...evidence.checks, pwa: pwaEvidence.checks, admin: adminEvidence.checks };
-  state.completeFoundation = true; state.pending = []; state.manualChecks = ['Conferir instalação e acesso nas duas interfaces', 'Conferir SMTP e recuperação das duas contas']; await save();
-  console.log(`Backend, PWA e admin verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
+  state.completeFoundation = false; state.pending = []; state.manualChecks = ['Conferir instalação e acesso nas três interfaces', 'Conferir SMTP e recuperação das duas contas', 'Concluir as sprints restantes do website']; await save();
+  console.log(`Backend, PWA, admin e website verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
   console.log(`Admin: ${c.adminUrl}. Crie o administrador com admin:create conforme o manual.`);
+  console.log(`Website: ${c.websiteUrl}. Autenticação integrada ainda pendente.`);
   console.log('Código 0 não atesta instalação, offline ou atualização em aparelhos. Aceite final exige validação própria.');
 } catch (error) {
   if (state) { state.phase = error.code === 2 ? 'manual-pending' : 'failed'; state.lastExitCode = error.code === 2 ? 2 : 1; await save().catch(() => {}); }

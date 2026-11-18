@@ -54,7 +54,7 @@ export async function discover(c) {
   const nginx = all.filter(x => labels(x)['com.docker.compose.service'] === c.NGINX_SERVICE && labels(x)['com.docker.compose.oneoff'] !== 'True');
   requireThat(nginx.length === 1, 'Serviço Nginx não identificado unicamente na infraestrutura compartilhada.');
   requireThat(php.State?.Running && nginx[0].State?.Running, 'PHP-FPM/Nginx precisam estar ativos; inicie apenas os serviços necessários.', 2);
-  const prefix = ['compose', '--project-name', project, '--project-directory', directory, ...internalFiles.flatMap(f => ['-f', f]), '--profile', 'dev'];
+  const prefix = ['compose', '--project-name', project, '--project-directory', directory, ...internalFiles.flatMap(f => ['-f', f]), '--profile', 'dev', '--profile', 'website'];
   // Read-only Compose. Paths stay unexpanded; host paths are passed directly to Engine when needed.
   const config = jsonOutput(await docker([...prefix, 'config', '--format', 'json', '--no-path-resolution'], { cwd: directory, label: 'Validação Compose compartilhado' }), 'Compose config');
   for (const object of [php, nginx[0]]) requireThat(object.NetworkSettings?.Networks?.[c.DOCKER_NETWORK], `${c.DOCKER_NETWORK} não está aplicada a PHP/Nginx.`, 2);
@@ -83,7 +83,16 @@ export function infraProblems(c, d) {
     if (!node.volumes?.some(v => v.type === 'volume' && v.source === f.volume && v.target === '/app/node_modules')) problems.push(`Corrigir node_modules exclusivo de ${f.service}.`);
     if (!node.ports?.some(p => +p.target === 5173 && +p.published === f.port && p.host_ip === '127.0.0.1')) problems.push(`Corrigir publicação local da porta dev de ${f.service}.`);
   }
-  for (const name of [c.vendorVolume, c.modulesVolume, c.adminModulesVolume]) if (volumes[name]?.name !== name) problems.push(`Declarar volume ${name} com name explícito.`);
+  const website = services[c.websiteService];
+  if (!website) problems.push(`Adicionar serviço ${c.websiteService}.`);
+  else {
+    if (website.image !== 'node:22-alpine' || website.working_dir !== '/app' || JSON.stringify(website.command) !== JSON.stringify(['node', 'scripts/start.mjs'])) problems.push(`Corrigir imagem/comando de ${c.websiteService}.`);
+    if (!website.profiles?.includes('website') || !Object.hasOwn(website.networks || {}, c.DOCKER_NETWORK)) problems.push(`Corrigir perfil/rede de ${c.websiteService}.`);
+    if (!website.volumes?.some(v => v.type === 'bind' && v.target === '/app' && sameHost(resolveBind(v.source, d), d.mapping.toHost(c.website)))) problems.push(`Corrigir bind mount de ${c.websiteService}.`);
+    if (!website.volumes?.some(v => v.type === 'volume' && v.target === '/app/node_modules' && v.source === c.websiteModulesVolume)) problems.push(`Corrigir node_modules exclusivo de ${c.websiteService}.`);
+    if (String(website.environment?.NITRO_PORT) !== '3000' || website.environment?.NITRO_HOST !== '0.0.0.0' || website.environment?.NODE_ENV !== 'production') problems.push(`Corrigir ambiente runtime de ${c.websiteService}.`);
+  }
+  for (const name of [c.vendorVolume, c.modulesVolume, c.adminModulesVolume, c.websiteModulesVolume]) if (volumes[name]?.name !== name) problems.push(`Declarar volume ${name} com name explícito.`);
   if (!services[c.PHP_SERVICE]?.volumes?.some(v => v.type === 'volume' && v.source === c.vendorVolume && v.target === path.join(c.backend, 'vendor'))) problems.push('Adicionar vendor ao PHP-FPM no Compose.');
   if (!d.php.Mounts?.some(m => m.Type === 'volume' && m.Name === c.vendorVolume && m.Destination === path.join(c.backend, 'vendor'))) problems.push('Aplicar mount vendor no contêiner PHP-FPM (recriação manual).');
   const projectHost = d.mapping.toHost(c.root);
@@ -97,9 +106,9 @@ export function infraProblems(c, d) {
   // A resource with the desired name must not already belong to another product/stack.
   for (const [name, service] of Object.entries(services)) {
     const own = frontends.find(f => f.service === name);
-    if (service.volumes?.some(v => (v.source === c.modulesVolume && name !== c.nodeService) || (v.source === c.adminModulesVolume && name !== c.adminNodeService) || (name !== c.PHP_SERVICE && (v.source === c.vendorVolume || v.target === path.join(c.backend, 'vendor'))))) problems.push(`Recurso do projeto conflita com serviço ${name}; revisar manualmente.`);
-    const allowedPorts = own ? [own.port] : [];
-    if (service.ports?.some(p => [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(+p.published) && !allowedPorts.includes(+p.published))) problems.push(`Porta configurada em outro serviço: ${name}.`);
+    if (service.volumes?.some(v => (v.source === c.modulesVolume && name !== c.nodeService) || (v.source === c.adminModulesVolume && name !== c.adminNodeService) || (v.source === c.websiteModulesVolume && name !== c.websiteService) || (name !== c.PHP_SERVICE && (v.source === c.vendorVolume || v.target === path.join(c.backend, 'vendor'))))) problems.push(`Recurso do projeto conflita com serviço ${name}; revisar manualmente.`);
+    const allowedPorts = own ? [own.port] : name === c.websiteService ? [c.WEBSITE_DEV_PORT] : [];
+    if (service.ports?.some(p => [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT, c.WEBSITE_DEV_PORT].includes(+p.published) && !allowedPorts.includes(+p.published))) problems.push(`Porta configurada em outro serviço: ${name}.`);
   }
   requireThat(projectHost, 'Mapeamento do projeto ausente.');
   return problems;
@@ -110,8 +119,8 @@ export async function phpExec(c, d, argv, input, label = 'PHP') {
 export async function checkPorts(c, d) {
   const running = await containers(['--filter', 'status=running']);
   const free = [];
-  for (const port of [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT]) {
-    const service = [c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(port) ? c.adminNodeService : c.nodeService;
+  for (const port of [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT, c.WEBSITE_DEV_PORT]) {
+    const service = port === c.WEBSITE_DEV_PORT ? c.websiteService : [c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(port) ? c.adminNodeService : c.nodeService;
     const owners = running.filter(x => Object.values(x.NetworkSettings?.Ports || {}).flat().some(p => p && +p.HostPort === port));
     requireThat(owners.every(x => labels(x)['com.docker.compose.project'] === d.project && labels(x)['com.docker.compose.service'] === service), `Porta ${port} ocupada por outro contêiner.`);
     if (!owners.length) free.push(port);

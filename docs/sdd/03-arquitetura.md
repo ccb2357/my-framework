@@ -1,8 +1,18 @@
 # Arquitetura
 
-PWA em `frontend/`, admin independente em `admin/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-pwa-framework.md).
+PWA em `frontend/`, admin em `admin/`, website Nuxt em `website/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-pwa-framework.md).
 
 ## Organização
+
+Rotas HTTP do backend:
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `backend/routes/pwa.php` | APIs de autenticação e demais rotas da PWA. |
+| `backend/routes/admin.php` | Rotas administrativas, com sessão e CSRF próprios. |
+| `backend/routes/website.php` | Rotas do site institucional e do e-commerce, com o grupo web (sessão e CSRF). |
+
+`bootstrap/app.php` registra os três arquivos. `website.php` começa vazio; páginas, catálogo, checkout e demais recursos pertencem ao produto. Evitar caminhos duplicados entre os arquivos; separar arquivos não cria domínio, interface ou autorização automaticamente. APIs protegidas de clientes usam ClientSession; administrativas, AdminSession.
 
 | Área | Responsabilidade |
 | --- | --- |
@@ -27,13 +37,15 @@ Build com staging validado por `check-pwa.mjs`; `publish-build.mjs` publica asse
 
 ## Fronteira PWA/admin
 
-Dois projetos Vite, dois serviços Node, dois volumes node_modules e dois dist. Dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e frontend/; ambos importam apenas a lógica neutra em shared/forms/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir os dois sites.
+PWA/admin possuem dois projetos Vite, serviços Node e dist próprios. Seus dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e frontend/; ambos importam apenas a lógica neutra em shared/forms/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir as três interfaces.
 
 Clientes possuem cadastro imediato e sessão web. Admin tem área protegida e conta única criada por comando, com guard/provider e sessão próprios. Não ampliar SESSION_DOMAIN para compartilhar cookies. Nenhuma compra, assinatura integra este ciclo.
 
 `shared/forms/` não importa pacotes dos node_modules das aplicações; os adaptadores fornecem IMask/JustValidate de suas dependências próprias, fixadas na mesma versão. Mensagens/máscaras/regras são fonte única. O bind monta a pasta em /shared somente leitura, ao lado de /app, preservando o caminho relativo ../shared. Alias @shared nos dois Vites. Identificadores de build incluem shared/forms para que alterações dos textos participem da atualização PWA e identificação do admin.
 
 ## Autenticação dos clientes
+
+Rotas da PWA em `backend/routes/pwa.php`, carregadas pelo parâmetro web de `bootstrap/app.php` com sessão e CSRF. Rotas administrativas permanecem em `backend/routes/admin.php`, com pipeline próprio. Os caminhos HTTP continuam iguais.
 
 `ClientAuthContext`, antes dos middlewares web, restringe `/api/v1/auth/*` e `/sanctum/csrf-cookie` ao host da PWA e às origens/portas configuradas. A ausência de Origin não dispensa sessão/CSRF; diagnóstico permanece independente. `ClientCredentials` valida uma lista explícita de campos; cadastro grava senha com o cast hashed existente. Login/cadastro regeneram sessão e CSRF. `ClientSession` exige usuário web real; Bearer isolado não autentica clientes. Respostas são privadas/no-store e erros não expõem exceções.
 
@@ -52,3 +64,11 @@ CSRF administrativo usa XSRF-ADMIN-TOKEN, header X-XSRF-TOKEN e endpoint própri
 PasswordRecoveryController usa PasswordBroker Laravel: clients → EloquentUserProvider/users/client_password_reset_tokens; administrators → administrators/admin_password_reset_tokens. Tokens separados de password_reset_tokens legado; broker padrão é clients. Notification AccountPasswordReset constrói o link a partir de APP_URL/ADMIN_URL, nunca do Host/Origin recebido. Dados do link ficam no fragmento # (não enviados a Nginx/SW); a tela os lê em memória e remove do histórico, sem armazenamento persistente. Reload exige reabrir o link do e-mail.
 
 Reset não cria sessão; altera somente a senha/hash, remember_token e auth_version da conta alvo. A versão é registrada no login e verificada nas APIs protegidas, preservando a outra área e rejeitando sessões antigas. Tokens expiram pela verificação do broker, sem worker adicional. SMTP envia de forma síncrona com timeout e TLS obrigatório; não há fallback para log. Testing deriva transporte array, recuperação desabilitada e senha SMTP vazia; testes explícitos usam notificações simuladas.
+
+## Website SSR
+
+`website/` é uma terceira aplicação Nuxt, com dependências/lockfile próprios. Nuxt Router atende páginas públicas, enquanto `backend/routes/website.php` permanece reservado a futuros endpoints Laravel; não renderiza as páginas Nuxt. Nginx encaminha `/` ao `<slug>-website-node:3000` e rotas técnicas ao PHP-FPM; resolver Docker dinâmico evita exigir que o website esteja ativo ao carregar o Nginx.
+
+Bootstrap gera somente configuração pública permitida: nome, slug, locale, URLs públicas e buildId. Nuxt nunca recebe `.env.foundation`, credenciais ou diretórios do backend. Build `node-server` cria release em `.releases/`, publica um ponteiro apenas após sucesso e conserva as anteriores. O runtime carrega uma release fixa ao iniciar; novo build exige recriar somente o serviço website. Rollback automático/limpeza de releases não implementados.
+
+Website sem manifest/service worker e sem sessão nesta etapa. Configuração pública não inclui URL técnica do proxy. Autenticação atual PWA/admin continua host-only; não habilitar cookies compartilhados antecipadamente. Login integrado será tratado com CSRF/origens na Sprint 3.

@@ -77,6 +77,16 @@ export function validate(input, root) {
     requireThat(url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && !url.port && url.hostname !== new URL(c.appUrl).hostname, 'ADMIN_PRODUCTION_URL deve ser uma origem HTTPS em host diferente, sem porta ou caminho.');
     c.adminUrl = url.origin;
   }
+  c.WEBSITE_LOCAL_DOMAIN ||= 'website.' + c.LOCAL_DOMAIN;
+  requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.WEBSITE_LOCAL_DOMAIN) && ![c.LOCAL_DOMAIN, c.ADMIN_LOCAL_DOMAIN].includes(c.WEBSITE_LOCAL_DOMAIN), 'WEBSITE_LOCAL_DOMAIN deve ser distinto da PWA e do admin.');
+  c.WEBSITE_DEV_PORT = port(c.WEBSITE_DEV_PORT || '5184', 'WEBSITE_DEV_PORT');
+  requireThat(![c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(c.WEBSITE_DEV_PORT), 'As cinco portas devem ser diferentes.');
+  c.websiteUrl = 'http://' + c.WEBSITE_LOCAL_DOMAIN;
+  if (c.APP_ENV === 'production') {
+    let url; try { url = new URL(c.WEBSITE_PRODUCTION_URL || 'https://website.' + new URL(c.appUrl).hostname); } catch { throw new FoundationError('WEBSITE_PRODUCTION_URL inválida.'); }
+    requireThat(url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && !url.port && ![new URL(c.appUrl).hostname, new URL(c.adminUrl).hostname].includes(url.hostname), 'WEBSITE_PRODUCTION_URL deve ser uma origem HTTPS distinta da PWA e do admin.');
+    c.websiteUrl = url.origin;
+  }
   c.DB_HOST = nonempty(c.DB_HOST, 'DB_HOST');
   requireThat(!/[;\r\n\0]/.test(c.DB_HOST), 'DB_HOST inválido.');
   c.DB_PORT = port(c.DB_PORT || '3306', 'DB_PORT');
@@ -105,6 +115,7 @@ export function validate(input, root) {
   c.base = c.PROJECT_SLUG.replaceAll('-', '_'); c.nodeService = c.PROJECT_SLUG + '-node';
   c.vendorVolume = c.base + '_vendor'; c.modulesVolume = c.base + '_node_modules';
   c.shared = path.join(root, 'shared'); c.admin = path.join(root, 'admin'); c.adminNodeService = c.PROJECT_SLUG + '-admin-node'; c.adminModulesVolume = c.base + '_admin_node_modules';
+  c.website = path.join(root, 'website'); c.websiteService = c.PROJECT_SLUG + '-website-node'; c.websiteModulesVolume = c.base + '_website_node_modules';
   c.backend = path.join(root, 'backend'); c.frontend = path.join(root, 'frontend');
   c.sessionCookie = c.base + '_session';
   const origins = c.APP_ENV === 'production' ? [new URL(c.appUrl).host] : [c.LOCAL_DOMAIN, ...['localhost', '127.0.0.1', c.LOCAL_DOMAIN].flatMap(h => [`${h}:${c.DEV_PORT}`, `${h}:${c.PREVIEW_PORT}`])];

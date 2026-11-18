@@ -11,16 +11,17 @@ export function frontendCommand(c, d, command) {
     '--env', 'npm_config_cache=/tmp/npm-cache', 'node:22-alpine', ...command];
 }
 export async function installFrontend(c, d) {
-  const label = c.administrative ? 'admin' : 'frontend';
+  const label = c.websiteMode ? 'website' : c.administrative ? 'admin' : 'frontend';
   const packageJson = await fs.readFile(path.join(c.frontend, 'package.json'), 'utf8');
   const lock = await fs.readFile(path.join(c.frontend, 'package-lock.json'), 'utf8');
   const manifest = JSON.parse(packageJson);
   requireThat(manifest.scripts?.dev && manifest.scripts?.build, 'Frontend precisa dos scripts dev e build.');
   const fingerprint = hash(packageJson + '\n' + lock + '\nnode22-include-dev');
-  const inspect = `const fs=require('node:fs');const p='node_modules/.foundation-lock';process.stdout.write(JSON.stringify({nodeVersion:process.versions.node,marker:fs.existsSync(p)?fs.readFileSync(p,'utf8').trim():'',metadata:fs.existsSync('node_modules/vite/package.json')&&fs.existsSync('node_modules/${c.administrative ? 'reka-ui' : 'framework7-vue'}/package.json')}));`;
+  const inspect = `const fs=require('node:fs');const p='node_modules/.foundation-lock';process.stdout.write(JSON.stringify({nodeVersion:process.versions.node,marker:fs.existsSync(p)?fs.readFileSync(p,'utf8').trim():'',metadata:fs.existsSync('node_modules/${c.websiteMode ? 'nuxt' : 'vite'}/package.json')&&fs.existsSync('node_modules/${c.websiteMode ? 'nuxt' : c.administrative ? 'reka-ui' : 'framework7-vue'}/package.json')}));`;
   const state = jsonOutput(await docker(frontendCommand(c, d, ['node', '-e', inspect]), { label: 'Estado efetivo node_modules' }), 'Estado node_modules');
   const version = String(state.nodeVersion || '').split('.').map(Number);
   requireThat(version[0] === 22 && version[1] >= 13, 'Frontend exige Node 22.13 ou superior na linha 22. Atualize a imagem node:22-alpine antes de repetir.');
+  if (c.websiteMode) requireThat(version[0] === 22 && (version[1] > 22 || (version[1] === 22 && version[2] >= 3)), 'Website Nuxt exige Node 22.22.3 ou superior na linha 22. Atualize node:22-alpine.');
   if (state.marker === fingerprint && state.metadata) { console.log(`Dependências ${label} inalteradas; instalação preservada.`); return fingerprint; }
   console.log(`Instalando dependências ${label} pelo package-lock.json.`);
   await docker(frontendCommand(c, d, ['npm', 'ci', '--include=dev', '--no-audit', '--no-fund']), { label: `Instalação ${label} npm ci`, timeout: 900000 });

@@ -43,3 +43,13 @@ admin/dist/
 admin/.dist-build/
 admin/test-results/
 admin/playwright-report/
+
+# Website Nuxt
+website/.nuxt/
+website/.output/
+website/.releases/
+website/.foundation.public.json
+website/.foundation-build.json*
+website/nuxt.cmd
+website/node_modules/
+

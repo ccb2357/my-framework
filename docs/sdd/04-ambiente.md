@@ -1,10 +1,10 @@
 # Ambiente e inicialização
 
-O [guia de instalação](../../instalacao-pwa-framework.md) concentra os comandos e trechos Compose/Nginx. Host precisa de Docker/Compose; PHP/Composer e Node/npm executam em contêineres. PHP 8.2, MySQL 8 e Node 22.13+ na linha 22; dependências fixadas pelos lockfiles.
+O [guia de instalação](../../instalacao-pwa-framework.md) concentra os comandos e trechos Compose/Nginx. Host precisa de Docker/Compose; PHP/Composer e Node/npm executam em contêineres. PHP 8.2, MySQL 8 e Node na linha 22 (website exige ≥22.22.3); dependências fixadas pelos lockfiles.
 
 ## Configuração central
 
-A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e as configurações públicas `frontend/.foundation.public.json`/`admin/.foundation.public.json`; não criar `.env` frontend nem editar derivados. Preservar opções próprias do produto e APP_KEY válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
+A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e as configurações públicas `frontend/.foundation.public.json`, `admin/.foundation.public.json` e `website/.foundation.public.json`; não criar `.env` frontend nem editar derivados. Preservar opções próprias do produto e APP_KEY válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
 
 | Campos | Contrato |
 | --- | --- |
@@ -15,6 +15,7 @@ A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera 
 | LOCAL_DOMAIN, DEV_PORT, PREVIEW_PORT | Domínio e portas disponíveis, distintas entre serviços/projetos. Dev: porta do host → 5173 interno; prévia: porta do host → 4173 interno. |
 | ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL | Opcionais: vazios derivam admin.<host da PWA>. Hosts diferentes; produção HTTPS sem caminho/porta. |
 | ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT | Admin: 5182/5183 no exemplo. Quatro portas distintas entre PWA/admin; internamente 5173 dev/4173 preview. |
+| WEBSITE_LOCAL_DOMAIN, WEBSITE_PRODUCTION_URL, WEBSITE_DEV_PORT | Website SSR independente, domínio próprio e porta dev 5184; runtime interno 3000. |
 | DB_HOST/PORT/USERNAME/PASSWORD | MySQL/conta existentes; não criar usuários/senhas/grants. |
 | DB_DATABASE, DB_TEST_DATABASE | Banco principal e testing distinto; padrões derivados do slug e sufixo _test. |
 | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME | Localidade, fusos IANA e duração da sessão; padrões no exemplo. |
@@ -58,4 +59,14 @@ SMTP_HOST vazio desabilita e-mail. SMTP_PORT (587 padrão), SMTP_SCHEME (smtp/ST
 
 ## Versão e conclusão
 
-`foundation.json` identifica a versão estável entregue. O estado local começa com `completeFoundation=false` e passa a true somente após backend, builds e HTTP das duas interfaces aprovados; `manualChecks` lista as conferências interativas de cada instalação. Isso não homologa automaticamente SMTP, aparelho ou VPS.
+`foundation.json` identifica a versão entregue. O estado local começa com `completeFoundation=false` e permanece false durante a extensão do website; `manualChecks` lista as conferências interativas de cada instalação. Isso não homologa automaticamente SMTP, aparelho ou VPS.
+
+## Website Nuxt
+
+Central: `WEBSITE_LOCAL_DOMAIN`, `WEBSITE_PRODUCTION_URL` e `WEBSITE_DEV_PORT` (5184). Domínio vazio deriva `website.<domínio da PWA>`; não renomear domínios existentes automaticamente. Para website no domínio principal, configure explicitamente os três endereços, por exemplo website `dominio.com.br`, PWA `app.dominio.com.br`, admin `admin.dominio.com.br`. Em local, campos de produção permanecem vazios. Cinco portas de host distintas; website SSR usa 3000 somente na rede Docker.
+
+Serviço `<slug>-website-node`, perfil `website`, `node:22-alpine` atualizado (Node ≥22.22.3 na linha 22), bind apenas `website/` em `/app`, volume `<base>_website_node_modules` e restart `unless-stopped`. Sem socket Docker, central privado ou credenciais. Não recebe shared até a integração dos formulários. Desenvolvimento publica somente 127.0.0.1:WEBSITE_DEV_PORT:3000 em execução temporária, sem interromper o runtime.
+
+Bootstrap exige integração Compose/Nginx, instala via lockfile e compila Nuxt. Website ainda inativo/desatualizado retorna 2 com o comando para recriar apenas seu serviço; repetir bootstrap verifica HTML SSR/buildId/no-store pelo Nginx (HTTPS público validado em produção). Nenhum serviço compartilhado é recriado automaticamente. Artefatos e releases são gerados por ambiente e não entram no Git/pacote. Execução `nuxt.cmd build` requer reinício do runtime; o dev usa HMR.
+
+A versão deste ciclo é preliminar; `completeFoundation=false` enquanto faltarem as etapas do website. Código 0 verifica os contratos entregues, não declara a loja ou autenticação integrada prontas.

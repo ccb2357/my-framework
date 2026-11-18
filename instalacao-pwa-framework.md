@@ -1,7 +1,5 @@
 # Instalação — PWA Framework
 
-**Atualização de uma instalação existente:** preserve `.env.foundation` e volumes. Se os dois serviços Node já têm o bind `/shared` da etapa 2.1, repita apenas o bootstrap da etapa 5. Caso contrário, acrescente-o e valide o Compose conforme a etapa 4. Os demais trechos da infraestrutura só precisam ser reaplicados se houver pendência indicada. Esta atualização não exige novos serviços nem recriação do administrador.
-
 ## 1. Preparar a pasta e a configuração
 
 Os exemplos usam `meu-projeto` em `C:\var\www`, com a pasta `infra` ao lado. Substitua nomes, caminhos, portas e rede pelos valores do seu `.env.foundation` e da infraestrutura.
@@ -21,6 +19,7 @@ Os exemplos deste guia usam:
 | --- | --- | --- | --- |
 | PWA | meu-projeto.localhost | 5180 | 5181 |
 | Admin | admin.meu-projeto.localhost | 5182 | 5183 |
+| Website | website.meu-projeto.localhost | 5184 | — |
 
 **Ambiente local — seu computador:**
 
@@ -28,22 +27,25 @@ Os exemplos deste guia usam:
 - `PROJECT_SLUG`: mesmo nome da pasta do projeto, por exemplo `meu-projeto`.
 - `LOCAL_DOMAIN`: domínio local da PWA, por exemplo `meu-projeto.localhost`.
 - `ADMIN_LOCAL_DOMAIN`: deixe vazio para usar `admin.meu-projeto.localhost` automaticamente.
-- `PRODUCTION_URL` e `ADMIN_PRODUCTION_URL`: deixe ambos vazios no ambiente local.
+- `WEBSITE_LOCAL_DOMAIN`: domínio do website, por exemplo `website.meu-projeto.localhost`.
+- `PRODUCTION_URL`, `ADMIN_PRODUCTION_URL` e `WEBSITE_PRODUCTION_URL`: vazios no ambiente local.
 
 **Portas locais:**
 
 - `DEV_PORT` e `PREVIEW_PORT`: desenvolvimento e prévia da PWA.
 - `ADMIN_DEV_PORT` e `ADMIN_PREVIEW_PORT`: desenvolvimento e prévia do admin.
-- As quatro portas devem ser diferentes e estar livres.
+- `WEBSITE_DEV_PORT`: desenvolvimento do website (5184).
+- As cinco portas devem ser diferentes e estar livres.
 
 **Produção — na VPS:**
 
 - `APP_ENV=production`.
 - `PRODUCTION_URL`: endereço HTTPS real da PWA, por exemplo `https://meu-dominio.com.br`.
 - `ADMIN_PRODUCTION_URL`: deixe vazio para usar `https://admin.meu-dominio.com.br`, ou informe outro endereço HTTPS.
-- Configure DNS e HTTPS válidos para os dois domínios.
+- `WEBSITE_PRODUCTION_URL`: endereço HTTPS do website.
+- Configure DNS e HTTPS para os três domínios.
 
-Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas da PWA e do admin, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
+Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas das três interfaces, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
 
 <!-- BEGIN FOUNDATION INSTALL INFRA -->
 
@@ -51,7 +53,7 @@ Você configura somente esse arquivo. O bootstrap gera os arquivos internos do L
 
 ### 2.1 Serviços Node no Compose existente
 
-Arquivo de destino: `C:\var\www\infra\docker-compose.yml`.
+Arquivo de destino: `C:/var/www/infra/docker-compose.yml`.
 
 ```yaml
 services:
@@ -91,6 +93,26 @@ services:
             - infra_network
         profiles:
             - dev
+    meu-projeto-website-node:
+        image: node:22-alpine
+        working_dir: /app
+        command: ["node", "scripts/start.mjs"]
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            NITRO_HOST: 0.0.0.0
+            NITRO_PORT: 3000
+        volumes:
+            - type: bind
+              source: C:/var/www/meu-projeto/website
+              target: /app
+            - meu_projeto_website_node_modules:/app/node_modules
+        expose:
+            - "3000"
+        networks:
+            - infra_network
+        profiles:
+            - website
 ```
 
 ### 2.2 Mount vendor no PHP-FPM existente
@@ -113,11 +135,13 @@ volumes:
         name: meu_projeto_node_modules
     meu_projeto_admin_node_modules:
         name: meu_projeto_admin_node_modules
+    meu_projeto_website_node_modules:
+        name: meu_projeto_website_node_modules
 ```
 
 ### 2.4 Sites Nginx
 
-No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. A PWA usa `frontend/dist` e o admin usa `admin/dist`; ambos encaminham rotas técnicas ao mesmo Laravel. O admin não possui PWA. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
+No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. PWA: `frontend/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
 
 ```nginx
 # PWA FOUNDATION: meu-projeto
@@ -141,7 +165,7 @@ server {
         fastcgi_pass php-fpm:9000;
         fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
         fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
-
+        
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
@@ -170,11 +194,39 @@ server {
         fastcgi_pass php-fpm:9000;
         fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
         fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
-
+        
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
     location / { try_files $uri $uri/ /index.html; }
+}
+
+# WEBSITE FOUNDATION: meu-projeto
+server {
+    listen 80;
+    server_name website.meu-projeto.localhost;
+    charset utf-8;
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    location ~ /\. { deny all; }
+    location ~ ^/(api|sanctum|up|status)(/|$) { rewrite ^ /index.php last; }
+    location = /index.php {
+        internal;
+        include fastcgi_params;
+        fastcgi_pass php-fpm:9000;
+        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        
+        add_header Cache-Control "no-store" always;
+    }
+    location ~* \.php(/|$) { return 404; }
+    location / {
+        set $website_upstream meu-projeto-website-node:3000;
+        proxy_pass http://$website_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
 }
 ```
 
@@ -186,7 +238,7 @@ Entre na pasta da infraestrutura e valide o Compose:
 
 ```cmd
 cd /d C:\var\www\infra
-docker compose --profile dev config --quiet
+docker compose --profile dev --profile website config --quiet
 ```
 
 A validação `config --quiet` não mostra nada quando está correta.
@@ -202,7 +254,7 @@ docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
 
 ## 5. Executar o bootstrap
 
-Agora os dois serviços Node, os volumes, o mount PHP-FPM e os dois sites Nginx devem estar configurados e aplicados. Execute:
+Com os três serviços Node, volumes, mount PHP-FPM e sites Nginx configurados, execute:
 
 ```cmd
 docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount "type=bind,source=C:\var\www,target=/var/www" --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network pwa-foundation-bootstrap:0.1.0 --project /var/www/meu-projeto
@@ -216,11 +268,22 @@ echo %ERRORLEVEL%
 
 O código esperado ao concluir esta etapa é **0**. Se retornar **2**, ainda existe alguma pendência: leia a lista exibida, confira as alterações da etapa 2, aplique-as conforme a etapa 3 e repita este comando. Não é necessário refazer as etapas que já estiverem corretas. Código **1** indica erro; envie a mensagem para análise.
 
+### Ativar o website
+
+Após o build, se o bootstrap pedir, execute na pasta infra e repita o bootstrap:
+
+```cmd
+docker compose --profile website up -d --no-deps --force-recreate meu-projeto-website-node
+```
+
+Abra [http://website.meu-projeto.localhost](http://website.meu-projeto.localhost). Nuxt permanece em execução; login/loja ainda não incluídos.
+
 ## 6. Conferir o resultado
 
 Confira:
 
 - [Hello/PWA](http://meu-projeto.localhost/)
+- [Hello Website](http://website.meu-projeto.localhost/)
 - [Login/Dashboard administrativa](http://admin.meu-projeto.localhost/)
 - [Status do backend e banco](http://meu-projeto.localhost/status)
 - [Mesmo diagnóstico em JSON](http://meu-projeto.localhost/api/v1/status)
@@ -235,7 +298,7 @@ Confira:
 
 ### Criar e acessar o administrador
 
-Após extrair a atualização, repita o bootstrap da etapa 5. Não precisa alterar Compose/Nginx nem reconstruir a imagem do executor. Na pasta infra, execute (adapte meu-projeto ao nome da sua pasta):
+Na pasta infra, execute (adapte meu-projeto ao nome da sua pasta):
 
 ```cmd
 docker compose exec -it -w /var/www/meu-projeto/backend php-fpm php artisan admin:create admin@example.com --name="Administrador"
@@ -298,6 +361,27 @@ Build:
 ```cmd
 cd /d C:\var\www\meu-projeto\admin
 vite.cmd build
+```
+
+### Website — CMD
+
+```cmd
+cd /d C:\var\www\meu-projeto\website
+nuxt.cmd dev
+```
+
+Acesso: [http://localhost:5184](http://localhost:5184) (`WEBSITE_DEV_PORT`). Encerrar: **Ctrl+C**.
+
+Build:
+
+```cmd
+nuxt.cmd build
+```
+
+Depois, na pasta infra:
+
+```cmd
+docker compose --profile website up -d --no-deps --force-recreate meu-projeto-website-node
 ```
 
 ### Mensagens e máscaras
@@ -418,6 +502,14 @@ Testes e build do admin:
 ```cmd
 docker compose --profile dev run --rm --no-deps meu-projeto-admin-node npm run check
 ```
+
+Website — build e testes SSR:
+
+```cmd
+docker compose --profile website run --rm --no-deps meu-projeto-website-node npm run check
+```
+
+Após esse build, recrie somente o serviço website com o comando acima.
 
 Esperado: todos os testes passando e nenhuma falha de formatação.
 

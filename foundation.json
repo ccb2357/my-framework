@@ -1,7 +1,7 @@
 {
-  "foundationVersion": "1.0.0",
-  "stage": "stable",
-  "completeFoundation": true,
+  "foundationVersion": "1.1.0-website.1",
+  "stage": "website-structure",
+  "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
     "version": "v12.12.2",
@@ -42,7 +42,7 @@
     "@tailwindcss/vite": "4.3.5",
     "vite": "8.3.4",
     "pwa": false,
-    "shadcnCli": "2.9.0 (somente geração dos componentes entregues)",
+    "shadcnCli": "2.9.0 (somente gera\u00e7\u00e3o dos componentes entregues)",
     "cn": "0.5.2",
     "@vueuse/core": "15.0.0",
     "lucide": "1.72.0"
@@ -75,5 +75,17 @@
     "singleUse": true,
     "separateBrokers": true,
     "autoLogin": false
+  },
+  "website": {
+    "nuxt": "4.6.4",
+    "vue": "3.5.45",
+    "tailwindcss": "4.3.5",
+    "lucide": "1.72.0",
+    "reka-ui": "2.11.0",
+    "shadcn-vue": "componentes locais JavaScript / new-york",
+    "node": ">=22.22.3 <23",
+    "ssr": true,
+    "pwa": false,
+    "authentication": "pending"
   }
 }

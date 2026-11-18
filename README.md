@@ -1,6 +1,6 @@
 # PWA Framework
 
-Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, Laravel e MySQL**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
+Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, website Nuxt, Laravel e MySQL**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
 
 [![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![Framework7 9](https://img.shields.io/badge/Framework7-9-EF2D5E?style=for-the-badge&logo=framework7&logoColor=white)](https://framework7.io/vue/)
@@ -15,13 +15,16 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, L
 
 **[Instalação e operação](instalacao-pwa-framework.md)** · **[Especificação técnica](docs/sdd/00-visao.md)** · **[Regras de desenvolvimento](RULES.md)**
 
-Versão da fundação: **1.0.0**. Instalação local e fluxos de acesso validados; evidências em [MEMORY.md](MEMORY.md).
+Versão: **1.1.0-website.1**. Website SSR inicial; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
+
+[![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/)
 
 ## Recursos
 
+- **Website independente:** Nuxt SSR em `website/`, Tailwind/shadcn-vue e Lucide próprios; serviço Node permanente, sem PWA. Hello pública, ainda sem autenticação ou loja.
 - **Admin independente:** Vue/shadcn-vue/Tailwind em `admin/`, subdomínio e build próprios; sem misturar componentes ou estilos com a PWA.
 
-- **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations e publica os builds PWA/admin.
+- **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations publica os builds PWA/admin e compila o website; a ativação do serviço Nuxt é manual.
 - **Configuração única:** `.env.foundation` define identidade, ambiente, infraestrutura, bancos, sessão e PWA. Arquivos internos são gerados automaticamente.
 - **Interface nativa:** Vue/Framework7, grid responsivo, Nunito local, ícones, máscaras, validação e design system compartilhado.
 - **Hello demonstrativa:** componentes oficiais, FAB com três ações, quatro transições, formulário e status real de backend/banco.
@@ -38,12 +41,13 @@ Clientes têm cadastro público, login/logout e área protegida na PWA, com aces
 | Estilos e ícones | CSS/grid Framework7 · tokens próprios · Nunito local · Framework7 Icons 5.0.5 · Lucide 1.72.0 |
 | Formulários compartilhados | IMask 7.6.1 · JustValidate 4.3.0 nas duas interfaces; mensagens/máscaras/regras em `shared/forms/`; validação também obrigatória no backend |
 | Build e PWA | Vite 8.3.4 · plugin-vue 6.0.11 · vite-plugin-pwa 2.0.0 · Workbox 7.4.1/injectManifest |
+| Website | Nuxt 4.6.4 · Vue 3.5.45 · Tailwind 4.3.5 · shadcn-vue/JavaScript · Lucide 1.72.0 · SSR/Nitro |
 | Administrativo | Vue 3.5.45 · shadcn-vue/JavaScript · Reka UI 2.11.0 · Tailwind 4.3.5 · Lucide 1.72.0 · Vite 8.3.4 |
 | Backend | PHP 8.2 · Laravel 12.70.0 · Sanctum 4.4.0 · Composer 2 |
 | Infraestrutura | Docker/Compose · Node 22.13+ na linha 22 · Nginx · PHP-FPM · MySQL 8 · HTTPS/Certbot conforme infraestrutura |
 | Qualidade | PHPUnit/Pint · Vitest 5.1.0 · Playwright 1.65.1 · ESLint 10.15.0/Vue · Stylelint 16.26.1 |
 
-Manifests, lockfiles e [foundation.json](foundation.json) identificam as versões efetivas. Conferir engines, exports e peerDependencies antes de atualizar. Dependências npm diretas exatas, lockfiles no Git e instalação com `npm ci`; atualizações são deliberadas e testadas. `.npmrc` mantém `save-exact=true`. Node continua na faixa 22 compatível. Branch principal: `master`. Não acrescentar React ou TypeScript. Framework7 e seu roteador pertencem à PWA; shadcn-vue/Tailwind somente ao admin.
+Manifests, lockfiles e [foundation.json](foundation.json) identificam as versões efetivas. Conferir engines, exports e peerDependencies antes de atualizar. Dependências npm diretas exatas, lockfiles no Git e instalação com `npm ci`; atualizações são deliberadas e testadas. `.npmrc` mantém `save-exact=true`. Node permanece na linha 22; o website exige 22.22.3 ou superior. Branch principal: `master`. Não acrescentar React ou TypeScript. Framework7 e seu roteador pertencem à PWA; shadcn-vue/Tailwind pertencem ao admin e ao website, com estilos e componentes independentes.
 
 ## Começar um projeto
 
@@ -60,13 +64,13 @@ Cada aplicação recebe código pronto; não recrie Laravel/Vite. Preserve os ar
 
 | Grupo | Campos principais |
 | --- | --- |
-| Identidade e ambiente | PROJECT_SLUG, PROJECT_NAME, APP_ENV, LOCAL_DOMAIN, PRODUCTION_URL, ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL |
+| Identidade e ambiente | PROJECT_SLUG, PROJECT_NAME, APP_ENV, LOCAL_DOMAIN, PRODUCTION_URL, ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL, WEBSITE_LOCAL_DOMAIN, WEBSITE_PRODUCTION_URL |
 | Infraestrutura | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT, DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL |
-| Acesso e dados | DEV_PORT, PREVIEW_PORT, ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
+| Acesso e dados | DEV_PORT, PREVIEW_PORT, ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT, WEBSITE_DEV_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
 | Regionalização e sessão | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME |
 | PWA | PWA_SHORT_NAME/DESCRIPTION/THEME_COLOR/BACKGROUND_COLOR |
 
-O bootstrap deriva os `.env` Laravel/testing e configurações públicas próprias de `frontend/` e `admin/`; não criar `.env` no frontend nem repetir valores nos derivados. Somente campos públicos permitidos chegam ao navegador. APP_KEY válida é preservada.
+O bootstrap deriva os `.env` Laravel/testing e configurações públicas próprias de `frontend/`, `admin/` e `website/`; não criar `.env` no frontend nem repetir valores nos derivados. Somente campos públicos permitidos chegam ao navegador. APP_KEY válida é preservada.
 
 Serviço Node, volumes, bancos, cookie e manifest têm identidade própria por projeto. Portas do host devem estar livres e não podem conflitar entre aplicativos. Credenciais são da conta MySQL existente; o bootstrap não cria usuários, senhas ou grants.
 
@@ -77,11 +81,12 @@ Serviço Node, volumes, bancos, cookie e manifest têm identidade própria por p
 | Desenvolvimento | `frontend/vite.cmd dev`: Vite/HMR via Docker, na DEV_PORT do host → 5173 interno. Worker desativado; sem instalação da PWA. |
 | Build | `frontend/vite.cmd build`: publica `frontend/dist` após validar artefatos; não instala npm automaticamente. |
 | Prévia | Build na PREVIEW_PORT do host → 4173 interno; instalação/offline em localhost, inclusive Android por USB/ADB. |
-| Produção | Nginx serve dist e encaminha API/Laravel ao PHP-FPM, na mesma origem HTTPS. Node só para build; sem servidor Node permanente. |
+| Produção | Nginx serve dist e encaminha API/Laravel ao PHP-FPM, na mesma origem HTTPS. PWA/admin usam Node para build; website mantém servidor Nuxt/Nitro atrás do Nginx. |
 | Admin | `admin/vite.cmd dev` ou `build`: serviço e dist próprios; subdomínio administrativo, sem PWA. |
+| Website | `website/nuxt.cmd dev` ou `build`; runtime SSR no serviço `<slug>-website-node`, porta interna 3000. Reiniciar esse serviço após novo build. |
 | Backend | `app:sync`: limpa caches e aplica migrations pendentes, com propagação de falhas; --force obrigatório em produção. |
 
-Comandos completos de CMD/Linux, integração Docker, Android/ADB, fila e testes ficam no [manual](instalacao-pwa-framework.md). Frontend e API usam proxy técnico no Vite/prévia; Nginx encaminha `/api`, `/sanctum`, `/up` e `/status` ao Laravel, sem responder HTML da SPA para essas rotas.
+Comandos completos de CMD/Linux, integração Docker, Android/ADB e testes ficam no [manual](instalacao-pwa-framework.md). Frontend e API usam proxy técnico no Vite/prévia; Nginx encaminha `/api`, `/sanctum`, `/up` e `/status` ao Laravel, sem responder HTML da SPA para essas rotas.
 
 ### Diagnósticos
 
@@ -117,10 +122,14 @@ Um único worker em `frontend/src/sw.js` atende precache, offline e atualizaçã
 | `frontend/src/css/`, `public/` | Tokens/estilos, fonte local, ícones e estáticos |
 | `frontend/src/sw.js`, `dist/` | Fonte do worker e saída gerada do build |
 | `admin/src/`, `components.json` | Hello Dashboard e componentes shadcn-vue/JavaScript; Tailwind e build próprios, sem PWA |
+| `website/app/`, `scripts/` | Páginas/layout Nuxt, componentes shadcn próprios e build SSR em releases preservadas |
 | `shared/forms/` | Mensagens pt-BR, máscaras, regras e integração comum, sem CSS/framework visual |
-| `backend/` | Laravel, APIs, sessão, modelos, migrations, serviços e fila |
+| `backend/` | Laravel, APIs, sessão, modelos, migrations e serviços |
+| `backend/routes/` | `pwa.php`: PWA · `admin.php`: administrativo · `website.php`: site institucional/e-commerce |
 | `docs/sdd/`, `docs/telas/` | Contratos técnicos e referências visuais aprovadas |
 | `AGENTS.md`, `RULES.md`, `MEMORY.md` | Orientação, regras obrigatórias e registros específicos do projeto |
+
+O website não reutiliza componentes/CSS do admin ou da PWA. Formulários compartilhados e login integrado website/PWA pertencem às próximas etapas; o admin continua isolado.
 
 ## Convenções de desenvolvimento
 

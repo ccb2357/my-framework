@@ -27,3 +27,5 @@ Regra visual aprovada: inputs, selects e textareas sem outline retangular de foc
 Validação final por instalação do zero e evidências reais. Não exigir clones A/B nem aprovar referências visuais automaticamente.
 
 18. Compartilhar somente lógica neutra em shared/forms/; mensagens JSON, máscaras, regras e ciclo de validação. Nunca colocar CSS/componentes F7/shadcn nessa pasta nem reutilizar node_modules entre serviços. Dependências diretas npm exatas, lockfiles versionados e instalação com npm ci; mudanças de versão exigem testes/builds. A faixa Node/imagens Docker não se torna fixa por fixar pacotes npm.
+
+Website autorizado em website/: Nuxt SSR + Tailwind + shadcn-vue JavaScript e Lucide, dependências/componentes/CSS próprios, sem Framework7 nem recursos PWA. Serviço Node permanente atrás do Nginx. Configuração somente por whitelist gerada pelo bootstrap; nunca ler o central privado no Nuxt. Não alterar domínios/sessões existentes automaticamente. Formulários neutros e login compartilhado website/PWA pertencem às sprints posteriores, mantendo admin isolado. Plano em sprints-website.md (fora do SDD).
