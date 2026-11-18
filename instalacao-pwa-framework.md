@@ -30,6 +30,7 @@ Os exemplos deste guia usam:
 - `LOCAL_DOMAIN`: domínio local da PWA, por exemplo `meu-projeto.localhost`.
 - `ADMIN_LOCAL_DOMAIN`: deixe vazio para usar `admin.meu-projeto.localhost` automaticamente.
 - `WEBSITE_LOCAL_DOMAIN`: domínio do website, por exemplo `website.meu-projeto.localhost`.
+- `CLIENT_SESSION_DOMAIN`: deixe vazio para derivar o domínio comum da PWA e do website.
 - `PRODUCTION_URL`, `ADMIN_PRODUCTION_URL` e `WEBSITE_PRODUCTION_URL`: vazios no ambiente local.
 
 **Portas locais:**
@@ -42,9 +43,10 @@ Os exemplos deste guia usam:
 **Produção — na VPS:**
 
 - `APP_ENV=production`.
-- `PRODUCTION_URL`: endereço HTTPS real da PWA, por exemplo `https://meu-dominio.com.br`.
-- `ADMIN_PRODUCTION_URL`: deixe vazio para usar `https://admin.meu-dominio.com.br`, ou informe outro endereço HTTPS.
-- `WEBSITE_PRODUCTION_URL`: endereço HTTPS do website.
+- `PRODUCTION_URL`: endereço HTTPS real da PWA, por exemplo `https://app.meu-dominio.com.br`.
+- `ADMIN_PRODUCTION_URL`: endereço HTTPS do admin, por exemplo `https://admin.meu-dominio.com.br`.
+- `WEBSITE_PRODUCTION_URL`: endereço HTTPS do website, por exemplo `https://meu-dominio.com.br`.
+- PWA e website devem pertencer ao mesmo domínio de sessão; não use domínios independentes.
 - Configure DNS e HTTPS para os três domínios.
 
 Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas das três interfaces, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
@@ -289,10 +291,12 @@ Confira:
 
 ### Cadastro, login e logout dos clientes
 
-1. Na Hello, em **Sua conta**, clique **Criar conta**. Preencha nome, e-mail, senha (mínimo 8 caracteres) e confirmação. O cadastro abre **Minha conta** imediatamente, sem confirmação por e-mail.
-2. Recarregue a página e confira nome/e-mail. Clique **Sair**; acessar `/conta/` deve levar a **Entrar**.
-3. Entre novamente. Confira também senha incorreta, e-mail já cadastrado e campos inválidos.
-4. Execute a suíte Laravel da seção **Verificações e testes**, no banco testing.
+1. No website, clique **Criar conta**; o cadastro abre **Minha conta**, sem confirmação de e-mail.
+2. Abra a PWA pelo domínio Nginx e acesse **Minha conta**: deve usar a mesma sessão. Teste o login no sentido inverso.
+3. Saia em uma interface e volte à outra: ao navegar/recarregar ou recuperar foco, deve pedir login. O admin continua conectado.
+4. **Esqueci minha senha** no website envia o link para o próprio website, usando o SMTP já configurado. Nova solicitação após 60 segundos; redefinir não autentica automaticamente.
+
+**Atualização desta base:** reconstrua a imagem da etapa 4, repita o bootstrap da etapa 5 e aceite **Atualizar aplicativo** na PWA. Clientes precisam entrar novamente; contas/senhas são preservadas. Admin mantém sessão própria. Teste a integração pelos domínios; `localhost:porta` é outro contexto de cookies.
 
 ### Criar e acessar o administrador
 

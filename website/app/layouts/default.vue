@@ -9,7 +9,7 @@ const config = useRuntimeConfig().public;
       <div class="mx-auto flex max-w-5xl items-center gap-3 px-6 py-5">
         <SiteIcon class="size-6" />
         <NuxtLink to="/" class="font-semibold focus-visible:outline-2 focus-visible:outline-offset-4">{{ config.name }}</NuxtLink>
-        <span class="ml-auto text-sm text-muted-foreground">Website</span>
+        <nav aria-label="Conta do cliente" class="ml-auto flex gap-4 text-sm underline"><NuxtLink to="/entrar/">Entrar</NuxtLink><NuxtLink to="/cadastro/">Criar conta</NuxtLink><NuxtLink to="/conta/">Minha conta</NuxtLink></nav>
       </div>
     </header>
     <main id="conteudo" class="mx-auto max-w-5xl px-6 py-12"><slot /></main>

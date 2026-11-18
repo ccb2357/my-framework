@@ -8,7 +8,7 @@ import { setTimeout } from 'node:timers/promises';
 import { requireThat } from './errors.mjs';
 export function websiteContext(c) { return { ...c, frontend: c.website, modulesVolume: c.websiteModulesVolume, websiteMode: true, nodeImage: 'node:22-bookworm-slim' }; }
 export async function websiteBuildId(c) {
-  const parts = [c.PROJECT_NAME, c.PROJECT_SLUG, c.APP_LOCALE, c.websiteUrl, c.appUrl];
+  const parts = [c.PROJECT_NAME, c.PROJECT_SLUG, c.APP_LOCALE, c.websiteUrl, c.appUrl, c.NGINX_INTERNAL_URL, c.WEBSITE_DEV_PORT, c.clientSessionCookie];
   async function collect(directory) {
     for (const item of (await fs.readdir(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
       if (item.name.startsWith('.') || item.name === 'node_modules' || item.name === 'nuxt.cmd') continue;
@@ -62,7 +62,7 @@ export async function activateWebsite(c, d, buildId) {
   console.log('Iniciando/atualizando somente o serviço website.');
   const activation = websiteActivation(c, d);
   await docker(activation.argv, { input: activation.input, cwd: d.directory, label: 'Ativação do serviço website', timeout: 300000 });
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < 30; attempt++) {
     if (attempt) await setTimeout(1000);
     const evidence = await websiteEvidence(c, d, buildId);
     if (evidence) return evidence;

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
 import net from 'node:net';
+import http from 'node:http';
 import fs from 'node:fs';
 import { checkBuild } from '../scripts/check-build.mjs';
 import { readConfiguration } from '../scripts/config.mjs';
@@ -15,7 +16,16 @@ test('production server renders Hello, styles and icons without JavaScript and h
   await new Promise(resolve => listener.listen(0, '127.0.0.1', resolve));
   const port = listener.address().port;
   await new Promise(resolve => listener.close(resolve));
-  const child = spawn(process.execPath, ['scripts/start.mjs'], { env: { ...process.env, NITRO_PORT: String(port), NITRO_HOST: '127.0.0.1' }, stdio: 'pipe' });
+  const backend = http.createServer((req, res) => {
+    assert.equal(req.headers.host, 'website.example.test');
+    res.setHeader('content-type', 'application/json');
+    const name = req.headers.cookie === 'fixture_client=signed-a' ? 'Client A' : req.headers.cookie === 'fixture_client=signed-b' ? 'Client B' : null;
+    res.statusCode = name ? 200 : 401;
+    res.end(JSON.stringify(name ? { user: { id: 1, name, email: 'client@example.test' } } : {message:'expired'}));
+  });
+  await new Promise(resolve => backend.listen(0, '127.0.0.1', resolve));
+  const backendConfig = JSON.stringify({ backendTarget: 'http://127.0.0.1:' + backend.address().port, backendHost: 'website.example.test', websiteUrl: 'https://website.example.test', clientSessionCookie: 'fixture_client', devPort: 5184 });
+  const child = spawn(process.execPath, ['scripts/start.mjs'], { env: { ...process.env, NUXT_CLIENT_BACKEND: backendConfig, NITRO_PORT: String(port), NITRO_HOST: '127.0.0.1' }, stdio: 'pipe' });
   let output = ''; child.stderr.on('data', chunk => { output += chunk; });
   try {
     let response;
@@ -36,6 +46,21 @@ test('production server renders Hello, styles and icons without JavaScript and h
     assert.ok(html.includes(buildId));
     assert.ok(html.includes(config.pwaUrl));
     assert.doesNotMatch(html, /serviceWorker|rel="manifest"|DB_PASSWORD|SMTP_PASS/);
+    for (const route of ['/entrar/', '/cadastro/', '/esqueci-senha/', '/redefinir-senha/']) {
+      const page = await fetch(`http://127.0.0.1:${port}${route}`);
+      assert.equal(page.status, 200);
+      assert.match(await page.text(), /<fieldset[^>]*disabled/);
+    }
+    const account = () => fetch(`http://127.0.0.1:${port}/conta/`, { redirect: 'manual' });
+    assert.equal((await account()).status, 302);
+    for (const [cookie, name, absent] of [['signed-a', 'Client A', 'Client B'], ['signed-b', 'Client B', 'Client A']]) {
+      const privatePage = await fetch(`http://127.0.0.1:${port}/conta/`, { headers: { Cookie: 'fixture_client=' + cookie } });
+      assert.equal(privatePage.status, 200);
+      assert.match(privatePage.headers.get('cache-control'), /no-store/);
+      const content = await privatePage.text(); assert.ok(content.includes(name)); assert.ok(!content.includes(absent));
+      assert.doesNotMatch(content, /signed-a|signed-b|backendTarget|clientSessionCookie|website.example.test/);
+    }
+    assert.equal((await account()).status, 302);
     const css = html.match(/href="([^"]+\.css)"/);
     assert.ok(css);
     const asset = await fetch(new URL(css[1], `http://127.0.0.1:${port}`));
@@ -45,6 +70,7 @@ test('production server renders Hello, styles and icons without JavaScript and h
   } finally {
     child.kill('SIGTERM');
     await new Promise(resolve => child.once('exit', resolve));
+    await new Promise(resolve => backend.close(resolve));
   }
 });
 

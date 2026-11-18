@@ -9,11 +9,11 @@ export async function apiRequest(path, { method = 'GET', json, signal, csrfRefre
   if (!path.startsWith('/api/v1/') || path.startsWith('//')) throw new ApiError('Rota de API inválida.');
   const headers = { Accept: 'application/json' };
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
-    if (csrfRefresh || !readCookie('XSRF-TOKEN')) {
-      const csrf = await fetcher('/sanctum/csrf-cookie', { credentials: 'include', cache: 'no-store', signal });
+    if (csrfRefresh || !readCookie('XSRF-CLIENT-TOKEN')) {
+      const csrf = await fetcher('/sanctum/csrf-cookie', { credentials: 'include', cache: 'no-store', signal, referrerPolicy: 'origin' });
       if (!csrf.ok) throw new ApiError('Não foi possível iniciar a sessão.', csrf.status);
     }
-    const token = readCookie('XSRF-TOKEN');
+    const token = readCookie('XSRF-CLIENT-TOKEN');
     if (!token) throw new ApiError('Token CSRF indisponível.');
     headers['X-XSRF-TOKEN'] = token;
   }

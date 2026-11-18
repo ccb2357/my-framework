@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\AdminCsrf;
+use App\Http\Middleware\ClientCsrf as ValidateCsrfToken;
 use App\Models\Administrator;
 use App\Models\User;
 use App\Notifications\AccountPasswordReset;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;

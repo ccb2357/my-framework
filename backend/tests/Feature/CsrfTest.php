@@ -14,8 +14,8 @@ class CsrfTest extends TestCase
         $response->assertNoContent();
         $cookies = $response->headers->getCookies();
         $names = array_map(fn ($cookie) => $cookie->getName(), $cookies);
-        $this->assertContains('XSRF-TOKEN', $names);
-        $this->assertContains(config('session.cookie'), $names);
+        $this->assertContains('XSRF-CLIENT-TOKEN', $names);
+        $this->assertContains(config('foundation.client_session_cookie') ?: config('session.cookie'), $names);
         foreach ($cookies as $cookie) {
             $this->assertNull($cookie->getDomain());
         }

@@ -24,7 +24,7 @@ async function fixture({ pending = false, production = false, desktop = false, h
   await fs.writeFile(root + '/admin/package-lock.json', '{}');
   await fs.writeFile(root + '/website/package.json', JSON.stringify({ scripts: { dev: 'nuxt dev', build: 'nuxt build' } }));
   await fs.writeFile(root + '/website/package-lock.json', '{}');
-  const values = { ...example, PROJECT_SLUG: 'product-a', LOCAL_DOMAIN: 'product-a.localhost', DB_DATABASE: 'product_a', DB_TEST_DATABASE: 'product_a_test', CONTAINER_PROJECTS_ROOT: projects, APP_ENV: production ? 'production' : 'local', PRODUCTION_URL: production ? 'https://example.com' : '', DB_PASSWORD: 'fixture$special #password' };
+  const values = { ...example, WEBSITE_LOCAL_DOMAIN: '', PROJECT_SLUG: 'product-a', LOCAL_DOMAIN: 'product-a.localhost', DB_DATABASE: 'product_a', DB_TEST_DATABASE: 'product_a_test', CONTAINER_PROJECTS_ROOT: projects, APP_ENV: production ? 'production' : 'local', PRODUCTION_URL: production ? 'https://example.com' : '', DB_PASSWORD: 'fixture$special #password' };
   await fs.writeFile(root + '/.env.foundation', Object.entries(values).map(([k, v]) => `${k}='${v}'`).join('\n'));
   const c = validate(values, root);
   const source = desktop ? '/run/desktop/mnt/host/c/var/www' : '/srv/apps';
@@ -95,7 +95,7 @@ else if(a[0]==='exec'){
 fs.writeFileSync(file,JSON.stringify(data));process.stdout.write(out);
 `;
   await fs.writeFile(tmp + '/bin/docker', fake, { mode: 0o755 });
-  const invoke = async force => run(process.execPath, [entry, '--project', root, ...(force ? ['--force'] : [])], { allowFailure: true, env: { ...process.env, PATH: tmp + '/bin:' + process.env.PATH, FOUNDATION_RUNTIME_PACKAGE: runtime, FAKE_ENGINE_DATA: dataFile, WEBSITE_ROOT: root + '/website' }, timeout: 30000 });
+  const invoke = async force => run(process.execPath, [entry, '--project', root, ...(force ? ['--force'] : [])], { allowFailure: true, env: { ...process.env, PATH: tmp + '/bin:' + process.env.PATH, FOUNDATION_RUNTIME_PACKAGE: runtime, FAKE_ENGINE_DATA: dataFile, WEBSITE_ROOT: root + '/website' }, timeout: 120000 });
   return { root, invoke, data: async () => JSON.parse(await fs.readFile(dataFile, 'utf8')), cleanup: () => fs.rm(tmp, { recursive: true, force: true }) };
 }
 test('preparation exits 2 before dependencies/env writes when effective infra is missing', async () => {
@@ -154,7 +154,7 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     const runs = data.calls.filter(a => a[0] === 'run' && (a.includes('build') || a.includes('ci')));
     assert.ok(runs.every(a => a.some(x => x.includes('target=/shared,readonly'))));
     assert.ok(data.calls.some(a => a[0] === 'run' && a.includes('--publish') && a.includes('infra_network')));
-    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '1.1.0-website.2'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
+    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '1.1.0-website.3'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
     assert.equal(data.websiteActivations, 1);
     assert.ok(data.calls.filter(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))).every(a => a.includes('up') && a.includes('--no-deps') && a.includes('--no-build') && a.at(-1) === 'product-a-website-node'));
     assert.ok(data.websiteActivationInputs.every(x => Object.keys(x.services).join() === 'product-a-website-node'));
@@ -174,7 +174,7 @@ test('HTTP failure identifies the failed contract and leaves state failed withou
   try {
     const result = await f.invoke();
     assert.equal(result.code, 1);
-    assert.match(result.stderr, /\/sanctum\/csrf-cookie; cookie XSRF-TOKEN ausente; HTTP 204/);
+    assert.match(result.stderr, /\/sanctum\/csrf-cookie; cookie CSRF\/cliente ausente; HTTP 204/);
     assert.match(result.stderr, /origem nº 3/);
     assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE/);
     assert.equal(JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')).phase, 'failed');

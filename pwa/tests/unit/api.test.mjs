@@ -20,7 +20,7 @@ test('mutations initialize CSRF and submit the decoded cookie once, without retr
   try {
     await assert.rejects(apiRequest('/api/v1/example', { method: 'POST', json: { example: true }, fetcher: async (path, options) => {
       calls.push({ path, options });
-      if (path === '/sanctum/csrf-cookie') { document.cookie = 'XSRF-TOKEN=token%3D'; return new Response(null, { status: 204 }); }
+      if (path === '/sanctum/csrf-cookie') { document.cookie = 'XSRF-CLIENT-TOKEN=token%3D'; return new Response(null, { status: 204 }); }
       return json({}, 419);
     } }), error => error.status === 419);
     assert.equal(calls.length, 2); assert.equal(calls[1].options.headers['X-XSRF-TOKEN'], 'token=');

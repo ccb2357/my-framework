@@ -15,4 +15,4 @@ Toda sprint atualiza README, SDD pertinente, manual conciso e MEMORY. Catálogo,
 
 ## Estado
 
-Sprints 1 e 2 implementadas: website SSR e formulário demonstrativo usando a lógica comum. Dependências próprias e visual separado; autenticação ainda não alterada. Verificações e limites em MEMORY.md. Sprints 3–6 pendentes; confirmar formulário no Docker/Windows antes de avançar.
+Sprints 1 e 2 validadas pelo responsável no Windows. Sprint 3 implementada: cadastro/login/logout/recuperação e conta SSR, sessão integrada website/PWA, admin isolado; aceite Windows pendente. Sprints 4–6 pendentes. Evidências e limites em MEMORY.md.

@@ -65,7 +65,6 @@ class ClientAuthController
 
     public function logout(Request $request)
     {
-        // Logout event revokes the subscription linked to this session only.
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

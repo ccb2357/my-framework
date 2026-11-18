@@ -16,7 +16,11 @@ class AccountPasswordReset extends Notification
 
     public function url($notifiable): string
     {
-        $origin = $this->area === 'admin' ? config('foundation.admin_url') : config('app.url');
+        $origin = match ($this->area) {
+            'admin' => config('foundation.admin_url'),
+            'website' => config('foundation.website_url'),
+            default => config('app.url'),
+        };
 
         return rtrim($origin, '/').'/redefinir-senha/#'.http_build_query(['token' => $this->token, 'email' => $notifiable->getEmailForPasswordReset()], '', '&', PHP_QUERY_RFC3986);
     }

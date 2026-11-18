@@ -15,13 +15,13 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, w
 
 **[Instalação e operação](instalacao-pwa-framework.md)** · **[Especificação técnica](docs/sdd/00-visao.md)** · **[Regras de desenvolvimento](RULES.md)**
 
-Versão: **1.1.0-website.2**. Website SSR e formulários compartilhados; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
+Versão: **1.1.0-website.3**. Website SSR, formulários e autenticação integrada à PWA; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
 
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/)
 
 ## Recursos
 
-- **Website independente:** Nuxt SSR em `website/`, Tailwind/shadcn-vue e Lucide próprios; serviço Node permanente, sem PWA. Hello pública com formulário demonstrativo; ainda sem autenticação ou loja.
+- **Website independente:** Nuxt SSR em `website/`, Tailwind/shadcn-vue e Lucide próprios; serviço Node permanente, sem PWA. Hello pública, formulários, cadastro/login/logout, recuperação e Minha conta; sem regras de loja.
 - **Admin independente:** Vue/shadcn-vue/Tailwind em `admin/`, subdomínio e build próprios; sem misturar componentes ou estilos com a PWA.
 
 - **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations, publica os builds PWA/admin e compila/ativa o website automaticamente.
@@ -31,7 +31,7 @@ Versão: **1.1.0-website.2**. Website SSR e formulários compartilhados; evoluç
 - **PWA:** manifest, instalação em navegadores compatíveis, shell offline e atualização confirmada, preservando campos e abas em uso.
 - **API e testes:** Laravel/Sanctum, sessão/CSRF, diagnósticos HTTP/JSON, isolamento do banco testing e testes automatizados.
 
-Clientes têm cadastro público, login/logout e área protegida na PWA, com acesso imediato, sem confirmação de e-mail. O admin tem login/logout independentes, conta criada por comando e Dashboard protegida. Ambos recuperam a senha por e-mail, com SMTP centralizado e tokens separados. Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
+Clientes têm cadastro público, login/logout e área protegida no website e na PWA, com acesso imediato, sem confirmação de e-mail. O admin tem login/logout independentes, conta criada por comando e Dashboard protegida. Ambos recuperam a senha por e-mail, com SMTP centralizado e tokens separados. Regras de negócio pertencem ao aplicativo derivado. Offline cobre a interface estática; não implementa edição/sincronização de registros. O formulário Hello não grava dados.
 
 ## Stack
 
@@ -67,7 +67,7 @@ Cada aplicação recebe código pronto; não recrie Laravel/Vite. Preserve os ar
 | Identidade e ambiente | PROJECT_SLUG, PROJECT_NAME, APP_ENV, LOCAL_DOMAIN, PRODUCTION_URL, ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL, WEBSITE_LOCAL_DOMAIN, WEBSITE_PRODUCTION_URL |
 | Infraestrutura | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT, DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL |
 | Acesso e dados | DEV_PORT, PREVIEW_PORT, ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT, WEBSITE_DEV_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
-| Regionalização e sessão | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME |
+| Regionalização e sessão | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME, CLIENT_SESSION_DOMAIN |
 | PWA | PWA_SHORT_NAME/DESCRIPTION/THEME_COLOR/BACKGROUND_COLOR |
 
 O bootstrap deriva os `.env` Laravel/testing e configurações públicas próprias de `pwa/`, `admin/` e `website/`; não criar `.env` na PWA nem repetir valores nos derivados. Somente campos públicos permitidos chegam ao navegador. APP_KEY válida é preservada.
@@ -129,7 +129,7 @@ Um único worker em `pwa/src/sw.js` atende precache, offline e atualização con
 | `docs/sdd/`, `docs/telas/` | Contratos técnicos e referências visuais aprovadas |
 | `AGENTS.md`, `RULES.md`, `MEMORY.md` | Orientação, regras obrigatórias e registros específicos do projeto |
 
-O website não reutiliza componentes/CSS do admin ou da PWA. As três interfaces reutilizam somente a lógica de `shared/forms/`, com dependências próprias. Login integrado website/PWA pertence à próxima etapa; o admin continua isolado.
+O website não reutiliza componentes/CSS do admin ou da PWA. As três interfaces reutilizam somente a lógica de `shared/forms/`, com dependências próprias. Website e PWA compartilham a sessão de cliente nos domínios configurados; o admin continua isolado.
 
 ## Convenções de desenvolvimento
 
@@ -190,5 +190,5 @@ Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, reten�
 | Admin dev / preview | 5182 / 5183 |
 | Website | http://website.pwa-framework.localhost |
 | Website dev | 5184 |
-| Fundação | 1.1.0-website.2 |
+| Fundação | 1.1.0-website.3 |
 <!-- END FOUNDATION IDENTITY -->

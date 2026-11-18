@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\AdminCsrf;
+use App\Http\Middleware\ClientCsrf as ValidateCsrfToken;
 use App\Models\Administrator;
 use App\Models\User;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
@@ -77,7 +77,7 @@ class AdminAuthGuardsTest extends TestCase
         $sessionName = config('session.cookie').'_admin';
         $this->assertArrayHasKey($sessionName, $jar);
         $this->assertArrayHasKey('XSRF-ADMIN-TOKEN', $jar);
-        $this->assertArrayNotHasKey('XSRF-TOKEN', $jar);
+        $this->assertArrayNotHasKey('XSRF-CLIENT-TOKEN', $jar);
         foreach ($csrf->headers->getCookies() as $cookie) {
             $this->assertNull($cookie->getDomain());
         }
@@ -116,10 +116,10 @@ class AdminAuthGuardsTest extends TestCase
         $clientJar = $this->jar($this->getJson('http://localhost/sanctum/csrf-cookie')->assertNoContent());
         $adminJar = $this->jar($this->withUnencryptedCookies($clientJar)->getJson($this->admin('csrf-cookie'))->assertNoContent());
         $both = array_replace($clientJar, $adminJar);
-        $this->withUnencryptedCookies($both)->postJson($this->admin('login'), [], ['X-XSRF-TOKEN' => $clientJar['XSRF-TOKEN']])->assertStatus(419);
+        $this->withUnencryptedCookies($both)->postJson($this->admin('login'), [], ['X-XSRF-TOKEN' => $clientJar['XSRF-CLIENT-TOKEN']])->assertStatus(419);
         $this->withUnencryptedCookies($both)->postJson('http://localhost/api/v1/auth/login', [], ['X-XSRF-TOKEN' => $adminJar['XSRF-ADMIN-TOKEN']])->assertStatus(419);
         $this->withUnencryptedCookies($both)->postJson($this->admin('login'), [], ['X-XSRF-TOKEN' => $adminJar['XSRF-ADMIN-TOKEN']])->assertUnprocessable();
-        $this->withUnencryptedCookies($both)->postJson('http://localhost/api/v1/auth/login', [], ['X-XSRF-TOKEN' => $clientJar['XSRF-TOKEN']])->assertUnprocessable();
+        $this->withUnencryptedCookies($both)->postJson('http://localhost/api/v1/auth/login', [], ['X-XSRF-TOKEN' => $clientJar['XSRF-CLIENT-TOKEN']])->assertUnprocessable();
     }
 
     public function test_wrong_password_rate_limits_and_errors_remain_controlled(): void

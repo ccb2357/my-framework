@@ -15,7 +15,7 @@ test('real shadcn login button validates empty fields without calling server and
  app.unmount();target.remove();spy.mockRestore();
 });
 test('HTTP adapter reads only admin CSRF cookie and sanitizes error bodies', async () => {
- document.cookie='XSRF-TOKEN=client-secret';document.cookie='XSRF-ADMIN-TOKEN=admin-token';
+ document.cookie='XSRF-CLIENT-TOKEN=client-secret';document.cookie='XSRF-ADMIN-TOKEN=admin-token';
  const fetcher=vi.fn().mockResolvedValueOnce(new Response(null,{status:204})).mockResolvedValueOnce(new Response(JSON.stringify({message:'PRIVATE',errors:{email:['Inválido'],trace:['PRIVATE']}}),{status:422,headers:{'content-type':'application/json'}}));
  await expect(adminRequest('login',{method:'POST',json:{email:'x',password:'secret'},fetcher})).rejects.toSatisfy(e=>e.status===422&&e.errors.email[0]==='Inválido'&&!JSON.stringify(e).includes('PRIVATE'));
  expect(fetcher.mock.calls[1][1].headers['X-XSRF-TOKEN']).toBe('admin-token');expect(fetcher.mock.calls[1][1].cache).toBe('no-store');

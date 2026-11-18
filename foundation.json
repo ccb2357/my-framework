@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "1.1.0-website.2",
-  "stage": "website-forms",
+  "foundationVersion": "1.1.0-website.3",
+  "stage": "website-client-auth",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -12,7 +12,8 @@
     "dockerCli": "28.5.1",
     "compose": "2.40.3",
     "node": "22-alpine",
-    "dotenv": "16.6.1"
+    "dotenv": "16.6.1",
+    "tldts": "6.1.86"
   },
   "pwa": {
     "framework7": "9.2.0",

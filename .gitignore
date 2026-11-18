@@ -53,3 +53,5 @@ website/.foundation-build.json*
 website/nuxt.cmd
 website/node_modules/
 
+
+**/.foundation.server.json

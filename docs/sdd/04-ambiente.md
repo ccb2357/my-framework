@@ -4,7 +4,7 @@ O [guia de instalação](../../instalacao-pwa-framework.md) concentra os comando
 
 ## Configuração central
 
-A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e as configurações públicas `pwa/.foundation.public.json`, `admin/.foundation.public.json` e `website/.foundation.public.json`; não criar `.env` na PWA nem editar derivados. Preservar opções próprias do produto e APP_KEY válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
+A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera `backend/.env`, `.env.testing` local e as configurações públicas `pwa/.foundation.public.json`, `admin/.foundation.public.json` e `website/.foundation.public.json`, além da whitelist técnica privada `website/.foundation.server.json`; não criar `.env` na PWA nem editar derivados. Preservar opções próprias do produto e APP_KEY válidas. Arquivos privados, estado, dependências e builds não acompanham o repositório.
 
 | Campos | Contrato |
 | --- | --- |
@@ -74,3 +74,9 @@ A versão deste ciclo é preliminar; `completeFoundation=false` enquanto faltare
 Desenvolvimento do website: watchers Nuxt/Vite usam polling de 300 ms para detectar edições no host Windows com Docker Desktop. Vite ignora releases e saídas geradas; fs.allow continua restrito ao website. Mudanças nessa configuração exigem reiniciar somente nuxt.cmd dev.
 
 Website inclui IMask 7.6.1, JustValidate 4.3.0 e VueUse 15.0.0 no próprio manifest/lockfile; Vitest/jsdom somente para testes DOM. Adicionar o bind shared ao serviço website existente conforme o guia; sem novos serviços/volumes, mudanças Nginx/PHP ou chaves de configuração. Bootstrap retorna 2 se faltar esse mount. Testes SSR não executam APIs do navegador; testes DOM não substituem aceite no navegador/Docker Windows.
+
+## Sessão integrada website/PWA
+
+`CLIENT_SESSION_DOMAIN` opcional no central: vazio deriva o ancestral comum validado pela PSL. Local: meu-projeto.localhost e website.meu-projeto.localhost compartilham meu-projeto.localhost. Produção: https://app.exemplo.com.br e https://exemplo.com.br compartilham exemplo.com.br; configurar as URLs explicitamente. Domínios não relacionados/sufixos públicos são bloqueados antes de escrever ambientes. HTTPS obrigatório em produção e cookies Secure; SameSite=Lax, sessão HttpOnly e CSRF legível pelo cliente. Não compartilhar com subdomínios não confiáveis.
+
+Atualização exige reconstruir a imagem do executor (tldts 6.1.86 adicionado ao runtime fixado), executar o bootstrap e aceitar o novo build PWA. Não altera banco/contas; clientes entram novamente por mudança do nome do cookie. A sessão administrativa conserva nome/escopo. Não editar derivados. O bootstrap faz até 30 verificações do website com intervalo de 1s e timeout HTTP individual de 5s, cobrindo a validade de 10s do DNS Nginx, sem reiniciar outros serviços. Cold start PHP-FPM/healthcheck compartilhado continua fora desta alteração.

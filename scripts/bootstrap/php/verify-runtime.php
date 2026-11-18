@@ -16,6 +16,7 @@ try {
         'host' => $mysql['host'], 'port' => (int) $mysql['port'], 'database' => $mysql['database'], 'username' => $mysql['username'], 'password' => (string) $mysql['password'],
         'queue' => $config->get('queue.default'),
         'cookie' => $config->get('session.cookie'), 'stateful' => implode(',', $config->get('sanctum.stateful')),
+        'website' => $config->get('foundation.website_url'), 'clientCookie' => $config->get('foundation.client_session_cookie'), 'clientDomain' => $config->get('foundation.client_session_domain'),
     ];
     if ($values !== $expected || $config->get('database.default') !== 'mysql' || ! empty($mysql['url']) || ! empty($mysql['unix_socket']) || isset($mysql['read']) || isset($mysql['write']) || ($expected['environment'] === 'production' && $config->get('app.debug'))) {
         throw new RuntimeException('effective-config');

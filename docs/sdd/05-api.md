@@ -7,7 +7,7 @@ Base `/api/v1`. APIs de negócio são responsabilidade do produto. Autenticaçõ
 | GET /up | Saúde Laravel; não consulta/comprova banco. |
 | GET /status | HTML com consulta MySQL real; 200 saudável ou 503 indisponível. |
 | GET /api/v1/status | Mesmo diagnóstico em JSON, sem cache. |
-| GET /sanctum/csrf-cookie | 204, cookies host-only para sessão/CSRF; não autentica. |
+| GET /sanctum/csrf-cookie | 204, cookies de cliente/CSRF no domínio comum; host-only em localhost dev. Não autentica. |
 
 JSON saudável: `{"status":"ok","checks":{"application":"ok","database":"ok"}}`. Banco indisponível: HTTP 503, `{"status":"error","checks":{"application":"ok","database":"error"}}`. Diagnóstico público sem credenciais, exceções, caminhos ou dados de usuários.
 
@@ -30,7 +30,7 @@ Mutações exigem CSRF inclusive sem Origin: header X-XSRF-TOKEN vindo de XSRF-A
 
 ## Autenticação de clientes
 
-Prefixo `/api/v1/auth`, somente no host da PWA. Cookies host-only, sessão web e CSRF nas mutações; origens precisam estar na configuração Sanctum derivada. Respostas `no-store, private`; sucesso contém somente `user: {id, name, email}`.
+Prefixo `/api/v1/auth`, nos hosts autorizados da PWA e do website. Cookie de sessão de cliente com domínio comum (host-only em localhost dev), XSRF-CLIENT-TOKEN e header X-XSRF-TOKEN nas mutações; origens precisam estar na configuração Sanctum derivada. Respostas `no-store, private`; sucesso contém somente `user: {id, name, email}`.
 
 | Método/rota | Contrato | Limite |
 | --- | --- | --- |
@@ -58,4 +58,6 @@ SMTP vazio desabilita envio; nenhuma recuperação usa transporte log ou grava t
 
 ## Website
 
-Hello Nuxt pública não acrescenta endpoints de negócio nem autenticação. `/api`, `/sanctum`, `/up` e `/status` permanecem no Laravel; APIs de cliente atuais rejeitam o host do website. `routes/website.php` está reservado para endpoints futuros; suas rotas não substituem o roteamento Nuxt. Contratos de sessão compartilhada serão definidos antes de habilitar login no website.
+O website usa os mesmos contratos /api/v1/auth e /sanctum/csrf-cookie da PWA, sem duplicar contas, brokers ou quotas. Administração continua proibida nesses hosts. `/api`, `/sanctum`, `/up` e `/status` permanecem no Laravel; routes/website.php reserva APIs específicas do produto e não substitui páginas Nuxt.
+
+GET /_session pertence ao Nuxt: 200 com user {id,name,email}, 401 sem cookie/sessão, 503 quando Laravel/contrato não puder ser confirmado; no-store/private. Não aceita destino, bearer token ou parâmetros de identidade, não encaminha cookie administrativo e não devolve Set-Cookie. Não é uma segunda sessão nem API de negócio. Demais endpoints de autenticação continuam autorizando e validando exclusivamente no Laravel.

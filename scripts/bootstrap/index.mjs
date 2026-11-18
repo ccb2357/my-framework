@@ -19,7 +19,7 @@ try {
   const saved = await readOptional(stateFile, '{}');
   try { state = JSON.parse(saved); } catch { throw new FoundationError('Estado local inválido. Preserve-o para diagnóstico; não reinicialize identidade automaticamente.'); }
   checkIdentity(state, c);
-  state = { ...state, schema, identity: identity(c), release: '1.1.0-website.2', completeFoundation: false, startedAt: new Date().toISOString() };
+  state = { ...state, schema, identity: identity(c), release: '1.1.0-website.3', completeFoundation: false, startedAt: new Date().toISOString() };
   console.log(`Preparação de ${c.PROJECT_SLUG} (${c.APP_ENV}).`);
   const d = await discover(c);
   if (state.composeProject) requireThat(state.composeProject === d.project, 'Identidade da infraestrutura Compose mudou; revisar explicitamente.');
@@ -61,12 +61,12 @@ try {
   if (databases.code !== 0) throw new FoundationError(databases.code === 2 ? 'Banco ausente sem permissão de criação. Crie os bancos informados no central manualmente com a conta existente e repita.' : 'Conexão aos bancos falhou. Confira os valores privados e a rede; nenhuma credencial será exibida.', databases.code === 2 ? 2 : 1);
   jsonOutput(databases, 'Verificação dos bancos');
   await phpExec(c, d, ['php', 'artisan', 'config:clear', '--no-interaction'], undefined, 'Limpeza de configuração em processo separado');
-  await phpExec(c, d, ['php', path.join(c.root, 'scripts/bootstrap/php/verify-runtime.php')], JSON.stringify({ environment: c.APP_ENV, name: c.PROJECT_NAME, url: c.appUrl, timezone: c.APP_TIMEZONE, host: c.DB_HOST, port: c.DB_PORT, database: c.DB_DATABASE, username: c.DB_USERNAME, password: c.DB_PASSWORD, queue: 'database', cookie: c.sessionCookie, stateful: c.stateful }), 'Conferência da configuração efetiva antes de migrations');
+  await phpExec(c, d, ['php', path.join(c.root, 'scripts/bootstrap/php/verify-runtime.php')], JSON.stringify({ environment: c.APP_ENV, name: c.PROJECT_NAME, url: c.appUrl, timezone: c.APP_TIMEZONE, host: c.DB_HOST, port: c.DB_PORT, database: c.DB_DATABASE, username: c.DB_USERNAME, password: c.DB_PASSWORD, queue: 'database', cookie: c.sessionCookie, stateful: c.stateful, website: c.websiteUrl, clientCookie: c.clientSessionCookie, clientDomain: c.CLIENT_SESSION_DOMAIN }), 'Conferência da configuração efetiva antes de migrations');
   console.log('Sincronizando caches e migrations pendentes.');
   await phpExec(c, d, ['php', 'artisan', 'app:sync', '--no-interaction', ...(options.force ? ['--force'] : [])], undefined, 'app:sync');
   await phpExec(c, d, ['php', path.join(c.root, 'scripts/bootstrap/php/permissions.php')], undefined, 'Permissões finais');
   const verify = await docker(['exec', '-i', '--workdir', c.backend, d.php.Id, 'php', path.join(c.root, 'scripts/bootstrap/php/verify-http.php')], {
-    input: JSON.stringify({ target: c.NGINX_INTERNAL_URL, url: c.appUrl, origins: c.stateful.split(','), environment: c.APP_ENV }),
+    input: JSON.stringify({ target: c.NGINX_INTERNAL_URL, url: c.appUrl, origins: c.stateful.split(','), environment: c.APP_ENV, clientCookie: c.clientSessionCookie, clientDomain: c.CLIENT_SESSION_DOMAIN }),
     label: 'HTTP via Nginx, diagnóstico e CSRF', allowFailure: true, timeout: 900000,
   });
   if (verify.code !== 0) throw new FoundationError(httpFailure(verify.stdout));
@@ -103,7 +103,7 @@ try {
   state.completeFoundation = false; state.pending = []; state.manualChecks = ['Conferir instalação e acesso nas três interfaces', 'Conferir SMTP e recuperação das duas contas', 'Concluir as sprints restantes do website']; await save();
   console.log(`Backend, PWA, admin e website verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
   console.log(`Admin: ${c.adminUrl}. Crie o administrador com admin:create conforme o manual.`);
-  console.log(`Website: ${c.websiteUrl}. Autenticação integrada ainda pendente.`);
+  console.log(`Website: ${c.websiteUrl}. Conta de cliente integrada à PWA.`);
   console.log('Código 0 não atesta instalação, offline ou atualização em aparelhos. Aceite final exige validação própria.');
 } catch (error) {
   if (state) { state.phase = error.code === 2 ? 'manual-pending' : 'failed'; state.lastExitCode = error.code === 2 ? 2 : 1; await save().catch(() => {}); }

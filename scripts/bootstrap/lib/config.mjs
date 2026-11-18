@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { requireThat, FoundationError } from './errors.mjs';
 const runtime = process.env.FOUNDATION_RUNTIME_PACKAGE || fileURLToPath(new URL('../executor/package.json', import.meta.url));
 const { parse } = createRequire(runtime)('dotenv');
+const { getDomain } = createRequire(runtime)('tldts');
 export { parse as parseDotenv };
 export const schema = 1;
 export function args(argv) {
@@ -56,7 +57,7 @@ export function validate(input, root) {
   for (const key of ['PHP_SERVICE', 'NGINX_SERVICE', 'DOCKER_NETWORK']) requireThat(/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(c[key]), `${key} inválido.`);
   c.NGINX_INTERNAL_URL ||= 'http://nginx';
   let target; try { target = new URL(c.NGINX_INTERNAL_URL); } catch { throw new FoundationError('NGINX_INTERNAL_URL inválida.'); }
-  requireThat(['http:', 'https:'].includes(target.protocol) && !target.username && !target.password, 'NGINX_INTERNAL_URL deve ser HTTP(S), sem credenciais.');
+  requireThat(['http:', 'https:'].includes(target.protocol) && !target.username && !target.password && target.pathname === '/' && !target.search && !target.hash, 'NGINX_INTERNAL_URL deve ser HTTP(S), sem credenciais.');
   c.LOCAL_DOMAIN ||= c.PROJECT_SLUG + '.localhost';
   requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.LOCAL_DOMAIN), 'LOCAL_DOMAIN inválido.');
   c.DEV_PORT = port(c.DEV_PORT, 'DEV_PORT'); c.PREVIEW_PORT = port(c.PREVIEW_PORT, 'PREVIEW_PORT');
@@ -87,6 +88,13 @@ export function validate(input, root) {
     requireThat(url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && !url.port && ![new URL(c.appUrl).hostname, new URL(c.adminUrl).hostname].includes(url.hostname), 'WEBSITE_PRODUCTION_URL deve ser uma origem HTTPS distinta da PWA e do admin.');
     c.websiteUrl = url.origin;
   }
+  const hosts = [new URL(c.appUrl).hostname, new URL(c.websiteUrl).hostname];
+  const common = hosts[0].split('.');
+  while (common.length && !hosts.every(host => host === common.join('.') || host.endsWith('.' + common.join('.')))) common.shift();
+  c.CLIENT_SESSION_DOMAIN = (c.CLIENT_SESSION_DOMAIN || common.join('.')).replace(/^\./, '');
+  const scope = c.CLIENT_SESSION_DOMAIN;
+  const localScope = c.APP_ENV === 'local' && scope.endsWith('.localhost') && scope !== 'localhost';
+  requireThat(/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(scope) && hosts.every(host => host === scope || host.endsWith('.' + scope)) && (localScope || Boolean(getDomain(scope, { allowPrivateDomains: true }))), 'PWA e website exigem domínio de sessão comum válido. Confira os domínios e CLIENT_SESSION_DOMAIN; não use localhost, sufixo público ou domínios de projetos diferentes.');
   c.DB_HOST = nonempty(c.DB_HOST, 'DB_HOST');
   requireThat(!/[;\r\n\0]/.test(c.DB_HOST), 'DB_HOST inválido.');
   c.DB_PORT = port(c.DB_PORT || '3306', 'DB_PORT');
@@ -119,7 +127,10 @@ export function validate(input, root) {
   c.backend = path.join(root, 'backend'); c.frontend = path.join(root, 'pwa');
   c.sessionCookie = c.base + '_session';
   const origins = c.APP_ENV === 'production' ? [new URL(c.appUrl).host] : [c.LOCAL_DOMAIN, ...['localhost', '127.0.0.1', c.LOCAL_DOMAIN].flatMap(h => [`${h}:${c.DEV_PORT}`, `${h}:${c.PREVIEW_PORT}`])];
+  origins.push(new URL(c.websiteUrl).host);
+  if (c.APP_ENV === 'local') origins.push(...['localhost', '127.0.0.1', c.WEBSITE_LOCAL_DOMAIN].map(host => `${host}:${c.WEBSITE_DEV_PORT}`));
   c.stateful = [...new Set(origins)].join(',');
+  c.clientSessionCookie = c.sessionCookie + '_client';
   return c;
 }
 export async function load(root) {

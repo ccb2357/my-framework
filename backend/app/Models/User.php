@@ -50,6 +50,8 @@ class User extends Authenticatable
 
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new AccountPasswordReset($token, 'client'));
+        $website = config('foundation.website_url');
+        $area = is_string($website) && request()->getHost() === parse_url($website, PHP_URL_HOST) ? 'website' : 'client';
+        $this->notify(new AccountPasswordReset($token, $area));
     }
 }

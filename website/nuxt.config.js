@@ -2,7 +2,9 @@ import { fileURLToPath } from 'node:url';
 import { defineNuxtConfig } from 'nuxt/config';
 import tailwindcss from '@tailwindcss/vite';
 import { readConfiguration } from './scripts/config.mjs';
+import { readServerConfiguration } from './scripts/server-config.mjs';
 const publicConfig = readConfiguration();
+const serverConfig = readServerConfiguration();
 const root = fileURLToPath(new URL('.', import.meta.url));
 const shared = fileURLToPath(new URL('../shared', import.meta.url));
 
@@ -13,7 +15,7 @@ export default defineNuxtConfig({
   components: [{ path: '~/components', extensions: ['.vue'] }],
   devtools: { enabled: false },
   css: ['~/assets/css/main.css'],
-  runtimeConfig: { public: publicConfig },
+  runtimeConfig: { clientBackend: serverConfig, public: publicConfig },
   app: { head: { htmlAttrs: { lang: publicConfig.locale }, title: publicConfig.name } },
   nitro: { preset: 'node-server', output: { dir: process.env.FOUNDATION_WEBSITE_OUTPUT || '.output' } },
   watchers: { chokidar: { usePolling: true, interval: 300 } },

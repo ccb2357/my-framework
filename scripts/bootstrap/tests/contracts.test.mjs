@@ -13,7 +13,7 @@ import { run } from '../lib/process.mjs';
 import { httpFailure } from '../lib/errors.mjs';
 const raw = await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8');
 // Keep test identity independent of the names chosen for the installation example.
-const input = { ...parseCentral(raw), PROJECT_SLUG: 'pwa-teste', LOCAL_DOMAIN: 'pwa-teste.localhost', DEV_PORT: '5176', PREVIEW_PORT: '5177', DB_DATABASE: 'pwa_teste', DB_TEST_DATABASE: 'pwa_teste_test' };
+const input = { ...parseCentral(raw), WEBSITE_LOCAL_DOMAIN: '', PROJECT_SLUG: 'pwa-teste', LOCAL_DOMAIN: 'pwa-teste.localhost', DEV_PORT: '5176', PREVIEW_PORT: '5177', DB_DATABASE: 'pwa_teste', DB_TEST_DATABASE: 'pwa_teste_test' };
 const config = changes => validate({ ...input, ...changes }, '/var/www/pwa-teste');
 test('HTTP failures show only controlled diagnostics and discard private output', () => {
   const output = httpFailure(JSON.stringify({ status: 'error', reason: 'html-contract', path: '/status', http_status: 200, curl_errno: 0, origin_index: 0, body: 'PRIVATE-BODY', cookies: 'PRIVATE-COOKIE' }));
@@ -46,7 +46,7 @@ test('production requires HTTPS origin and derives secure stateful host', () => 
   assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'http://example.com' }));
   assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com/subpath' }));
   const c = config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' });
-  assert.equal(c.appUrl, 'https://example.com'); assert.equal(c.stateful, 'example.com');
+  assert.equal(c.appUrl, 'https://example.com'); assert.ok(c.stateful.split(',').includes('example.com')); assert.ok(c.stateful.split(',').includes('website.example.com'));
 });
 test('test database collision is rejected, including case-only difference', () => {
   assert.throws(() => config({ DB_TEST_DATABASE: 'PWA_TESTE' }));
@@ -236,9 +236,9 @@ test('SMTP stays private, requires valid configuration and never enables real ma
 
 test('website has a distinct origin, exact ports and public-only generated configuration', () => {
   for (const changes of [{ WEBSITE_DEV_PORT: '5182' }, { WEBSITE_LOCAL_DOMAIN: input.LOCAL_DOMAIN }, { WEBSITE_LOCAL_DOMAIN: 'admin.pwa-teste.localhost' }, { APP_ENV: 'production', PRODUCTION_URL: 'https://example.com', WEBSITE_PRODUCTION_URL: 'http://shop.example.com' }]) assert.throws(() => config(changes));
-  const c = config({ DB_PASSWORD: 'PRIVATE-WEBSITE-SECRET', WEBSITE_LOCAL_DOMAIN: 'example.localhost' });
+  const c = config({ DB_PASSWORD: 'PRIVATE-WEBSITE-SECRET', WEBSITE_LOCAL_DOMAIN: 'example.pwa-teste.localhost' });
   const output = websitePublicConfiguration({ ...c, websiteBuildId: 'website-fixture' });
-  assert.equal(output.websiteUrl, 'http://example.localhost');
+  assert.equal(output.websiteUrl, 'http://example.pwa-teste.localhost');
   assert.doesNotMatch(JSON.stringify(output), /PRIVATE|DB_|SMTP|proxy/);
   const site = websiteNginxSnippet(c);
   assert.match(site, /resolver 127.0.0.11/);
@@ -283,4 +283,10 @@ test('website build identity includes shared form sources but not private root f
     await fs.writeFile(root + '/.env.foundation', 'DB_PASSWORD=PRIVATE-IGNORED');
     assert.equal(await websiteBuildId(c), after);
   } finally { await fs.rm(root, { recursive: true, force: true }); }
+});
+
+test('client cookie scope rejects public suffixes and unrelated domains but supports sibling subdomains', () => {
+ const local=config(); assert.equal(local.CLIENT_SESSION_DOMAIN,'pwa-teste.localhost');
+ for(const changes of [{WEBSITE_LOCAL_DOMAIN:'foreign.localhost'},{CLIENT_SESSION_DOMAIN:'localhost'},{APP_ENV:'production',PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://example.co.uk',CLIENT_SESSION_DOMAIN:'co.uk'},{APP_ENV:'production',PRODUCTION_URL:'https://app.example.com',WEBSITE_PRODUCTION_URL:'https://other.com'}])assert.throws(()=>config(changes));
+ const prod=config({APP_ENV:'production',PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://www.example.co.uk'});assert.equal(prod.CLIENT_SESSION_DOMAIN,'example.co.uk');assert.equal(prod.clientSessionCookie,'pwa_teste_session_client');
 });

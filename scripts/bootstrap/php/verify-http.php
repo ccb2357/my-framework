@@ -61,14 +61,19 @@ try {
         if ($code !== 204) {
             throw new RuntimeException('csrf-status');
         }
-        if (! str_contains($headers, 'XSRF-TOKEN=')) {
+        if (! str_contains($headers, 'XSRF-CLIENT-TOKEN=')) {
             throw new RuntimeException('csrf-token-missing');
         }
-        if (preg_match('/Set-Cookie:[^\r\n]*;\s*domain=/i', $headers)) {
+        if (! str_contains($headers, $config['clientCookie'].'=')) {
+            throw new RuntimeException('csrf-token-missing');
+        }
+        $local = ! $public && in_array(parse_url($origin, PHP_URL_HOST), ['localhost', '127.0.0.1'], true);
+        preg_match_all('/Set-Cookie:[^\r\n]*;\s*domain=([^;\r\n]+)/i', $headers, $domains);
+        if (($local && count($domains[1]) !== 0) || (! $local && (count($domains[1]) !== 2 || array_filter($domains[1], fn ($domain) => ltrim(trim($domain), '.') !== $config['clientDomain'])))) {
             throw new RuntimeException('csrf-cookie-domain');
         }
     }
-    $checks['origins-csrf-host-only'] = 'ok';
+    $checks['origins-csrf-scope'] = 'ok';
     echo json_encode(['status' => 'ok', 'checks' => $checks], JSON_THROW_ON_ERROR);
 } catch (Throwable $exception) {
     $known = ['http-connection', 'http-status', 'no-store', 'status-contract', 'html-contract', 'origin-status', 'csrf-status', 'csrf-token-missing', 'csrf-cookie-domain'];

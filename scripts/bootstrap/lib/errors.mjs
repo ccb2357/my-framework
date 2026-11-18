@@ -9,8 +9,8 @@ export function httpFailure(output) {
     'http-connection': 'falha de conexão HTTP', 'http-status': 'status HTTP diferente de 200',
     'no-store': 'cabeçalho Cache-Control sem no-store', 'status-contract': 'JSON ou Content-Type diferente do esperado',
     'html-contract': 'HTML sem os textos Backend OK e Banco OK', 'origin-status': 'API falhou com Origin',
-    'csrf-status': 'CSRF não retornou 204', 'csrf-token-missing': 'cookie XSRF-TOKEN ausente',
-    'csrf-cookie-domain': 'cookie com Domain explícito', 'invalid-json': 'resposta JSON inválida',
+    'csrf-status': 'CSRF não retornou 204', 'csrf-token-missing': 'cookie CSRF/cliente ausente',
+    'csrf-cookie-domain': 'escopo de cookie diferente do esperado', 'invalid-json': 'resposta JSON inválida',
     'unexpected-error': 'erro interno no verificador',
   };
   try {

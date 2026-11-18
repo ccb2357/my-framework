@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'website_url' => env('WEBSITE_URL'),
+    'client_session_domain' => env('CLIENT_SESSION_DOMAIN'),
+    'client_session_cookie' => env('CLIENT_SESSION_COOKIE'),
     'recovery_enabled' => (bool) env('RECOVERY_ENABLED', false),
     'admin_url' => env('ADMIN_URL'),
     'admin_origins' => array_values(array_filter(explode(',', (string) env('ADMIN_STATEFUL_DOMAINS', '')))),

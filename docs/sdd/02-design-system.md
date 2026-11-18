@@ -48,3 +48,5 @@ Recuperação reutiliza mensagens/regras em shared/forms e recovery.js (adaptado
 ## Website Nuxt
 
 `website/app/assets/css/main.css` contém os tokens/Tailwind próprios; componentes shadcn-vue JavaScript em `website/app/components/ui/`. A descoberta automática Nuxt considera somente `.vue`; arquivos `index.js` são exports explícitos. Não importar CSS/componentes de `admin/` ou `pwa/`. Hello usa layout responsivo simples, link de salto, HTML semântico e foco visível nos links/botões. Lucide 1.72.0 renderiza SVG sem alterar DOM gerenciado pelo Vue. Formulários reutilizam somente lógica neutra de `shared/forms/`; DemoForm.vue usa Input/Label/Button shadcn locais, erro no próprio campo e confirmação por status. Inputs sem outline/anel retangular; links e botões mantêm foco visível.
+
+Formulários de autenticação do website usam os mesmos controles locais Input/Label/Button, card de largura limitada e links Nuxt. `app/forms/auth.js` aplica regras neutras; recuperação reutiliza recovery.js com JustValidate próprio após onMounted. Sem importações visuais entre aplicações. Minha conta só mostra nome/e-mail com sessão confirmada; falha/offline oculta a identidade.
