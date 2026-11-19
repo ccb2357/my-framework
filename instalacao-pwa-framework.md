@@ -53,6 +53,8 @@ Os exemplos deste guia usam:
 - `NGINX_CERT_NAME`: nome do certificado compartilhado em `/etc/letsencrypt/live/<nome>`. Exemplo: `NGINX_CERT_NAME=meu-projeto.meu-dominio.com.br`. O certificado deve cobrir os três hosts. Vazio mantém um caminho por host.
 - Após definir o nome, execute o bootstrap e aplique os blocos Nginx gerados; ele não emite certificados nem edita o Nginx.
 
+**Trechos por ambiente:** o bootstrap gera `.foundation-installation.md` na raiz, com os blocos Compose/Nginx e resumo do ambiente. Use esse arquivo quando houver pendência de infraestrutura. Ele é ignorado pelo Git; README e este manual versionados não são editados pelo bootstrap.
+
 Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas das três interfaces, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
 
 <!-- BEGIN FOUNDATION INSTALL INFRA -->
@@ -552,3 +554,13 @@ docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www
 ```
 
 Para atualizar: faça backup, execute `git pull` na pasta do projeto e repita o comando acima na pasta infra. Mantenha `infra` e projeto lado a lado; `source=..` usa a pasta acima de `infra` no Windows e Linux. Ajuste a rede e os nomes ao ambiente real; `--force` é necessário em produção para permitir migrations. A imagem só precisa ser reconstruída quando seu conteúdo mudar.
+
+
+Se uma versão anterior do bootstrap alterou README/manual e bloqueou o pull, guarde somente esses dois arquivos antes de atualizar:
+
+```bash
+git stash push -m "Documentos gerados antes da atualização" -- README.md instalacao-pwa-framework.md
+git pull
+```
+
+Não reaplique esse stash: o próximo bootstrap gera `.foundation-installation.md`. Essa migração é necessária uma vez para limpar alterações do bootstrap antigo; modificações próprias em outros arquivos continuam exigindo revisão normal do Git. Preserve `.env.foundation`, estado e dados.

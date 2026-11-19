@@ -55,3 +55,8 @@ website/node_modules/
 
 
 **/.foundation.server.json
+
+# Instruções e atalhos derivados por ambiente (não versionar)
+/.foundation-installation.md
+/pwa/vite.cmd
+/admin/vite.cmd

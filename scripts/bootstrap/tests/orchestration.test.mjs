@@ -101,9 +101,13 @@ fs.writeFileSync(file,JSON.stringify(data));process.stdout.write(out);
 test('preparation exits 2 before dependencies/env writes when effective infra is missing', async () => {
   const f = await fixture({ pending: true, guideCrlf: true });
   try {
+    const tracked = await fs.readFile(f.root + '/instalacao-pwa-framework.md');
+    await fs.writeFile(f.root + '/README.md', '# README preservado\n');
     const result = await f.invoke(); assert.equal(result.code, 2); assert.equal((await f.data()).installs, 0);
+    assert.deepEqual(await fs.readFile(f.root + '/instalacao-pwa-framework.md'), tracked);
+    assert.equal(await fs.readFile(f.root + '/README.md', 'utf8'), '# README preservado\n');
     await assert.rejects(fs.access(f.root + '/backend/.env'));
-    const guide = await fs.readFile(f.root + '/instalacao-pwa-framework.md', 'utf8');
+    const guide = await fs.readFile(f.root + '/.foundation-installation.md', 'utf8');
     assert.match(guide, /product-a-node/); assert.match(guide, /product_a_vendor/);
     assert.match(guide, /server_name product-a.localhost/);
     // Check the command and its ordering, regardless of Markdown fences or Windows CRLF.
@@ -134,7 +138,7 @@ test('Desktop mount and Windows labels discover the same Compose and reach the p
     const data = await f.data();
     assert.equal(data.installs, 0);
     assert.ok(data.calls.some(a => a[0] === 'compose' && a.includes('config')));
-    assert.match(await fs.readFile(f.root + '/instalacao-pwa-framework.md', 'utf8'), /C:\/var\/www\/product-a\/pwa/);
+    assert.match(await fs.readFile(f.root + '/.foundation-installation.md', 'utf8'), /C:\/var\/www\/product-a\/pwa/);
     await assert.rejects(fs.access(f.root + '/backend/.env'));
   } finally { await f.cleanup(); }
 });
@@ -144,10 +148,15 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     const first = await f.invoke(); assert.equal(first.code, 0, first.stdout + first.stderr);
     const env = await fs.readFile(f.root + '/backend/.env', 'utf8');
     const guidePath = f.root + '/instalacao-pwa-framework.md';
+    const readmePath = f.root + '/README.md';
+    await fs.writeFile(readmePath, '# README do produto\nTexto que o bootstrap deve preservar.\n');
+    const readme = await fs.readFile(readmePath, 'utf8');
     await fs.appendFile(guidePath, '\nObservação local preservada.\n');
     const guide = await fs.readFile(guidePath, 'utf8');
     const second = await f.invoke(); assert.equal(second.code, 0, second.stderr); assert.equal(await fs.readFile(f.root + '/backend/.env', 'utf8'), env);
     assert.equal(await fs.readFile(guidePath, 'utf8'), guide);
+    assert.equal(await fs.readFile(readmePath, 'utf8'), readme);
+    assert.match(await fs.readFile(f.root + '/.foundation-installation.md', 'utf8'), /Observação local preservada/);
     assert.equal((guide.match(/<!-- BEGIN FOUNDATION INSTALL INFRA -->/g) || []).length, 1);
     const data = await f.data(); assert.equal(data.installs, 1); assert.equal(data.syncs, 2); assert.equal(data.npmInstalls, 1); assert.equal(data.adminInstalls, 1); assert.equal(data.adminBuilds, 2); assert.equal(data.websiteInstalls, 1); assert.equal(data.websiteBuilds, 1);
     assert.ok(data.calls.filter(a => a[0] === 'run' && a.some(x => x.includes('_website_node_modules'))).every(a => a.includes('node:22-bookworm-slim')));
@@ -236,7 +245,7 @@ test('missing shared mounts stop before installs and both Node services receive 
     const result = await f.invoke(); assert.equal(result.code, 2, result.stdout + result.stderr);
     assert.match(result.stdout, /shared.*somente leitura/);
     assert.equal((await f.data()).installs, 0); await assert.rejects(fs.access(f.root + '/backend/.env'));
-    const guide = await fs.readFile(f.root + '/instalacao-pwa-framework.md', 'utf8');
+    const guide = await fs.readFile(f.root + '/.foundation-installation.md', 'utf8');
     assert.equal((guide.match(/target: \/shared/g) || []).length, 3);
     assert.equal((guide.match(/read_only: true/g) || []).length, 3);
   } finally { await f.cleanup(); }
@@ -283,5 +292,23 @@ test('website activation failure stops without exposing raw output or reporting 
     assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE-ACTIVATION|Website: http/);
     assert.equal((await f.data()).websiteActivations, 1);
     assert.equal(JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')).phase, 'failed');
+  } finally { await f.cleanup(); }
+});
+
+test('bootstrap keeps tracked Git documents unchanged and ignores its environment guide', async () => {
+  const f = await fixture({ pending: true });
+  try {
+    await fs.writeFile(f.root + '/README.md', '# README do produto\n');
+    await fs.copyFile(new URL('../../../.gitignore', import.meta.url), f.root + '/.gitignore');
+    await run('git', ['init', '-q'], { cwd: f.root });
+    await run('git', ['add', 'README.md', 'instalacao-pwa-framework.md', '.gitignore'], { cwd: f.root });
+    const before = await run('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: f.root });
+    const result = await f.invoke(); assert.equal(result.code, 2);
+    const after = await run('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: f.root });
+    assert.equal(after.stdout, before.stdout);
+    await run('git', ['diff', '--exit-code', '--', 'README.md', 'instalacao-pwa-framework.md'], { cwd: f.root });
+    await run('git', ['check-ignore', '-q', '.foundation-installation.md'], { cwd: f.root });
+    assert.match(result.stderr, /\.foundation-installation\.md/);
+    assert.match(await fs.readFile(f.root + '/.foundation-installation.md', 'utf8'), /product-a-node/);
   } finally { await f.cleanup(); }
 });

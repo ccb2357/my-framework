@@ -110,7 +110,7 @@ Em produção, `NGINX_CERT_NAME` no central permite usar um certificado cobrindo
 
 Executor temporário `pwa-foundation-bootstrap:0.1.0`, construído de `scripts/bootstrap/Dockerfile` e executado com docker run --rm. Acessa o Engine existente, com dependências próprias; sem Docker-in-Docker, outro Compose, serviço de bootstrap ou atalhos no host.
 
-Descobre serviços por labels/mounts reais, preserva a identidade Compose e mapeia caminhos host↔contêiner. Verifica recursos e portas efetivos; gera somente blocos gerenciados no guia, sem editar a infraestrutura compartilhada; inicia/recria exclusivamente o website quando o build esperado ainda não estiver acessível. Código **0**: backend/build/HTTP verificados; **1**: erro; **2**: integração manual pendente.
+Descobre serviços por labels/mounts reais, preserva a identidade Compose e mapeia caminhos host↔contêiner. Verifica recursos e portas efetivos; gera `.foundation-installation.md` ignorado pelo Git com os trechos e resumo do ambiente, sem editar README/manual versionados nem a infraestrutura compartilhada; inicia/recria exclusivamente o website quando o build esperado ainda não estiver acessível. Código **0**: backend/build/HTTP verificados; **1**: erro; **2**: integração manual pendente.
 
 Dependências PHP e Node ficam em volumes exclusivos; vendor real é conferido antes do Composer para reduzir lentidão no Windows. Reexecução preserva chaves, dados e dependências inalteradas. Lock bloqueia concorrência; `.foundation-state.json` registra estado sem segredos. Mudança de slug/pasta/bancos/volumes inicializados exige migração explícita. [Contrato do ambiente](docs/sdd/04-ambiente.md).
 

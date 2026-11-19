@@ -174,13 +174,11 @@ export async function generate(c, d) {
   const guide = await readOptional(guidePath);
   const infraBlock = /<!-- BEGIN FOUNDATION INSTALL INFRA -->[\s\S]*?<!-- END FOUNDATION INSTALL INFRA -->/;
   requireThat(infraBlock.test(guide), 'instalacao-pwa-framework.md ausente ou sem bloco gerenciado. Restaure o guia da entrega antes de executar o bootstrap.');
-  await writeAtomic(guidePath, guide.replace(infraBlock, () => installationInfra(c, d)));
+  const renderedGuide = guide.replace(infraBlock, () => installationInfra(c, d));
   const file = path.join(c.frontend, 'vite.cmd');
   await writeAtomic(file, viteCmd(c, d));
   const summary = `<!-- BEGIN FOUNDATION IDENTITY -->\n| Campo | Valor |\n| --- | --- |\n| Projeto | ${c.PROJECT_NAME.replaceAll('|', '\\|')} |\n| Slug | ${c.PROJECT_SLUG} |\n| Ambiente | ${c.APP_ENV} |\n| URL | ${c.appUrl} |\n| Dev / preview | ${c.DEV_PORT} / ${c.PREVIEW_PORT} |\n| Serviço / Compose | ${c.nodeService} / ${d.project} |\n| Volumes | ${c.vendorVolume}, ${c.modulesVolume} |\n| Bancos | ${c.DB_DATABASE}, ${c.DB_TEST_DATABASE} |\n| Admin | ${c.adminUrl} |\n| Admin dev / preview | ${c.ADMIN_DEV_PORT} / ${c.ADMIN_PREVIEW_PORT} |\n| Website | ${c.websiteUrl} |\n| Website dev | ${c.WEBSITE_DEV_PORT} |\n| Fundação | 1.1.0-website.4 |\n<!-- END FOUNDATION IDENTITY -->`;
-  const readmePath = path.join(c.root, 'README.md'), readme = await readOptional(readmePath);
-  const block = /<!-- BEGIN FOUNDATION IDENTITY -->[\s\S]*?<!-- END FOUNDATION IDENTITY -->/;
-  await writeAtomic(readmePath, block.test(readme) ? readme.replace(block, () => summary) : readme.trimEnd() + '\n\n' + summary + '\n');
+  await writeAtomic(path.join(c.root, '.foundation-installation.md'), renderedGuide.trimEnd() + '\n\n' + summary + '\n');
 }
 export function installationInfra(c, d) {
   const compose = composeSnippet(c, d);
