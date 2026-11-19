@@ -8,7 +8,7 @@ import path from 'node:path';
 import { parseCentral, validate, args, contained } from '../lib/config.mjs';
 import { mapPath, mappedPaths, infraProblems, sameHost } from '../lib/docker.mjs';
 import { managedEnv, synchronizeEnvs, appKey, checkIdentity, identity, writeAtomic } from '../lib/files.mjs';
-import { composeSnippet, nginxSnippet, siteApplied, viteCmd, publicConfiguration, adminPublicConfiguration, websiteNginxSnippet, websitePublicConfiguration, nuxtCmd } from '../lib/templates.mjs';
+import { composeSnippet, nginxSnippet, siteApplied, viteCmd, publicConfiguration, adminPublicConfiguration, websiteNginxSnippet, websitePublicConfiguration, websiteServerConfiguration, nuxtCmd } from '../lib/templates.mjs';
 import { run } from '../lib/process.mjs';
 import { httpFailure } from '../lib/errors.mjs';
 const raw = await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8');
@@ -310,4 +310,20 @@ test('shared certificate is generated and checked for all production interfaces'
   assert.doesNotMatch(nginxSnippet(config({ NGINX_CERT_NAME: 'shared-example.com' })), /ssl_certificate/);
   assert.doesNotMatch(JSON.stringify(publicConfiguration(c)) + JSON.stringify(adminPublicConfiguration(c)) + JSON.stringify(websitePublicConfiguration(c)), /NGINX_CERT_NAME|shared-example.com/);
   for (const name of ['../escape', '/tmp/cert', 'a/b', 'a\\b', 'a;return', 'a b', 'a\nssl']) assert.throws(() => config({ NGINX_CERT_NAME: name }));
+});
+
+
+test('production SSR backend uses the configured HTTPS origin instead of the redirecting HTTP listener', async () => {
+  const production = config({ APP_ENV: 'production', PRODUCTION_URL: 'https://app.example.com', WEBSITE_PRODUCTION_URL: 'https://www.example.com', NGINX_INTERNAL_URL: 'http://nginx' });
+  const server = websiteServerConfiguration(production);
+  assert.equal(server.backendTarget, 'https://www.example.com');
+  assert.equal(new URL('/api/v1/website/content', server.backendTarget).href, 'https://www.example.com/api/v1/website/content');
+  assert.equal(server.backendHost, 'www.example.com');
+  assert.equal(websiteServerConfiguration(config()).backendTarget, 'http://nginx');
+  const folder = await fs.mkdtemp(path.join(os.tmpdir(), 'website-transport-'));
+  try {
+    await fs.mkdir(folder + '/website'); await fs.mkdir(folder + '/shared/forms', { recursive: true });
+    const c = { ...production, website: folder + '/website', shared: folder + '/shared' };
+    assert.notEqual(await websiteBuildId(c), await websiteBuildId({ ...c, APP_ENV: 'local' }));
+  } finally { await fs.rm(folder, { recursive: true, force: true }); }
 });

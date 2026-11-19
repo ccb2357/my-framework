@@ -6,9 +6,10 @@ import { hash } from './files.mjs';
 import { resolveBind } from './docker.mjs';
 import { setTimeout } from 'node:timers/promises';
 import { requireThat } from './errors.mjs';
+export function websiteBackendTarget(c) { return c.APP_ENV === 'production' ? c.websiteUrl : c.NGINX_INTERNAL_URL; }
 export function websiteContext(c) { return { ...c, frontend: c.website, modulesVolume: c.websiteModulesVolume, websiteMode: true, nodeImage: 'node:22-bookworm-slim' }; }
 export async function websiteBuildId(c) {
-  const parts = [c.PROJECT_NAME, c.PROJECT_SLUG, c.APP_LOCALE, c.websiteUrl, c.appUrl, c.NGINX_INTERNAL_URL, c.WEBSITE_DEV_PORT, c.clientSessionCookie];
+  const parts = [c.PROJECT_NAME, c.PROJECT_SLUG, c.APP_LOCALE, c.websiteUrl, c.appUrl, c.NGINX_INTERNAL_URL, c.WEBSITE_DEV_PORT, c.clientSessionCookie, c.APP_ENV, websiteBackendTarget(c)];
   async function collect(directory) {
     for (const item of (await fs.readdir(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
       if (item.name.startsWith('.') || item.name === 'node_modules' || item.name === 'nuxt.cmd') continue;

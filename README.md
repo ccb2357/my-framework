@@ -104,6 +104,8 @@ Status faz consulta real, sem cache: HTTP 200 saudável ou 503 indisponível. Fa
 
 ### Contrato do bootstrap
 
+O website SSR usa a própria origem HTTPS para consultar o backend em produção; no ambiente local, usa o endereço interno do Nginx.
+
 Em produção, `NGINX_CERT_NAME` no central permite usar um certificado cobrindo as três interfaces; vazio mantém caminhos por host. Os blocos gerados devem ser aplicados manualmente no Nginx.
 
 Executor temporário `pwa-foundation-bootstrap:0.1.0`, construído de `scripts/bootstrap/Dockerfile` e executado com docker run --rm. Acessa o Engine existente, com dependências próprias; sem Docker-in-Docker, outro Compose, serviço de bootstrap ou atalhos no host.

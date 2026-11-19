@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { websiteBuildId } from './website.mjs';
+import { websiteBuildId, websiteBackendTarget } from './website.mjs';
 import { readOptional, writeAtomic } from './files.mjs';
 import { requireThat } from './errors.mjs';
 const q = JSON.stringify;
@@ -159,9 +159,12 @@ export function adminPublicConfiguration(c) {
     vite: { proxyTarget: c.NGINX_INTERNAL_URL, proxyHost: new URL(c.adminUrl).host, devPort: c.ADMIN_DEV_PORT, previewPort: c.ADMIN_PREVIEW_PORT },
   };
 }
+export function websiteServerConfiguration(c) {
+  return { backendTarget: websiteBackendTarget(c), backendHost: new URL(c.websiteUrl).host, websiteUrl: c.websiteUrl, devPort: c.WEBSITE_DEV_PORT, clientSessionCookie: c.clientSessionCookie };
+}
 export async function generate(c, d) {
   c.websiteBuildId = await websiteBuildId(c);
-  await writeAtomic(path.join(c.website, '.foundation.server.json'), JSON.stringify({ backendTarget: c.NGINX_INTERNAL_URL, backendHost: new URL(c.websiteUrl).host, websiteUrl: c.websiteUrl, devPort: c.WEBSITE_DEV_PORT, clientSessionCookie: c.clientSessionCookie }, null, 2) + '\n');
+  await writeAtomic(path.join(c.website, '.foundation.server.json'), JSON.stringify(websiteServerConfiguration(c), null, 2) + '\n');
   await writeAtomic(path.join(c.website, '.foundation.public.json'), JSON.stringify(websitePublicConfiguration(c), null, 2) + '\n');
   await writeAtomic(path.join(c.website, 'nuxt.cmd'), nuxtCmd(c, d));
   await writeAtomic(path.join(c.admin, '.foundation.public.json'), JSON.stringify(adminPublicConfiguration(c), null, 2) + '\n');

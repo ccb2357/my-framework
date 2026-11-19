@@ -49,7 +49,7 @@ Os exemplos deste guia usam:
 - `ADMIN_PRODUCTION_URL`: endereço HTTPS do admin, por exemplo `https://admin.meu-dominio.com.br`.
 - `WEBSITE_PRODUCTION_URL`: endereço HTTPS do website, por exemplo `https://meu-dominio.com.br`.
 - PWA e website devem pertencer ao mesmo domínio de sessão; não use domínios independentes.
-- Configure DNS e HTTPS para os três domínios.
+- Configure DNS e HTTPS para os três domínios. O contêiner do website também precisa alcançar seu domínio HTTPS para consultar o backend.
 - `NGINX_CERT_NAME`: nome do certificado compartilhado em `/etc/letsencrypt/live/<nome>`. Exemplo: `NGINX_CERT_NAME=meu-projeto.meu-dominio.com.br`. O certificado deve cobrir os três hosts. Vazio mantém um caminho por host.
 - Após definir o nome, execute o bootstrap e aplique os blocos Nginx gerados; ele não emite certificados nem edita o Nginx.
 
