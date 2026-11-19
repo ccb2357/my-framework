@@ -2,11 +2,9 @@
 
 ## 1. Preparar a pasta e a configuração
 
-Os exemplos usam `my-framework` em `C:\var\www` (Windows) ou `/var/www` (Linux), com a pasta `infra` ao lado. Substitua nomes, caminhos, portas e rede pelos valores do seu `.env.foundation` e da infraestrutura.
+Mantenha `my-framework` e `infra` lado a lado em `C:\var\www` (Windows) ou `/var/www` (Linux). Extraia sem criar outra pasta interna e adapte nomes, portas e rede ao ambiente.
 
-**Compose no Windows e Linux:** mantenha `infra/docker-compose.yml` e a pasta do projeto lado a lado. Os binds Node usam `../my-framework/pwa`, `../my-framework/admin`, `../my-framework/website` e `../my-framework/shared`, relativos à pasta do Compose; o mesmo trecho funciona nos dois sistemas. Cada serviço mantém seu volume exclusivo em `/app/node_modules`; `/shared` é somente leitura. Os caminhos internos `/var/www/...` do PHP/Nginx permanecem iguais. No executor, `source=..` é relativo à pasta atual do terminal: execute sempre dentro de `infra` para montar a pasta que contém os projetos.
-
-Extraia o pacote na pasta escolhida, sem criar outra pasta de projeto dentro dela. Preserve arquivos privados e volumes existentes. O pacote não contém vendor, node_modules, .env preenchidos ou APP_KEY.
+Os caminhos relativos do Compose funcionam nos dois sistemas. Execute o bootstrap dentro de `infra`. Preserve arquivos privados e volumes existentes.
 
 Prepare o arquivo de configuração central **manualmente**:
 
