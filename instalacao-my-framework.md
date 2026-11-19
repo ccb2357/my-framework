@@ -335,56 +335,19 @@ SMTP_FROM_NAME="Nome do aplicativo"
 
 Aguarde **60 segundos** antes de solicitar outro e-mail de recuperação para a mesma conta.
 
-## 7. Desenvolvimento com Vite (opcional)
+## 7. Desenvolvimento (opcional)
 
-### PWA — CMD
+No **CMD**, abra a pasta indicada e execute o comando desejado:
 
-```cmd
-cd /d C:\var\www\my-framework\pwa
-vite.cmd dev
-```
+| Interface | Abrir pasta | Desenvolvimento | Build | Acesso dev |
+| --- | --- | --- | --- | --- |
+| PWA | `cd /d C:\var\www\my-framework\pwa` | `vite dev` | `vite build` | [localhost:5180](http://localhost:5180) |
+| Admin | `cd /d C:\var\www\my-framework\admin` | `vite dev` | `vite build` | [localhost:5182](http://localhost:5182) |
+| Website | `cd /d C:\var\www\my-framework\website` | `nuxt dev` | `nuxt build` | [localhost:5184](http://localhost:5184) |
 
-Acesso: [http://localhost:5180](http://localhost:5180) (`PWA_DEV_PORT`). Encerrar: **Ctrl+C**.
+**Dev:** alterações aparecem ao salvar. Mantenha o terminal aberto; encerre com **Ctrl+C**.
 
-Build:
-
-```cmd
-cd /d C:\var\www\my-framework\pwa
-vite.cmd build
-```
-
-### Admin — CMD
-
-```cmd
-cd /d C:\var\www\my-framework\admin
-vite.cmd dev
-```
-
-Acesso: [http://localhost:5182](http://localhost:5182) (`ADMIN_DEV_PORT`). Encerrar: **Ctrl+C**.
-
-Build:
-
-```cmd
-cd /d C:\var\www\my-framework\admin
-vite.cmd build
-```
-
-### Website — CMD
-
-```cmd
-cd /d C:\var\www\my-framework\website
-nuxt.cmd dev
-```
-
-**Desenvolvimento:** [http://localhost:5184](http://localhost:5184) (`WEBSITE_DEV_PORT`); alterações aparecem ao salvar. Mantenha o terminal aberto; encerre com **Ctrl+C**.
-
-**Domínio do website:** alterações no código Vue/JS/CSS dependem do build publicado. Dados consultados no Laravel atualizam sem build. Para atualizá-lo, repita o bootstrap da etapa 5; ele recompila e ativa a nova versão.
-
-Build manual (opcional):
-
-```cmd
-nuxt.cmd build
-```
+**Build:** gera a versão otimizada. Os domínios Nginx exibem o build publicado; para compilar, ativar e verificar o website, repita o bootstrap da etapa 5. Dados consultados no Laravel atualizam sem build.
 
 ### Atualizar o website com formulários
 
