@@ -45,6 +45,7 @@ const nonempty = (value, name) => { requireThat(typeof value === 'string' && val
 const port = (value, name) => { requireThat(/^\d+$/.test(value || '') && +value > 0 && +value <= 65535, `${name} inválida.`); return +value; };
 export function validate(input, root) {
   const c = { ...input, root };
+  for (const key of ['LOCAL_DOMAIN', 'DEV_PORT', 'PREVIEW_PORT', 'PRODUCTION_URL']) requireThat(!Object.hasOwn(input, key), `Campo antigo ${key}: use PWA_${key}.`);
   c.PROJECT_SLUG = nonempty(c.PROJECT_SLUG, 'PROJECT_SLUG');
   requireThat(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(c.PROJECT_SLUG), 'PROJECT_SLUG deve usar letras minúsculas, números e hífens.');
   requireThat(path.basename(root) === c.PROJECT_SLUG, 'PROJECT_SLUG deve coincidir com o nome da pasta. Não houve renomeação.');
@@ -60,30 +61,30 @@ export function validate(input, root) {
   c.NGINX_INTERNAL_URL ||= 'http://nginx';
   let target; try { target = new URL(c.NGINX_INTERNAL_URL); } catch { throw new FoundationError('NGINX_INTERNAL_URL inválida.'); }
   requireThat(['http:', 'https:'].includes(target.protocol) && !target.username && !target.password && target.pathname === '/' && !target.search && !target.hash, 'NGINX_INTERNAL_URL deve ser HTTP(S), sem credenciais.');
-  c.LOCAL_DOMAIN ||= c.PROJECT_SLUG + '.localhost';
-  requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.LOCAL_DOMAIN), 'LOCAL_DOMAIN inválido.');
-  c.DEV_PORT = port(c.DEV_PORT, 'DEV_PORT'); c.PREVIEW_PORT = port(c.PREVIEW_PORT, 'PREVIEW_PORT');
-  requireThat(c.DEV_PORT !== c.PREVIEW_PORT, 'DEV_PORT e PREVIEW_PORT devem ser diferentes.');
+  c.PWA_LOCAL_DOMAIN ||= c.PROJECT_SLUG + '.localhost';
+  requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.PWA_LOCAL_DOMAIN), 'PWA_LOCAL_DOMAIN inválido.');
+  c.PWA_DEV_PORT = port(c.PWA_DEV_PORT, 'PWA_DEV_PORT'); c.PWA_PREVIEW_PORT = port(c.PWA_PREVIEW_PORT, 'PWA_PREVIEW_PORT');
+  requireThat(c.PWA_DEV_PORT !== c.PWA_PREVIEW_PORT, 'PWA_DEV_PORT e PWA_PREVIEW_PORT devem ser diferentes.');
   if (c.APP_ENV === 'production') {
-    let url; try { url = new URL(c.PRODUCTION_URL); } catch { throw new FoundationError('Produção exige PRODUCTION_URL HTTPS válida.'); }
-    requireThat(url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash, 'PRODUCTION_URL deve ser uma origem HTTPS, sem caminho, parâmetros ou credenciais.');
+    let url; try { url = new URL(c.PWA_PRODUCTION_URL); } catch { throw new FoundationError('Produção exige PWA_PRODUCTION_URL HTTPS válida.'); }
+    requireThat(url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash, 'PWA_PRODUCTION_URL deve ser uma origem HTTPS, sem caminho, parâmetros ou credenciais.');
     c.appUrl = url.origin;
-  } else c.appUrl = 'http://' + c.LOCAL_DOMAIN;
-  c.ADMIN_LOCAL_DOMAIN ||= 'admin.' + c.LOCAL_DOMAIN;
-  requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.ADMIN_LOCAL_DOMAIN) && c.ADMIN_LOCAL_DOMAIN !== c.LOCAL_DOMAIN, 'ADMIN_LOCAL_DOMAIN deve ser um domínio distinto do aplicativo.');
+  } else c.appUrl = 'http://' + c.PWA_LOCAL_DOMAIN;
+  c.ADMIN_LOCAL_DOMAIN ||= 'admin.' + c.PWA_LOCAL_DOMAIN;
+  requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.ADMIN_LOCAL_DOMAIN) && c.ADMIN_LOCAL_DOMAIN !== c.PWA_LOCAL_DOMAIN, 'ADMIN_LOCAL_DOMAIN deve ser um domínio distinto do aplicativo.');
   c.ADMIN_DEV_PORT = port(c.ADMIN_DEV_PORT || '5182', 'ADMIN_DEV_PORT');
   c.ADMIN_PREVIEW_PORT = port(c.ADMIN_PREVIEW_PORT || '5183', 'ADMIN_PREVIEW_PORT');
-  requireThat(new Set([c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT]).size === 4, 'As quatro portas da PWA e do admin devem ser diferentes.');
+  requireThat(new Set([c.PWA_DEV_PORT, c.PWA_PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT]).size === 4, 'As quatro portas da PWA e do admin devem ser diferentes.');
   c.adminUrl = 'http://' + c.ADMIN_LOCAL_DOMAIN;
   if (c.APP_ENV === 'production') {
     let url; try { url = new URL(c.ADMIN_PRODUCTION_URL || 'https://admin.' + new URL(c.appUrl).hostname); } catch { throw new FoundationError('ADMIN_PRODUCTION_URL inválida.'); }
     requireThat(url.protocol === 'https:' && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && !url.port && url.hostname !== new URL(c.appUrl).hostname, 'ADMIN_PRODUCTION_URL deve ser uma origem HTTPS em host diferente, sem porta ou caminho.');
     c.adminUrl = url.origin;
   }
-  c.WEBSITE_LOCAL_DOMAIN ||= 'website.' + c.LOCAL_DOMAIN;
-  requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.WEBSITE_LOCAL_DOMAIN) && ![c.LOCAL_DOMAIN, c.ADMIN_LOCAL_DOMAIN].includes(c.WEBSITE_LOCAL_DOMAIN), 'WEBSITE_LOCAL_DOMAIN deve ser distinto da PWA e do admin.');
+  c.WEBSITE_LOCAL_DOMAIN ||= 'website.' + c.PWA_LOCAL_DOMAIN;
+  requireThat(/^(?=.{1,253}$)[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(c.WEBSITE_LOCAL_DOMAIN) && ![c.PWA_LOCAL_DOMAIN, c.ADMIN_LOCAL_DOMAIN].includes(c.WEBSITE_LOCAL_DOMAIN), 'WEBSITE_LOCAL_DOMAIN deve ser distinto da PWA e do admin.');
   c.WEBSITE_DEV_PORT = port(c.WEBSITE_DEV_PORT || '5184', 'WEBSITE_DEV_PORT');
-  requireThat(![c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(c.WEBSITE_DEV_PORT), 'As cinco portas devem ser diferentes.');
+  requireThat(![c.PWA_DEV_PORT, c.PWA_PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(c.WEBSITE_DEV_PORT), 'As cinco portas devem ser diferentes.');
   c.websiteUrl = 'http://' + c.WEBSITE_LOCAL_DOMAIN;
   if (c.APP_ENV === 'production') {
     let url; try { url = new URL(c.WEBSITE_PRODUCTION_URL || 'https://website.' + new URL(c.appUrl).hostname); } catch { throw new FoundationError('WEBSITE_PRODUCTION_URL inválida.'); }
@@ -128,7 +129,7 @@ export function validate(input, root) {
   c.website = path.join(root, 'website'); c.websiteService = c.PROJECT_SLUG + '-website-node'; c.websiteModulesVolume = c.base + '_website_node_modules';
   c.backend = path.join(root, 'backend'); c.frontend = path.join(root, 'pwa');
   c.sessionCookie = c.base + '_session';
-  const origins = c.APP_ENV === 'production' ? [new URL(c.appUrl).host] : [c.LOCAL_DOMAIN, ...['localhost', '127.0.0.1', c.LOCAL_DOMAIN].flatMap(h => [`${h}:${c.DEV_PORT}`, `${h}:${c.PREVIEW_PORT}`])];
+  const origins = c.APP_ENV === 'production' ? [new URL(c.appUrl).host] : [c.PWA_LOCAL_DOMAIN, ...['localhost', '127.0.0.1', c.PWA_LOCAL_DOMAIN].flatMap(h => [`${h}:${c.PWA_DEV_PORT}`, `${h}:${c.PWA_PREVIEW_PORT}`])];
   origins.push(new URL(c.websiteUrl).host);
   if (c.APP_ENV === 'local') origins.push(...['localhost', '127.0.0.1', c.WEBSITE_LOCAL_DOMAIN].map(host => `${host}:${c.WEBSITE_DEV_PORT}`));
   c.stateful = [...new Set(origins)].join(',');

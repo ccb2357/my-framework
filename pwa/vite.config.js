@@ -27,7 +27,7 @@ export default defineConfig({
     injectManifest: { globPatterns: ['index.html', 'offline.html', 'assets/*.{js,css,woff2,woff,ttf}', 'fonts/*.woff2', 'icons/*.png'], globIgnores: ['**/.*'], maximumFileSizeToCacheInBytes: 2 * 1024 * 1024 },
   }), {
     name: 'foundation-public-html',
-    transformIndexHtml: html => html.replace('<title>PWA Framework</title>', `<title>${escapeHtml(app.name)}</title>`)
+    transformIndexHtml: html => html.replace('<title>My Framework</title>', `<title>${escapeHtml(app.name)}</title>`)
       .replace('lang="pt-BR"', `lang="${escapeHtml(app.locale)}"`)
       .replace('content="#007aff"', `content="${escapeHtml(app.themeColor)}"`)
       .replace('</head>', `<meta name="app-build" content="${buildId}"><link rel="apple-touch-icon" href="/icons/icon-180.png"></head>`),

@@ -19,7 +19,7 @@ try {
   const saved = await readOptional(stateFile, '{}');
   try { state = JSON.parse(saved); } catch { throw new FoundationError('Estado local inválido. Preserve-o para diagnóstico; não reinicialize identidade automaticamente.'); }
   checkIdentity(state, c);
-  state = { ...state, schema, identity: identity(c), release: '1.1.0-website.4', completeFoundation: false, startedAt: new Date().toISOString() };
+  state = { ...state, schema, identity: identity(c), release: '2.0.0', completeFoundation: false, startedAt: new Date().toISOString() };
   console.log(`Preparação de ${c.PROJECT_SLUG} (${c.APP_ENV}).`);
   const d = await discover(c);
   if (state.composeProject) requireThat(state.composeProject === d.project, 'Identidade da infraestrutura Compose mudou; revisar explicitamente.');
@@ -32,7 +32,7 @@ try {
   if (problems.length) {
     state.phase = 'infra-pending'; state.pending = problems; await save();
     console.log(problems.map(x => '- ' + x).join('\n'));
-    throw new FoundationError('Trechos deste ambiente em .foundation-installation.md, na raiz do projeto. Manual geral: instalacao-pwa-framework.md. Aplique manualmente, valide/recrie somente os serviços necessários e repita o comando.', 2);
+    throw new FoundationError('Trechos deste ambiente em .foundation-installation.md, na raiz do projeto. Manual geral: instalacao-my-framework.md. Aplique manualmente, valide/recrie somente os serviços necessários e repita o comando.', 2);
   }
   if (c.APP_ENV === 'production') requireThat(options.force, 'Produção: migrations exigem --force explícito. Nenhuma instalação/configuração backend foi alterada.');
   state.phase = 'backend-install'; state.pending = []; await save();

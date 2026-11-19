@@ -1,18 +1,16 @@
-# Instalação — PWA Framework
-
-**Pasta antiga:** se ainda usa `frontend/`, pare o Vite e renomeie `frontend` para `pwa` antes de extrair esta atualização. Ajuste o bind Node e o `root` Nginx da PWA conforme a etapa 2, valide/recarregue o Nginx e repita o bootstrap. Preserve serviços, volumes e `.foundation-state.json`.
+# Instalação — My Framework
 
 ## 1. Preparar a pasta e a configuração
 
-Os exemplos usam `meu-projeto` em `C:\var\www` (Windows) ou `/var/www` (Linux), com a pasta `infra` ao lado. Substitua nomes, caminhos, portas e rede pelos valores do seu `.env.foundation` e da infraestrutura.
+Os exemplos usam `my-framework` em `C:\var\www` (Windows) ou `/var/www` (Linux), com a pasta `infra` ao lado. Substitua nomes, caminhos, portas e rede pelos valores do seu `.env.foundation` e da infraestrutura.
 
-**Compose no Windows e Linux:** mantenha `infra/docker-compose.yml` e a pasta do projeto lado a lado. Os binds Node usam `../meu-projeto/pwa`, `../meu-projeto/admin`, `../meu-projeto/website` e `../meu-projeto/shared`, relativos à pasta do Compose; o mesmo trecho funciona nos dois sistemas. Cada serviço mantém seu volume exclusivo em `/app/node_modules`; `/shared` é somente leitura. Os caminhos internos `/var/www/...` do PHP/Nginx permanecem iguais. No executor, `source=..` é relativo à pasta atual do terminal: execute sempre dentro de `infra` para montar a pasta que contém os projetos.
+**Compose no Windows e Linux:** mantenha `infra/docker-compose.yml` e a pasta do projeto lado a lado. Os binds Node usam `../my-framework/pwa`, `../my-framework/admin`, `../my-framework/website` e `../my-framework/shared`, relativos à pasta do Compose; o mesmo trecho funciona nos dois sistemas. Cada serviço mantém seu volume exclusivo em `/app/node_modules`; `/shared` é somente leitura. Os caminhos internos `/var/www/...` do PHP/Nginx permanecem iguais. No executor, `source=..` é relativo à pasta atual do terminal: execute sempre dentro de `infra` para montar a pasta que contém os projetos.
 
 Extraia o pacote na pasta escolhida, sem criar outra pasta de projeto dentro dela. Preserve arquivos privados e volumes existentes. O pacote não contém vendor, node_modules, .env preenchidos ou APP_KEY.
 
 Prepare o arquivo de configuração central **manualmente**:
 
-   - Abra a pasta `C:\var\www\meu-projeto` no Explorador de Arquivos.
+   - Abra a pasta `C:\var\www\my-framework` no Explorador de Arquivos.
    - Se `.env.foundation` ainda não existir, copie o arquivo `.env.foundation.example` nessa mesma pasta e renomeie a cópia para `.env.foundation`, sem acrescentar `.txt` ao nome.
    - Se `.env.foundation` já existir, mantenha o arquivo atual; não o substitua pelo exemplo.
    - Abra `.env.foundation` no VSCode ou em outro editor de texto, confira os campos e salve as alterações.
@@ -21,23 +19,23 @@ Os exemplos deste guia usam:
 
 | Interface | Domínio local | Dev | Prévia |
 | --- | --- | --- | --- |
-| PWA | meu-projeto.localhost | 5180 | 5181 |
-| Admin | admin.meu-projeto.localhost | 5182 | 5183 |
-| Website | website.meu-projeto.localhost | 5184 | — |
+| PWA | my-framework.localhost | 5180 | 5181 |
+| Admin | admin.my-framework.localhost | 5182 | 5183 |
+| Website | website.my-framework.localhost | 5184 | — |
 
 **Ambiente local — seu computador:**
 
 - `APP_ENV=local`.
-- `PROJECT_SLUG`: mesmo nome da pasta do projeto, por exemplo `meu-projeto`.
-- `LOCAL_DOMAIN`: domínio local da PWA, por exemplo `meu-projeto.localhost`.
-- `ADMIN_LOCAL_DOMAIN`: deixe vazio para usar `admin.meu-projeto.localhost` automaticamente.
-- `WEBSITE_LOCAL_DOMAIN`: domínio do website, por exemplo `website.meu-projeto.localhost`.
+- `PROJECT_SLUG`: mesmo nome da pasta do projeto, por exemplo `my-framework`.
+- `PWA_LOCAL_DOMAIN`: domínio local da PWA, por exemplo `my-framework.localhost`.
+- `ADMIN_LOCAL_DOMAIN`: deixe vazio para usar `admin.my-framework.localhost` automaticamente.
+- `WEBSITE_LOCAL_DOMAIN`: domínio do website, por exemplo `website.my-framework.localhost`.
 - `CLIENT_SESSION_DOMAIN`: deixe vazio para derivar o domínio comum da PWA e do website.
-- `PRODUCTION_URL`, `ADMIN_PRODUCTION_URL` e `WEBSITE_PRODUCTION_URL`: vazios no ambiente local.
+- `PWA_PRODUCTION_URL`, `ADMIN_PRODUCTION_URL` e `WEBSITE_PRODUCTION_URL`: vazios no ambiente local.
 
 **Portas locais:**
 
-- `DEV_PORT` e `PREVIEW_PORT`: desenvolvimento e prévia da PWA.
+- `PWA_DEV_PORT` e `PWA_PREVIEW_PORT`: desenvolvimento e prévia da PWA.
 - `ADMIN_DEV_PORT` e `ADMIN_PREVIEW_PORT`: desenvolvimento e prévia do admin.
 - `WEBSITE_DEV_PORT`: desenvolvimento do website (5184).
 - As cinco portas devem ser diferentes e estar livres.
@@ -45,12 +43,12 @@ Os exemplos deste guia usam:
 **Produção — na VPS:**
 
 - `APP_ENV=production`.
-- `PRODUCTION_URL`: endereço HTTPS real da PWA, por exemplo `https://app.meu-dominio.com.br`.
+- `PWA_PRODUCTION_URL`: endereço HTTPS real da PWA, por exemplo `https://app.meu-dominio.com.br`.
 - `ADMIN_PRODUCTION_URL`: endereço HTTPS do admin, por exemplo `https://admin.meu-dominio.com.br`.
 - `WEBSITE_PRODUCTION_URL`: endereço HTTPS do website, por exemplo `https://meu-dominio.com.br`.
 - PWA e website devem pertencer ao mesmo domínio de sessão; não use domínios independentes.
 - Configure DNS e HTTPS para os três domínios. O contêiner do website também precisa alcançar seu domínio HTTPS para consultar o backend.
-- `NGINX_CERT_NAME`: nome do certificado compartilhado em `/etc/letsencrypt/live/<nome>`. Exemplo: `NGINX_CERT_NAME=meu-projeto.meu-dominio.com.br`. O certificado deve cobrir os três hosts. Vazio mantém um caminho por host.
+- `NGINX_CERT_NAME`: nome do certificado compartilhado em `/etc/letsencrypt/live/<nome>`. Exemplo: `NGINX_CERT_NAME=my-framework.meu-dominio.com.br`. O certificado deve cobrir os três hosts. Vazio mantém um caminho por host.
 - Após definir o nome, execute o bootstrap e aplique os blocos Nginx gerados; ele não emite certificados nem edita o Nginx.
 
 **Trechos por ambiente:** o bootstrap gera `.foundation-installation.md` na raiz, com os blocos Compose/Nginx e resumo do ambiente. Use esse arquivo quando houver pendência de infraestrutura. Ele é ignorado pelo Git; README e este manual versionados não são editados pelo bootstrap.
@@ -67,43 +65,43 @@ Arquivo de destino: `C:/var/www/infra/docker-compose.yml`.
 
 ```yaml
 services:
-    meu-projeto-node:
+    my-framework-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: ../meu-projeto/pwa
+              source: ../my-framework/pwa
               target: /app
             - type: bind
-              source: ../meu-projeto/shared
+              source: ../my-framework/shared
               target: /shared
               read_only: true
-            - meu_projeto_node_modules:/app/node_modules
+            - my_framework_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5180:5173"
         networks:
             - infra_network
         profiles:
             - dev
-    meu-projeto-admin-node:
+    my-framework-admin-node:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: ../meu-projeto/admin
+              source: ../my-framework/admin
               target: /app
             - type: bind
-              source: ../meu-projeto/shared
+              source: ../my-framework/shared
               target: /shared
               read_only: true
-            - meu_projeto_admin_node_modules:/app/node_modules
+            - my_framework_admin_node_modules:/app/node_modules
         ports:
             - "127.0.0.1:5182:5173"
         networks:
             - infra_network
         profiles:
             - dev
-    meu-projeto-website-node:
+    my-framework-website-node:
         image: node:22-bookworm-slim
         working_dir: /app
         command: ["node", "scripts/start.mjs"]
@@ -114,13 +112,13 @@ services:
             NITRO_PORT: 3000
         volumes:
             - type: bind
-              source: ../meu-projeto/website
+              source: ../my-framework/website
               target: /app
             - type: bind
-              source: ../meu-projeto/shared
+              source: ../my-framework/shared
               target: /shared
               read_only: true
-            - meu_projeto_website_node_modules:/app/node_modules
+            - my_framework_website_node_modules:/app/node_modules
         expose:
             - "3000"
         networks:
@@ -134,7 +132,7 @@ services:
 No mesmo Compose, localizar `services.php-fpm.volumes` e acrescentar somente a linha abaixo. Preservar os mounts atuais; não criar outro serviço PHP nem substituir sua lista de volumes.
 
 ```yaml
-- meu_projeto_vendor:/var/www/meu-projeto/backend/vendor
+- my_framework_vendor:/var/www/my-framework/backend/vendor
 ```
 
 ### 2.3 Declaração dos volumes ao final do Compose
@@ -143,14 +141,14 @@ No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz,
 
 ```yaml
 volumes:
-    meu_projeto_vendor:
-        name: meu_projeto_vendor
-    meu_projeto_node_modules:
-        name: meu_projeto_node_modules
-    meu_projeto_admin_node_modules:
-        name: meu_projeto_admin_node_modules
-    meu_projeto_website_node_modules:
-        name: meu_projeto_website_node_modules
+    my_framework_vendor:
+        name: my_framework_vendor
+    my_framework_node_modules:
+        name: my_framework_node_modules
+    my_framework_admin_node_modules:
+        name: my_framework_admin_node_modules
+    my_framework_website_node_modules:
+        name: my_framework_website_node_modules
 ```
 
 ### 2.4 Sites Nginx
@@ -158,11 +156,11 @@ volumes:
 No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\var\www\infra\nginx\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. PWA: `pwa/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.
 
 ```nginx
-# PWA FOUNDATION: meu-projeto
+# PWA FOUNDATION: my-framework
 server {
     listen 80;
-    server_name meu-projeto.localhost;
-    root "/var/www/meu-projeto/pwa/dist";
+    server_name my-framework.localhost;
+    root "/var/www/my-framework/pwa/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -177,8 +175,8 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/my-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/my-framework/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
@@ -186,11 +184,11 @@ server {
     location / { try_files $uri $uri/ /index.html; }
 }
 
-# ADMIN FOUNDATION: meu-projeto
+# ADMIN FOUNDATION: my-framework
 server {
     listen 80;
-    server_name admin.meu-projeto.localhost;
-    root "/var/www/meu-projeto/admin/dist";
+    server_name admin.my-framework.localhost;
+    root "/var/www/my-framework/admin/dist";
     index index.html;
     charset utf-8;
     add_header Cache-Control "no-cache" always;
@@ -206,8 +204,8 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/my-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/my-framework/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
@@ -215,10 +213,10 @@ server {
     location / { try_files $uri $uri/ /index.html; }
 }
 
-# WEBSITE FOUNDATION: meu-projeto
+# WEBSITE FOUNDATION: my-framework
 server {
     listen 80;
-    server_name website.meu-projeto.localhost;
+    server_name website.my-framework.localhost;
     charset utf-8;
     resolver 127.0.0.11 valid=10s ipv6=off;
     location ~ /\. { deny all; }
@@ -227,14 +225,14 @@ server {
         internal;
         include fastcgi_params;
         fastcgi_pass php-fpm:9000;
-        fastcgi_param SCRIPT_FILENAME "/var/www/meu-projeto/backend/public/index.php";
-        fastcgi_param DOCUMENT_ROOT "/var/www/meu-projeto/backend/public";
+        fastcgi_param SCRIPT_FILENAME "/var/www/my-framework/backend/public/index.php";
+        fastcgi_param DOCUMENT_ROOT "/var/www/my-framework/backend/public";
         
         add_header Cache-Control "no-store" always;
     }
     location ~* \.php(/|$) { return 404; }
     location / {
-        set $website_upstream meu-projeto-website-node:3000;
+        set $website_upstream my-framework-website-node:3000;
         proxy_pass http://$website_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -263,7 +261,7 @@ No **Prompt de Comando (CMD)**:
 
 ```cmd
 cd /d C:\var\www\infra
-docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
+docker build -t my-framework-bootstrap:0.1.0 ../my-framework/scripts/bootstrap
 ```
 
 ## 5. Executar o bootstrap
@@ -271,7 +269,7 @@ docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
 Com os três serviços Node, volumes, mount PHP-FPM e sites Nginx configurados, execute **dentro da pasta `infra`**. O comando usa `source=..` e é o mesmo no CMD do Windows e no terminal Linux; em produção, acrescente `--force` ao final:
 
 ```cmd
-docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network pwa-foundation-bootstrap:0.1.0 --project /var/www/meu-projeto
+docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network my-framework-bootstrap:0.1.0 --project /var/www/my-framework
 ```
 
 Quando o comando terminar e o prompt voltar, execute separadamente:
@@ -288,12 +286,12 @@ O bootstrap compila, inicia/atualiza o website e confere o acesso automaticament
 
 Confira:
 
-- [Hello/PWA](http://meu-projeto.localhost/)
-- [Hello Website](http://website.meu-projeto.localhost/)
-- [Login/Dashboard administrativa](http://admin.meu-projeto.localhost/)
-- [Status do backend e banco](http://meu-projeto.localhost/status)
-- [Mesmo diagnóstico em JSON](http://meu-projeto.localhost/api/v1/status)
-- [Verificação básica do Laravel](http://meu-projeto.localhost/up)
+- [Hello/PWA](http://my-framework.localhost/)
+- [Hello Website](http://website.my-framework.localhost/)
+- [Login/Dashboard administrativa](http://admin.my-framework.localhost/)
+- [Status do backend e banco](http://my-framework.localhost/status)
+- [Mesmo diagnóstico em JSON](http://my-framework.localhost/api/v1/status)
+- [Verificação básica do Laravel](http://my-framework.localhost/up)
 
 ### Cadastro, login e logout dos clientes
 
@@ -306,10 +304,10 @@ Confira:
 
 ### Criar e acessar o administrador
 
-Na pasta infra, execute (adapte meu-projeto ao nome da sua pasta):
+Na pasta infra, execute (adapte my-framework ao nome da sua pasta):
 
 ```cmd
-docker compose exec -it -w /var/www/meu-projeto/backend php-fpm php artisan admin:create admin@example.com --name="Administrador"
+docker compose exec -it -w /var/www/my-framework/backend php-fpm php artisan admin:create admin@example.com --name="Administrador"
 ```
 
 Informe e confirme a senha no terminal (mínimo 8 caracteres); ela não aparece enquanto digita. O e-mail será o login da conta, independente dos clientes. O comando cria somente um administrador e recusa outra criação sem alterar a conta existente. Não há cadastro público. A recuperação por e-mail exige o SMTP da seção abaixo.
@@ -342,23 +340,23 @@ Aguarde **60 segundos** antes de solicitar outro e-mail de recuperação para a 
 ### PWA — CMD
 
 ```cmd
-cd /d C:\var\www\meu-projeto\pwa
+cd /d C:\var\www\my-framework\pwa
 vite.cmd dev
 ```
 
-Acesso: [http://localhost:5180](http://localhost:5180) (`DEV_PORT`). Encerrar: **Ctrl+C**.
+Acesso: [http://localhost:5180](http://localhost:5180) (`PWA_DEV_PORT`). Encerrar: **Ctrl+C**.
 
 Build:
 
 ```cmd
-cd /d C:\var\www\meu-projeto\pwa
+cd /d C:\var\www\my-framework\pwa
 vite.cmd build
 ```
 
 ### Admin — CMD
 
 ```cmd
-cd /d C:\var\www\meu-projeto\admin
+cd /d C:\var\www\my-framework\admin
 vite.cmd dev
 ```
 
@@ -367,14 +365,14 @@ Acesso: [http://localhost:5182](http://localhost:5182) (`ADMIN_DEV_PORT`). Encer
 Build:
 
 ```cmd
-cd /d C:\var\www\meu-projeto\admin
+cd /d C:\var\www\my-framework\admin
 vite.cmd build
 ```
 
 ### Website — CMD
 
 ```cmd
-cd /d C:\var\www\meu-projeto\website
+cd /d C:\var\www\my-framework\website
 nuxt.cmd dev
 ```
 
@@ -397,13 +395,13 @@ Acrescente o bind `shared` ao serviço website, se ausente, conforme a etapa 2.1
 Após o bootstrap, execute na pasta infra:
 
 ```cmd
-docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan website:content "Conteudo publicado" --body="Texto vindo do Laravel."
+docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan website:content "Conteudo publicado" --body="Texto vindo do Laravel."
 ```
 
 Na Hello do website, clique **Atualizar conteúdo** ou recarregue. Altere os textos no comando e repita: o resultado muda sem build. Para remover somente o exemplo:
 
 ```cmd
-docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan website:content --clear
+docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan website:content --clear
 ```
 
 ### Mensagens e máscaras
@@ -433,11 +431,11 @@ Abra o projeto no Chrome do celular pelo cabo USB, sem depender do Wi-Fi.
 2. Ative **Depuração USB**, conecte um cabo de dados e desbloqueie a tela.
 3. Autorize **Permitir depuração USB?**. Autorize permanentemente somente um computador de confiança.
 
-Os exemplos abaixo usam `DEV_PORT=5180`, `PREVIEW_PORT=5181` e o serviço `meu-projeto-node`. Se seus valores forem outros, substitua-os nos comandos e endereços.
+Os exemplos abaixo usam `PWA_DEV_PORT=5180`, `PWA_PREVIEW_PORT=5181` e o serviço `my-framework-node`. Se seus valores forem outros, substitua-os nos comandos e endereços.
 
 ### Desenvolvimento — sem instalação da PWA
 
-`vite.cmd dev` usa a **DEV_PORT (5180)**. Nesse modo, o service worker fica desativado e **o botão de instalar a PWA não aparece**.
+`vite.cmd dev` usa a **PWA_DEV_PORT (5180)**. Nesse modo, o service worker fica desativado e **o botão de instalar a PWA não aparece**.
 
 1. Na pasta pwa, execute e mantenha o terminal aberto:
 
@@ -455,7 +453,7 @@ C:\tools\platform-tools\adb.exe reverse tcp:5180 tcp:5180
 
 ### Instalar a PWA e testar offline
 
-Use o **build na PREVIEW_PORT (5181)**. O bootstrap da etapa 5 já gera o build; se alterou a PWA depois, execute `vite.cmd build` na pasta pwa antes de continuar.
+Use o **build na PWA_PREVIEW_PORT (5181)**. O bootstrap da etapa 5 já gera o build; se alterou a PWA depois, execute `vite.cmd build` na pasta pwa antes de continuar.
 
 1. Na pasta infra, execute e mantenha o terminal aberto:
 
@@ -464,7 +462,7 @@ cd /d C:\var\www\infra
 ```
 
 ```cmd
-docker compose --profile dev run --rm --no-deps -p 127.0.0.1:5181:4173 meu-projeto-node npm run preview
+docker compose --profile dev run --rm --no-deps -p 127.0.0.1:5181:4173 my-framework-node npm run preview
 ```
 
 2. Em outro CMD:
@@ -498,37 +496,37 @@ cd /d C:\var\www\infra
 Testes do backend:
 
 ```cmd
-docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan test --env=testing
+docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan test --env=testing
 ```
 
 Formatação PHP:
 
 ```cmd
-docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php vendor/bin/pint --test
+docker compose exec -T -w /var/www/my-framework/backend php-fpm php vendor/bin/pint --test
 ```
 
 Testes do bootstrap (execute dentro da pasta `infra`):
 
 ```cmd
-docker run --rm --workdir /var/www/infra --mount type=bind,source=..,target=/var/www --entrypoint node pwa-foundation-bootstrap:0.1.0 --test /var/www/meu-projeto/scripts/bootstrap/tests/contracts.test.mjs /var/www/meu-projeto/scripts/bootstrap/tests/orchestration.test.mjs
+docker run --rm --workdir /var/www/infra --mount type=bind,source=..,target=/var/www --entrypoint node my-framework-bootstrap:0.1.0 --test /var/www/my-framework/scripts/bootstrap/tests/contracts.test.mjs /var/www/my-framework/scripts/bootstrap/tests/orchestration.test.mjs
 ```
 
 Testes da PWA, na pasta infra:
 
 ```cmd
-docker compose --profile dev run --rm --no-deps meu-projeto-node npm test
+docker compose --profile dev run --rm --no-deps my-framework-node npm test
 ```
 
 Testes e build do admin:
 
 ```cmd
-docker compose --profile dev run --rm --no-deps meu-projeto-admin-node npm run check
+docker compose --profile dev run --rm --no-deps my-framework-admin-node npm run check
 ```
 
 Website — build e testes SSR:
 
 ```cmd
-docker compose --profile website run --rm --no-deps meu-projeto-website-node npm run check
+docker compose --profile website run --rm --no-deps my-framework-website-node npm run check
 ```
 
 Após esse build, repita o bootstrap para ativar e conferir o website.
@@ -541,7 +539,7 @@ Limpa os caches e aplica migrations pendentes. No CMD:
 
 ```cmd
 cd /d C:\var\www\infra
-docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan app:sync
+docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan app:sync
 ```
 
 ## VPS
@@ -549,6 +547,6 @@ docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan app:s
 Na pasta infra da VPS, com `.env.foundation` de produção, Compose, Nginx e HTTPS preparados:
 
 ```bash
-docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
-docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network pwa-foundation-bootstrap:0.1.0 --project /var/www/meu-projeto --force
+docker build -t my-framework-bootstrap:0.1.0 ../my-framework/scripts/bootstrap
+docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network my-framework-bootstrap:0.1.0 --project /var/www/my-framework --force
 ```

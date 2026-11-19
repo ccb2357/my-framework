@@ -71,7 +71,7 @@ export function sameHost(a, b) {
 }
 export function infraProblems(c, d) {
   const problems = [], services = d.config.services || {}, volumes = d.config.volumes || {};
-  const frontends = [{ directory: c.frontend, service: c.nodeService, volume: c.modulesVolume, port: c.DEV_PORT }, { directory: c.admin, service: c.adminNodeService, volume: c.adminModulesVolume, port: c.ADMIN_DEV_PORT }];
+  const frontends = [{ directory: c.frontend, service: c.nodeService, volume: c.modulesVolume, port: c.PWA_DEV_PORT }, { directory: c.admin, service: c.adminNodeService, volume: c.adminModulesVolume, port: c.ADMIN_DEV_PORT }];
   for (const f of frontends) {
     const node = services[f.service];
     if (!node) { problems.push(`Adicionar serviço ${f.service}.`); continue; }
@@ -109,7 +109,7 @@ export function infraProblems(c, d) {
     const own = frontends.find(f => f.service === name);
     if (service.volumes?.some(v => (v.source === c.modulesVolume && name !== c.nodeService) || (v.source === c.adminModulesVolume && name !== c.adminNodeService) || (v.source === c.websiteModulesVolume && name !== c.websiteService) || (name !== c.PHP_SERVICE && (v.source === c.vendorVolume || v.target === path.join(c.backend, 'vendor'))))) problems.push(`Recurso do projeto conflita com serviço ${name}; revisar manualmente.`);
     const allowedPorts = own ? [own.port] : name === c.websiteService ? [c.WEBSITE_DEV_PORT] : [];
-    if (service.ports?.some(p => [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT, c.WEBSITE_DEV_PORT].includes(+p.published) && !allowedPorts.includes(+p.published))) problems.push(`Porta configurada em outro serviço: ${name}.`);
+    if (service.ports?.some(p => [c.PWA_DEV_PORT, c.PWA_PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT, c.WEBSITE_DEV_PORT].includes(+p.published) && !allowedPorts.includes(+p.published))) problems.push(`Porta configurada em outro serviço: ${name}.`);
   }
   requireThat(projectHost, 'Mapeamento do projeto ausente.');
   return problems;
@@ -120,7 +120,7 @@ export async function phpExec(c, d, argv, input, label = 'PHP') {
 export async function checkPorts(c, d) {
   const running = await containers(['--filter', 'status=running']);
   const free = [];
-  for (const port of [c.DEV_PORT, c.PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT, c.WEBSITE_DEV_PORT]) {
+  for (const port of [c.PWA_DEV_PORT, c.PWA_PREVIEW_PORT, c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT, c.WEBSITE_DEV_PORT]) {
     const service = port === c.WEBSITE_DEV_PORT ? c.websiteService : [c.ADMIN_DEV_PORT, c.ADMIN_PREVIEW_PORT].includes(port) ? c.adminNodeService : c.nodeService;
     const owners = running.filter(x => Object.values(x.NetworkSettings?.Ports || {}).flat().some(p => p && +p.HostPort === port));
     requireThat(owners.every(x => labels(x)['com.docker.compose.project'] === d.project && labels(x)['com.docker.compose.service'] === service), `Porta ${port} ocupada por outro contêiner.`);

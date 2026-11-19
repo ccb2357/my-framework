@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "1.1.0-website.4",
-  "stage": "website-dynamic-content",
+  "foundationVersion": "2.0.0",
+  "stage": "foundation-consolidation",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -13,7 +13,8 @@
     "compose": "2.40.3",
     "node": "22-alpine",
     "dotenv": "16.6.1",
-    "tldts": "6.1.86"
+    "tldts": "6.1.86",
+    "image": "my-framework-bootstrap:0.1.0"
   },
   "pwa": {
     "framework7": "9.2.0",
@@ -43,7 +44,7 @@
     "@tailwindcss/vite": "4.3.5",
     "vite": "8.3.4",
     "pwa": false,
-    "shadcnCli": "2.9.0 (somente gera\u00e7\u00e3o dos componentes entregues)",
+    "shadcnCli": "2.9.0 (somente geração dos componentes entregues)",
     "cn": "0.5.2",
     "@vueuse/core": "15.0.0",
     "lucide": "1.72.0"

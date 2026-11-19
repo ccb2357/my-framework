@@ -13,8 +13,8 @@ import { run } from '../lib/process.mjs';
 import { httpFailure } from '../lib/errors.mjs';
 const raw = await fs.readFile(new URL('../../../.env.foundation.example', import.meta.url), 'utf8');
 // Keep test identity independent of the names chosen for the installation example.
-const input = { ...parseCentral(raw), WEBSITE_LOCAL_DOMAIN: '', PROJECT_SLUG: 'pwa-teste', LOCAL_DOMAIN: 'pwa-teste.localhost', DEV_PORT: '5176', PREVIEW_PORT: '5177', DB_DATABASE: 'pwa_teste', DB_TEST_DATABASE: 'pwa_teste_test' };
-const config = changes => validate({ ...input, ...changes }, '/var/www/pwa-teste');
+const input = { ...parseCentral(raw), SMTP_HOST: '', WEBSITE_LOCAL_DOMAIN: '', PROJECT_SLUG: 'my-framework', PWA_LOCAL_DOMAIN: 'my-framework.localhost', PWA_DEV_PORT: '5176', PWA_PREVIEW_PORT: '5177', DB_DATABASE: 'my_framework', DB_TEST_DATABASE: 'my_framework_test' };
+const config = changes => validate({ ...input, ...changes }, '/var/www/my-framework');
 test('HTTP failures show only controlled diagnostics and discard private output', () => {
   const output = httpFailure(JSON.stringify({ status: 'error', reason: 'html-contract', path: '/status', http_status: 200, curl_errno: 0, origin_index: 0, body: 'PRIVATE-BODY', cookies: 'PRIVATE-COOKIE' }));
   assert.match(output, /\/status/); assert.match(output, /HTML/); assert.match(output, /HTTP 200/);
@@ -37,26 +37,26 @@ test('environment and identity cannot fall back silently', () => {
   assert.throws(() => config({ APP_ENV: '' }));
   assert.throws(() => config({ APP_ENV: 'staging' }));
   assert.throws(() => config({ PROJECT_SLUG: 'other' }));
-  assert.equal(config().nodeService, 'pwa-teste-node');
-  assert.equal(config().frontend, '/var/www/pwa-teste/pwa');
-  assert.equal(config().modulesVolume, 'pwa_teste_node_modules');
-  checkIdentity({ identity: { slug: 'pwa-teste', root: '/var/www/pwa-teste', database: 'pwa_teste', testDatabase: 'pwa_teste_test', vendor: 'pwa_teste_vendor', modules: 'pwa_teste_node_modules' } }, config());
+  assert.equal(config().nodeService, 'my-framework-node');
+  assert.equal(config().frontend, '/var/www/my-framework/pwa');
+  assert.equal(config().modulesVolume, 'my_framework_node_modules');
+  checkIdentity({ identity: { slug: 'my-framework', root: '/var/www/my-framework', database: 'my_framework', testDatabase: 'my_framework_test', vendor: 'my_framework_vendor', modules: 'my_framework_node_modules' } }, config());
 });
 test('production requires HTTPS origin and derives secure stateful host', () => {
-  assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'http://example.com' }));
-  assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com/subpath' }));
-  const c = config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' });
+  assert.throws(() => config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'http://example.com' }));
+  assert.throws(() => config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com/subpath' }));
+  const c = config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com' });
   assert.equal(c.appUrl, 'https://example.com'); assert.ok(c.stateful.split(',').includes('example.com')); assert.ok(c.stateful.split(',').includes('website.example.com'));
 });
 test('test database collision is rejected, including case-only difference', () => {
-  assert.throws(() => config({ DB_TEST_DATABASE: 'PWA_TESTE' }));
-  assert.equal(config({ DB_TEST_DATABASE: '' }).DB_TEST_DATABASE, 'pwa_teste_test');
+  assert.throws(() => config({ DB_TEST_DATABASE: 'MY_FRAMEWORK' }));
+  assert.equal(config({ DB_TEST_DATABASE: '' }).DB_TEST_DATABASE, 'my_framework_test');
   assert.throws(() => config({ DB_DATABASE: 'bad`;DROP' }));
 });
 test('ports must be valid and distinct', () => {
-  assert.throws(() => config({ DEV_PORT: '5177' }));
-  assert.throws(() => config({ DEV_PORT: '65536' }));
-  assert.throws(() => config({ DEV_PORT: '5176x' }));
+  assert.throws(() => config({ PWA_DEV_PORT: '5177' }));
+  assert.throws(() => config({ PWA_DEV_PORT: '65536' }));
+  assert.throws(() => config({ PWA_DEV_PORT: '5176x' }));
 });
 test('Windows/Linux host mapping preserves spaces and prevents traversal', () => {
   assert.equal(mapPath('/var/www/my project/a', '/var/www', 'C:\\var\\www'), 'C:\\var\\www\\my project\\a');
@@ -68,14 +68,14 @@ test('Windows/Linux host mapping preserves spaces and prevents traversal', () =>
 test('effective mount mapping is mandatory', () => {
   assert.throws(() => mappedPaths({ Mounts: [] }, config()));
   const result = mappedPaths({ Mounts: [{ Type: 'bind', Source: 'C:\\var\\www', Destination: '/var/www' }] }, config());
-  assert.equal(result.toHost('/var/www/pwa-teste'), 'C:\\var\\www\\pwa-teste');
+  assert.equal(result.toHost('/var/www/my-framework'), 'C:\\var\\www\\my-framework');
 });
 test('Docker Desktop mount aliases match Windows Compose labels without escaping the root', () => {
   const source = '/run/desktop/mnt/host/c/var/www';
   const mapping = mappedPaths({ Mounts: [{ Type: 'bind', Source: source, Destination: '/var/www' }] }, config());
   assert.equal(mapping.toInternal('C:\\var\\www\\infra\\docker-compose.yml'), '/var/www/infra/docker-compose.yml');
   assert.equal(mapping.toInternal(source + '/infra/docker-compose.yml'), '/var/www/infra/docker-compose.yml');
-  assert.equal(mapping.toHost('/var/www/pwa-teste/pwa'), 'C:\\var\\www\\pwa-teste\\pwa');
+  assert.equal(mapping.toHost('/var/www/my-framework/pwa'), 'C:\\var\\www\\my-framework\\pwa');
   assert.equal(sameHost(source, 'C:\\var\\www'), true);
   assert.equal(sameHost('C:\\var\\www', source), true);
   assert.equal(sameHost(source, 'D:\\var\\www'), false);
@@ -108,26 +108,26 @@ test('generated infrastructure is credential-free and restricted to the clone', 
   const c = config({ DB_PASSWORD: 'UNIQUE-SECRET' });
   const snippets = composeSnippet(c, d) + nginxSnippet(c);
   assert.doesNotMatch(snippets, /UNIQUE-SECRET/);
-  assert.match(snippets, /pwa_teste_vendor/); assert.match(snippets, /127\.0\.0\.1:5176:5173/);
-  assert.match(snippets, /C:\/var\/www\/pwa-teste\/pwa/);
+  assert.match(snippets, /my_framework_vendor/); assert.match(snippets, /127\.0\.0\.1:5176:5173/);
+  assert.match(snippets, /source: \.\.\/my-framework\/pwa/);
 });
 test('Nginx validation checks actual config rather than marker alone', () => {
-  const c = config(); assert.equal(siteApplied('# PWA FOUNDATION: pwa-teste', c), false);
+  const c = config(); assert.equal(siteApplied('# PWA FOUNDATION: my-framework', c), false);
   assert.equal(siteApplied(nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c), c), true);
   assert.equal(siteApplied(nginxSnippet(c).replace('php-fpm:9000', 'wrong:9000'), c), false);
   assert.equal(siteApplied((nginxSnippet(c) + nginxSnippet(c, true) + websiteNginxSnippet(c)).replace('/pwa/dist', '/frontend/dist'), c), false);
 });
 test('Windows shortcut preserves shared Compose identity and exit code', () => {
   const output = viteCmd(config(), d); assert.match(output, /-p infra/); assert.match(output, /%~dp0/); assert.match(output, /exit \/b %errorlevel%/);
-  assert.match(output, /--service-ports pwa-teste-node npm run dev/);
+  assert.match(output, /--service-ports my-framework-node npm run dev/);
   assert.doesNotMatch(output.split(':build')[1], /--service-ports/);
 });
 test('initial absence reports infra pending instead of installing', () => {
   const problems = infraProblems(config(), { ...d, config: { services: {} }, php: { Mounts: [] }, nginx: { Mounts: [] } });
-  assert.ok(problems.some(x => x.includes('pwa-teste-node'))); assert.ok(problems.some(x => x.includes('vendor')));
+  assert.ok(problems.some(x => x.includes('my-framework-node'))); assert.ok(problems.some(x => x.includes('vendor')));
 });
 test('CLI only accepts explicit target and narrow force option', () => {
-  assert.deepEqual(args(['--project', '/var/www/pwa-teste', '--force']), { force: true, project: '/var/www/pwa-teste' });
+  assert.deepEqual(args(['--project', '/var/www/my-framework', '--force']), { force: true, project: '/var/www/my-framework' });
   assert.throws(() => args(['--env', 'production'])); assert.throws(() => args(['--project', '../escape']));
 });
 test('process failures do not print stdout, secrets, or arbitrary shell content', async () => {
@@ -149,9 +149,9 @@ test('public config excludes credentials and keeps proxy details out of the brow
 
 test('PWA Nginx separates backend routes, mutable entrypoints and immutable assets', () => {
   const site = nginxSnippet(config());
-  assert.match(site, /root "\/var\/www\/pwa-teste\/pwa\/dist"/);
+  assert.match(site, /root "\/var\/www\/my-framework\/pwa\/dist"/);
   assert.match(site, /api\|sanctum\|up\|status/);
-  assert.match(site, /internal;/); assert.match(site, /SCRIPT_FILENAME "\/var\/www\/pwa-teste\/backend\/public\/index.php"/);
+  assert.match(site, /internal;/); assert.match(site, /SCRIPT_FILENAME "\/var\/www\/my-framework\/backend\/public\/index.php"/);
   assert.match(site, /location = \/sw.js[^}]+no-cache/);
   assert.match(site, /location \/assets\/[^}]+immutable/);
   assert.doesNotMatch(site, /return 302 \/status/);
@@ -159,25 +159,25 @@ test('PWA Nginx separates backend routes, mutable entrypoints and immutable asse
 
 test('admin origins and four ports are distinct and production admin requires HTTPS', () => {
   const c = config();
-  assert.equal(c.adminUrl, 'http://admin.pwa-teste.localhost');
-  assert.equal(c.adminNodeService, 'pwa-teste-admin-node');
-  assert.equal(c.adminModulesVolume, 'pwa_teste_admin_node_modules');
-  assert.throws(() => config({ ADMIN_DEV_PORT: input.DEV_PORT }));
+  assert.equal(c.adminUrl, 'http://admin.my-framework.localhost');
+  assert.equal(c.adminNodeService, 'my-framework-admin-node');
+  assert.equal(c.adminModulesVolume, 'my_framework_admin_node_modules');
+  assert.throws(() => config({ ADMIN_DEV_PORT: input.PWA_DEV_PORT }));
   assert.throws(() => config({ ADMIN_PREVIEW_PORT: '5182' }));
-  assert.throws(() => config({ ADMIN_LOCAL_DOMAIN: input.LOCAL_DOMAIN }));
+  assert.throws(() => config({ ADMIN_LOCAL_DOMAIN: input.PWA_LOCAL_DOMAIN }));
   assert.throws(() => config({ ADMIN_LOCAL_DOMAIN: 'bad;server' }));
   for (const url of ['http://admin.example.com', 'https://example.com', 'https://admin.example.com/path', 'https://user:pass@admin.example.com']) {
-    assert.throws(() => config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com', ADMIN_PRODUCTION_URL: url }));
+    assert.throws(() => config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com', ADMIN_PRODUCTION_URL: url }));
   }
-  assert.equal(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' }).adminUrl, 'https://admin.example.com');
+  assert.equal(config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com' }).adminUrl, 'https://admin.example.com');
 });
 test('admin public config and Nginx exclude PWA resources and private credentials', () => {
   const c = config({ DB_PASSWORD: 'PRIVATE-SECRET' });
   const output = adminPublicConfiguration(c), site = nginxSnippet(c, true);
   assert.doesNotMatch(JSON.stringify(output), /PRIVATE|PWA_THEME|SESSION|DB_PASSWORD/);
   assert.equal(output.app.appUrl, c.adminUrl);
-  assert.equal(output.vite.proxyHost, 'admin.pwa-teste.localhost');
-  assert.match(site, /root "\/var\/www\/pwa-teste\/admin\/dist"/);
+  assert.equal(output.vite.proxyHost, 'admin.my-framework.localhost');
+  assert.match(site, /root "\/var\/www\/my-framework\/admin\/dist"/);
   assert.match(site, /location = \/sw.js \{ return 404; \}/);
   assert.match(site, /location = \/manifest.webmanifest \{ return 404; \}/);
   assert.doesNotMatch(site, /Service-Worker-Allowed|pwa\/dist/);
@@ -185,8 +185,8 @@ test('admin public config and Nginx exclude PWA resources and private credential
   assert.equal(siteApplied(nginxSnippet(c), c), false);
   assert.equal(siteApplied(nginxSnippet(c) + site + websiteNginxSnippet(c), c), true);
   const shortcut = viteCmd(c, d, true);
-  assert.match(shortcut, /--service-ports pwa-teste-admin-node/);
-  assert.doesNotMatch(shortcut, /--service-ports pwa-teste-node /);
+  assert.match(shortcut, /--service-ports my-framework-admin-node/);
+  assert.doesNotMatch(shortcut, /--service-ports my-framework-node /);
 });
 
 test('npm manifests pin direct versions and lockfiles agree, including shared form libraries', async () => {
@@ -235,14 +235,14 @@ test('SMTP stays private, requires valid configuration and never enables real ma
 });
 
 test('website has a distinct origin, exact ports and public-only generated configuration', () => {
-  for (const changes of [{ WEBSITE_DEV_PORT: '5182' }, { WEBSITE_LOCAL_DOMAIN: input.LOCAL_DOMAIN }, { WEBSITE_LOCAL_DOMAIN: 'admin.pwa-teste.localhost' }, { APP_ENV: 'production', PRODUCTION_URL: 'https://example.com', WEBSITE_PRODUCTION_URL: 'http://shop.example.com' }]) assert.throws(() => config(changes));
-  const c = config({ DB_PASSWORD: 'PRIVATE-WEBSITE-SECRET', WEBSITE_LOCAL_DOMAIN: 'example.pwa-teste.localhost' });
+  for (const changes of [{ WEBSITE_DEV_PORT: '5182' }, { WEBSITE_LOCAL_DOMAIN: input.PWA_LOCAL_DOMAIN }, { WEBSITE_LOCAL_DOMAIN: 'admin.my-framework.localhost' }, { APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com', WEBSITE_PRODUCTION_URL: 'http://shop.example.com' }]) assert.throws(() => config(changes));
+  const c = config({ DB_PASSWORD: 'PRIVATE-WEBSITE-SECRET', WEBSITE_LOCAL_DOMAIN: 'example.my-framework.localhost' });
   const output = websitePublicConfiguration({ ...c, websiteBuildId: 'website-fixture' });
-  assert.equal(output.websiteUrl, 'http://example.pwa-teste.localhost');
+  assert.equal(output.websiteUrl, 'http://example.my-framework.localhost');
   assert.doesNotMatch(JSON.stringify(output), /PRIVATE|DB_|SMTP|proxy/);
   const site = websiteNginxSnippet(c);
   assert.match(site, /resolver 127.0.0.11/);
-  assert.match(site, /pwa-teste-website-node:3000/);
+  assert.match(site, /my-framework-website-node:3000/);
   assert.match(site, /proxy_pass http:\/\/\$website_upstream/);
   assert.doesNotMatch(site, /pwa\/dist|admin\/dist/);
   const shortcut = nuxtCmd(c, d);
@@ -254,7 +254,7 @@ test('website has a distinct origin, exact ports and public-only generated confi
 test('website activation preserves Compose identity and resolves only its binds on the host', () => {
   const c = config();
   const discovery = { ...d, prefix: ['compose', '-p', 'infra', '-f', '/var/www/infra/docker-compose.yml', '--profile', 'website'], config: { services: { [c.websiteService]: { volumes: [
-    { type: 'bind', source: '../pwa-teste/website', target: '/app' },
+    { type: 'bind', source: '../my-framework/website', target: '/app' },
     { type: 'volume', source: c.websiteModulesVolume, target: '/app/node_modules' },
   ] } } } };
   const result = websiteActivation(c, discovery);
@@ -262,12 +262,12 @@ test('website activation preserves Compose identity and resolves only its binds 
   assert.deepEqual(result.argv.slice(discovery.prefix.length), ['-f', '-', 'up', '-d', '--no-deps', '--no-build', '--force-recreate', c.websiteService]);
   const model = JSON.parse(result.input);
   assert.deepEqual(Object.keys(model.services), [c.websiteService]);
-  assert.equal(model.services[c.websiteService].volumes[0].source, 'C:\\var\\www\\pwa-teste\\website');
+  assert.equal(model.services[c.websiteService].volumes[0].source, 'C:\\var\\www\\my-framework\\website');
   assert.equal(model.services[c.websiteService].volumes[1].source, c.websiteModulesVolume);
   const special = { ...discovery, hostDir: 'C:\\apps$private\\infra' };
   assert.match(JSON.parse(websiteActivation(c, special).input).services[c.websiteService].volumes[0].source, /apps\$\$private/);
   const linux = { ...discovery, hostDir: '/srv/apps/infra' };
-  assert.equal(JSON.parse(websiteActivation(c, linux).input).services[c.websiteService].volumes[0].source, '/srv/apps/pwa-teste/website');
+  assert.equal(JSON.parse(websiteActivation(c, linux).input).services[c.websiteService].volumes[0].source, '/srv/apps/my-framework/website');
 });
 
 test('website build identity includes shared form sources but not private root files', async () => {
@@ -286,14 +286,14 @@ test('website build identity includes shared form sources but not private root f
 });
 
 test('client cookie scope rejects public suffixes and unrelated domains but supports sibling subdomains', () => {
- const local=config(); assert.equal(local.CLIENT_SESSION_DOMAIN,'pwa-teste.localhost');
- for(const changes of [{WEBSITE_LOCAL_DOMAIN:'foreign.localhost'},{CLIENT_SESSION_DOMAIN:'localhost'},{APP_ENV:'production',PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://example.co.uk',CLIENT_SESSION_DOMAIN:'co.uk'},{APP_ENV:'production',PRODUCTION_URL:'https://app.example.com',WEBSITE_PRODUCTION_URL:'https://other.com'}])assert.throws(()=>config(changes));
- const prod=config({APP_ENV:'production',PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://www.example.co.uk'});assert.equal(prod.CLIENT_SESSION_DOMAIN,'example.co.uk');assert.equal(prod.clientSessionCookie,'pwa_teste_session_client');
+ const local=config(); assert.equal(local.CLIENT_SESSION_DOMAIN,'my-framework.localhost');
+ for(const changes of [{WEBSITE_LOCAL_DOMAIN:'foreign.localhost'},{CLIENT_SESSION_DOMAIN:'localhost'},{APP_ENV:'production',PWA_PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://example.co.uk',CLIENT_SESSION_DOMAIN:'co.uk'},{APP_ENV:'production',PWA_PRODUCTION_URL:'https://app.example.com',WEBSITE_PRODUCTION_URL:'https://other.com'}])assert.throws(()=>config(changes));
+ const prod=config({APP_ENV:'production',PWA_PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://www.example.co.uk'});assert.equal(prod.CLIENT_SESSION_DOMAIN,'example.co.uk');assert.equal(prod.clientSessionCookie,'my_framework_session_client');
 });
 
 
 test('shared certificate is generated and checked for all production interfaces', () => {
-  const c = config({ APP_ENV: 'production', PRODUCTION_URL: 'https://www.app.example.com', ADMIN_PRODUCTION_URL: 'https://www.admin.example.com', WEBSITE_PRODUCTION_URL: 'https://www.website.example.com', NGINX_CERT_NAME: 'shared-example.com' });
+  const c = config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://www.app.example.com', ADMIN_PRODUCTION_URL: 'https://www.admin.example.com', WEBSITE_PRODUCTION_URL: 'https://www.website.example.com', NGINX_CERT_NAME: 'shared-example.com' });
   const sites = [nginxSnippet(c), nginxSnippet(c, true), websiteNginxSnippet(c)];
   for (const site of sites) {
     assert.match(site, /ssl_certificate \/etc\/letsencrypt\/live\/shared-example.com\/fullchain.pem;/);
@@ -303,7 +303,7 @@ test('shared certificate is generated and checked for all production interfaces'
   assert.equal(siteApplied(output, c), true);
   assert.equal(siteApplied(output.replace('shared-example.com/fullchain.pem', 'wrong/fullchain.pem'), c), false);
   assert.equal(siteApplied(output.replace('/backend/public/index.php', '/wrong/index.php'), c), false);
-  for (const site of [nginxSnippet(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' })), nginxSnippet(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' }), true), websiteNginxSnippet(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' }))]) {
+  for (const site of [nginxSnippet(config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com' })), nginxSnippet(config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com' }), true), websiteNginxSnippet(config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://example.com' }))]) {
     assert.doesNotMatch(site, /shared-example/);
     assert.match(site, /ssl_certificate \/etc\/letsencrypt\/live\/(?:admin\.|website\.)?example.com\/fullchain.pem;/);
   }
@@ -314,7 +314,7 @@ test('shared certificate is generated and checked for all production interfaces'
 
 
 test('production SSR backend uses the configured HTTPS origin instead of the redirecting HTTP listener', async () => {
-  const production = config({ APP_ENV: 'production', PRODUCTION_URL: 'https://app.example.com', WEBSITE_PRODUCTION_URL: 'https://www.example.com', NGINX_INTERNAL_URL: 'http://nginx' });
+  const production = config({ APP_ENV: 'production', PWA_PRODUCTION_URL: 'https://app.example.com', WEBSITE_PRODUCTION_URL: 'https://www.example.com', NGINX_INTERNAL_URL: 'http://nginx' });
   const server = websiteServerConfiguration(production);
   assert.equal(server.backendTarget, 'https://www.example.com');
   assert.equal(new URL('/api/v1/website/content', server.backendTarget).href, 'https://www.example.com/api/v1/website/content');
@@ -326,4 +326,19 @@ test('production SSR backend uses the configured HTTPS origin instead of the red
     const c = { ...production, website: folder + '/website', shared: folder + '/shared' };
     assert.notEqual(await websiteBuildId(c), await websiteBuildId({ ...c, APP_ENV: 'local' }));
   } finally { await fs.rm(folder, { recursive: true, force: true }); }
+});
+
+
+test('My Framework uses PWA-prefixed fields and portable generated mounts', () => {
+  const c = config();
+  assert.equal(c.appUrl, 'http://my-framework.localhost');
+  assert.equal(c.PWA_DEV_PORT, 5176);
+  assert.equal(c.nodeService, 'my-framework-node');
+  assert.equal(c.websiteService, 'my-framework-website-node');
+  assert.equal(c.vendorVolume, 'my_framework_vendor');
+  const windows = composeSnippet(c, d);
+  const linux = composeSnippet(c, { ...d, mapping: { toHost: value => value.replace('/var/www', '/srv/apps') } });
+  assert.equal(windows, linux);
+  for (const folder of ['pwa', 'admin', 'website', 'shared']) assert.ok(windows.includes('source: ../my-framework/' + folder));
+  for (const legacy of ['LOCAL_DOMAIN', 'DEV_PORT', 'PREVIEW_PORT', 'PRODUCTION_URL']) assert.throws(() => config({ [legacy]: 'obsolete' }), /Campo antigo/);
 });

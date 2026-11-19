@@ -3,7 +3,7 @@ import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL, match
 import { registerRoute, setCatchHandler, setDefaultHandler } from 'workbox-routing';
 import { NetworkOnly } from 'workbox-strategies';
 import { technicalPath, shellPath } from './pwa/policy.js';
-setCacheNameDetails({ prefix: 'pwa-framework', suffix: self.registration.scope });
+setCacheNameDetails({ prefix: 'my-framework', suffix: self.registration.scope });
 // Only the explicit public build files are injected; no API runtime caches.
 precacheAndRoute(self.__WB_MANIFEST, { ignoreURLParametersMatching: [] });
 cleanupOutdatedCaches();

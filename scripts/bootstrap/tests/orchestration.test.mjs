@@ -15,8 +15,8 @@ async function fixture({ pending = false, production = false, desktop = false, h
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'foundation flow with spaces-'));
   const projects = tmp + '/projects', root = projects + '/product-a';
   await fs.mkdir(root + '/backend', { recursive: true }); await fs.mkdir(root + '/pwa'); await fs.mkdir(root + '/admin'); await fs.mkdir(root + '/website'); await fs.mkdir(root + '/shared/forms', { recursive: true }); await fs.writeFile(root + '/shared/forms/rules.js', 'export const fixture = true;'); await fs.mkdir(projects + '/infra'); await fs.mkdir(tmp + '/bin');
-  const guide = await fs.readFile(new URL('../../../instalacao-pwa-framework.md', import.meta.url), 'utf8');
-  await fs.writeFile(root + '/instalacao-pwa-framework.md', guideCrlf ? guide.replace(/\r?\n/g, '\r\n') : guide);
+  const guide = await fs.readFile(new URL('../../../instalacao-my-framework.md', import.meta.url), 'utf8');
+  await fs.writeFile(root + '/instalacao-my-framework.md', guideCrlf ? guide.replace(/\r?\n/g, '\r\n') : guide);
   await fs.writeFile(projects + '/infra/docker-compose.yml', '# fixture'); await fs.writeFile(root + '/backend/composer.lock', '{}');
   await fs.writeFile(root + '/pwa/package.json', JSON.stringify({ scripts: { dev: 'vite', build: 'vite build' } }));
   await fs.writeFile(root + '/pwa/package-lock.json', '{}');
@@ -24,7 +24,7 @@ async function fixture({ pending = false, production = false, desktop = false, h
   await fs.writeFile(root + '/admin/package-lock.json', '{}');
   await fs.writeFile(root + '/website/package.json', JSON.stringify({ scripts: { dev: 'nuxt dev', build: 'nuxt build' } }));
   await fs.writeFile(root + '/website/package-lock.json', '{}');
-  const values = { ...example, WEBSITE_LOCAL_DOMAIN: '', PROJECT_SLUG: 'product-a', LOCAL_DOMAIN: 'product-a.localhost', DB_DATABASE: 'product_a', DB_TEST_DATABASE: 'product_a_test', CONTAINER_PROJECTS_ROOT: projects, APP_ENV: production ? 'production' : 'local', PRODUCTION_URL: production ? 'https://example.com' : '', DB_PASSWORD: 'fixture$special #password' };
+  const values = { ...example, SMTP_HOST: '', WEBSITE_LOCAL_DOMAIN: '', PROJECT_SLUG: 'product-a', PWA_LOCAL_DOMAIN: 'product-a.localhost', DB_DATABASE: 'product_a', DB_TEST_DATABASE: 'product_a_test', CONTAINER_PROJECTS_ROOT: projects, APP_ENV: production ? 'production' : 'local', PWA_PRODUCTION_URL: production ? 'https://example.com' : '', DB_PASSWORD: 'fixture$special #password' };
   await fs.writeFile(root + '/.env.foundation', Object.entries(values).map(([k, v]) => `${k}='${v}'`).join('\n'));
   const c = validate(values, root);
   const source = desktop ? '/run/desktop/mnt/host/c/var/www' : '/srv/apps';
@@ -33,7 +33,7 @@ async function fixture({ pending = false, production = false, desktop = false, h
   const labels = service => ({ 'com.docker.compose.service': service, 'com.docker.compose.project': 'shared-infra', 'com.docker.compose.project.config_files': composeHostRoot + '/infra/docker-compose.yml', 'com.docker.compose.project.working_dir': composeHostRoot + '/infra', 'com.docker.compose.oneoff': 'False' });
   const php = { Id: 'php-id', Config: { Labels: labels('php-fpm') }, State: { Running: true }, Mounts: [...mounts, ...(!pending ? [{ Type: 'volume', Name: c.vendorVolume, Destination: c.backend + '/vendor' }] : [])], NetworkSettings: { Networks: { infra_network: {} }, Ports: {} } };
   const nginx = { Id: 'nginx-id', Config: { Labels: labels('nginx') }, State: { Running: true }, Mounts: mounts, NetworkSettings: { Networks: { infra_network: {} }, Ports: {} } };
-  const config = { services: { 'php-fpm': { volumes: [{ type: 'volume', source: c.vendorVolume, target: c.backend + '/vendor' }] }, [c.nodeService]: { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/pwa', target: '/app' }, { type: 'volume', source: c.modulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.DEV_PORT), host_ip: '127.0.0.1' }] } }, volumes: { [c.vendorVolume]: { name: c.vendorVolume }, [c.modulesVolume]: { name: c.modulesVolume } } };
+  const config = { services: { 'php-fpm': { volumes: [{ type: 'volume', source: c.vendorVolume, target: c.backend + '/vendor' }] }, [c.nodeService]: { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/pwa', target: '/app' }, { type: 'volume', source: c.modulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.PWA_DEV_PORT), host_ip: '127.0.0.1' }] } }, volumes: { [c.vendorVolume]: { name: c.vendorVolume }, [c.modulesVolume]: { name: c.modulesVolume } } };
   config.volumes[c.adminModulesVolume] = { name: c.adminModulesVolume };
   if (!missingAdmin) config.services[c.adminNodeService] = { image: 'node:22-alpine', working_dir: '/app', profiles: ['dev'], networks: { infra_network: {} }, volumes: [{ type: 'bind', source: '/srv/apps/product-a/admin', target: '/app' }, { type: 'volume', source: c.adminModulesVolume, target: '/app/node_modules' }], ports: [{ target: 5173, published: String(c.ADMIN_DEV_PORT), host_ip: '127.0.0.1' }] };
   for (const service of Object.values(config.services)) {
@@ -101,31 +101,31 @@ fs.writeFileSync(file,JSON.stringify(data));process.stdout.write(out);
 test('preparation exits 2 before dependencies/env writes when effective infra is missing', async () => {
   const f = await fixture({ pending: true, guideCrlf: true });
   try {
-    const tracked = await fs.readFile(f.root + '/instalacao-pwa-framework.md');
+    const tracked = await fs.readFile(f.root + '/instalacao-my-framework.md');
     await fs.writeFile(f.root + '/README.md', '# README preservado\n');
     const result = await f.invoke(); assert.equal(result.code, 2); assert.equal((await f.data()).installs, 0);
-    assert.deepEqual(await fs.readFile(f.root + '/instalacao-pwa-framework.md'), tracked);
+    assert.deepEqual(await fs.readFile(f.root + '/instalacao-my-framework.md'), tracked);
     assert.equal(await fs.readFile(f.root + '/README.md', 'utf8'), '# README preservado\n');
     await assert.rejects(fs.access(f.root + '/backend/.env'));
     const guide = await fs.readFile(f.root + '/.foundation-installation.md', 'utf8');
     assert.match(guide, /product-a-node/); assert.match(guide, /product_a_vendor/);
     assert.match(guide, /server_name product-a.localhost/);
     // Check the command and its ordering, regardless of Markdown fences or Windows CRLF.
-    const firstRun = guide.search(/^[ \t]*docker run --rm[^\r\n]*pwa-foundation-bootstrap:0\.1\.0[^\r\n]* --project \S+/m);
+    const firstRun = guide.search(/^[ \t]*docker run --rm[^\r\n]*my-framework-bootstrap:0\.1\.0[^\r\n]* --project \S+/m);
     assert.notEqual(firstRun, -1, 'Guia deve conter o comando de bootstrap com --project.');
-    assert.doesNotMatch(guide, /docker compose (?:run.*|build) pwa-foundation-bootstrap/);
-    assert.doesNotMatch(guide, /services:\s+pwa-foundation-bootstrap:/);
-    assert.match(guide, /docker build -t pwa-foundation-bootstrap:0\.1\.0/);
+    assert.doesNotMatch(guide, /docker compose (?:run.*|build) my-framework-bootstrap/);
+    assert.doesNotMatch(guide, /services:\s+my-framework-bootstrap:/);
+    assert.match(guide, /docker build -t my-framework-bootstrap:0\.1\.0/);
     assert.match(guide, /source=\.\.,target=\/var\/www/);
     assert.match(guide, /--network infra_network/);
     assert.doesNotMatch(guide, /não cadastrar serviço de bootstrap no Compose|aplique \*\*todos os quatro itens/);
     assert.ok(guide.indexOf('### 2.4 Sites Nginx') < guide.indexOf('## 3. Validar e aplicar a infraestrutura'));
     assert.ok(guide.indexOf('## 3. Validar e aplicar a infraestrutura') < firstRun);
-    const imageBuild = guide.indexOf('docker build -t pwa-foundation-bootstrap:0.1.0');
+    const imageBuild = guide.indexOf('docker build -t my-framework-bootstrap:0.1.0');
     assert.ok(guide.indexOf('## 3. Validar e aplicar a infraestrutura') < imageBuild);
     assert.ok(imageBuild < guide.indexOf('## 5. Executar o bootstrap'));
     assert.ok(guide.indexOf('## 5. Executar o bootstrap') < firstRun);
-    assert.match(result.stderr, /instalacao-pwa-framework.md/);
+    assert.match(result.stderr, /instalacao-my-framework.md/);
     await assert.rejects(fs.access(f.root + '/infra-generated'));
     assert.doesNotMatch(result.stdout + result.stderr, /fixture\$special/);
   } finally { await f.cleanup(); }
@@ -138,7 +138,7 @@ test('Desktop mount and Windows labels discover the same Compose and reach the p
     const data = await f.data();
     assert.equal(data.installs, 0);
     assert.ok(data.calls.some(a => a[0] === 'compose' && a.includes('config')));
-    assert.match(await fs.readFile(f.root + '/.foundation-installation.md', 'utf8'), /C:\/var\/www\/product-a\/pwa/);
+    assert.match(await fs.readFile(f.root + '/.foundation-installation.md', 'utf8'), /source: \.\.\/product-a\/pwa/);
     await assert.rejects(fs.access(f.root + '/backend/.env'));
   } finally { await f.cleanup(); }
 });
@@ -147,7 +147,7 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
   try {
     const first = await f.invoke(); assert.equal(first.code, 0, first.stdout + first.stderr);
     const env = await fs.readFile(f.root + '/backend/.env', 'utf8');
-    const guidePath = f.root + '/instalacao-pwa-framework.md';
+    const guidePath = f.root + '/instalacao-my-framework.md';
     const readmePath = f.root + '/README.md';
     await fs.writeFile(readmePath, '# README do produto\nTexto que o bootstrap deve preservar.\n');
     const readme = await fs.readFile(readmePath, 'utf8');
@@ -163,7 +163,7 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     const runs = data.calls.filter(a => a[0] === 'run' && (a.includes('build') || a.includes('ci')));
     assert.ok(runs.every(a => a.some(x => x.includes('target=/shared,readonly'))));
     assert.ok(data.calls.some(a => a[0] === 'run' && a.includes('--publish') && a.includes('infra_network')));
-    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '1.1.0-website.4'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
+    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '2.0.0'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
     assert.equal(data.websiteActivations, 1);
     assert.ok(data.calls.filter(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))).every(a => a.includes('up') && a.includes('--no-deps') && a.includes('--no-build') && a.at(-1) === 'product-a-website-node'));
     assert.ok(data.websiteActivationInputs.every(x => Object.keys(x.services).join() === 'product-a-website-node'));
@@ -301,12 +301,12 @@ test('bootstrap keeps tracked Git documents unchanged and ignores its environmen
     await fs.writeFile(f.root + '/README.md', '# README do produto\n');
     await fs.copyFile(new URL('../../../.gitignore', import.meta.url), f.root + '/.gitignore');
     await run('git', ['init', '-q'], { cwd: f.root });
-    await run('git', ['add', 'README.md', 'instalacao-pwa-framework.md', '.gitignore'], { cwd: f.root });
+    await run('git', ['add', 'README.md', 'instalacao-my-framework.md', '.gitignore'], { cwd: f.root });
     const before = await run('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: f.root });
     const result = await f.invoke(); assert.equal(result.code, 2);
     const after = await run('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: f.root });
     assert.equal(after.stdout, before.stdout);
-    await run('git', ['diff', '--exit-code', '--', 'README.md', 'instalacao-pwa-framework.md'], { cwd: f.root });
+    await run('git', ['diff', '--exit-code', '--', 'README.md', 'instalacao-my-framework.md'], { cwd: f.root });
     await run('git', ['check-ignore', '-q', '.foundation-installation.md'], { cwd: f.root });
     assert.match(result.stderr, /\.foundation-installation\.md/);
     assert.match(await fs.readFile(f.root + '/.foundation-installation.md', 'utf8'), /product-a-node/);

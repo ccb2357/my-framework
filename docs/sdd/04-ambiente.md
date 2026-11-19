@@ -1,6 +1,6 @@
 # Ambiente e inicialização
 
-O [guia de instalação](../../instalacao-pwa-framework.md) concentra os comandos e trechos Compose/Nginx. Host precisa de Docker/Compose; PHP/Composer e Node/npm executam em contêineres. PHP 8.2, MySQL 8 e Node na linha 22 (website exige ≥22.22.3); dependências fixadas pelos lockfiles.
+O [guia de instalação](../../instalacao-my-framework.md) concentra os comandos e trechos Compose/Nginx. Host precisa de Docker/Compose; PHP/Composer e Node/npm executam em contêineres. PHP 8.2, MySQL 8 e Node na linha 22 (website exige ≥22.22.3); dependências fixadas pelos lockfiles.
 
 ## Configuração central
 
@@ -9,11 +9,11 @@ A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera 
 | Campos | Contrato |
 | --- | --- |
 | PROJECT_SLUG, PROJECT_NAME | Slug minúsculo com hífens, igual à pasta; nome público. Renomear identidade inicializada exige migração explícita. |
-| APP_ENV, PRODUCTION_URL | local/production explícito; produção exige origem HTTPS e --force para o bootstrap. |
+| APP_ENV, PWA_PRODUCTION_URL | local/production explícito; produção exige origem HTTPS e --force para o bootstrap. |
 | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT | Compose real e raiz interna permitida; validar caminhos/mounts e bloquear escapes por symlink. |
 | DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL | Recursos existentes; não presumir container_name. |
 | NGINX_CERT_NAME | Opcional: nome seguro do certificado compartilhado em /etc/letsencrypt/live/<nome>, usado por PWA/admin/website; vazio deriva cada host. Não é URL/caminho. Certificado deve cobrir todos os hosts; emissão e aplicação Nginx manuais. |
-| LOCAL_DOMAIN, DEV_PORT, PREVIEW_PORT | Domínio e portas disponíveis, distintas entre serviços/projetos. Dev: porta do host → 5173 interno; prévia: porta do host → 4173 interno. |
+| PWA_LOCAL_DOMAIN, PWA_DEV_PORT, PWA_PREVIEW_PORT | Domínio e portas disponíveis, distintas entre serviços/projetos. Dev: porta do host → 5173 interno; prévia: porta do host → 4173 interno. |
 | ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL | Opcionais: vazios derivam admin.<host da PWA>. Hosts diferentes; produção HTTPS sem caminho/porta. |
 | ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT | Admin: 5182/5183 no exemplo. Quatro portas distintas entre PWA/admin; internamente 5173 dev/4173 preview. |
 | WEBSITE_LOCAL_DOMAIN, WEBSITE_PRODUCTION_URL, WEBSITE_DEV_PORT | Website SSR independente, domínio próprio e porta dev 5184; runtime interno 3000. |
@@ -28,9 +28,9 @@ Derivar serviço `<slug>-node`, volumes `<slug_com_sublinhados>_vendor` e `<slug
 
 Reutilizar Compose/rede/PHP-FPM/Nginx/MySQL existentes. Antes de analisar ou alterar infraestrutura, solicitar os arquivos atuais necessários: Compose, Dockerfile PHP, Nginx principal/sites e php.ini, com segredos removidos. Não armazenar cópias em docs nem tratar histórico como configuração atual.
 
-Portabilidade dos exemplos Compose: com `infra/docker-compose.yml` e projeto lado a lado, os binds das aplicações usam `../<projeto>/pwa`, `../<projeto>/admin` e `../<projeto>/website` em `/app`; todos montam `../<projeto>/shared` em `/shared` somente leitura. Os caminhos são relativos à pasta do Compose (arquivo base quando há vários arquivos), não ao diretório do terminal. Preservar os três volumes `node_modules` exclusivos. Esse trecho é comum a Windows/Linux; os caminhos internos PHP/Nginx continuam `/var/www/...` e o bind de entrada do executor usa `source=..`, resolvido a partir do diretório atual do terminal: o comando deve ser executado dentro de `infra` nos dois sistemas. Em produção, acrescentar `--force` para autorizar migrations. Trechos gerados pelo bootstrap podem indicar caminhos absolutos descobertos no ambiente; ao reutilizá-los em outro sistema, adaptar os binds conforme o guia.
+Portabilidade dos exemplos Compose: com `infra/docker-compose.yml` e projeto lado a lado, os binds das aplicações usam `../<projeto>/pwa`, `../<projeto>/admin` e `../<projeto>/website` em `/app`; todos montam `../<projeto>/shared` em `/shared` somente leitura. Os caminhos são relativos à pasta do Compose (arquivo base quando há vários arquivos), não ao diretório do terminal. Preservar os três volumes `node_modules` exclusivos. Esse trecho é comum a Windows/Linux; os caminhos internos PHP/Nginx continuam `/var/www/...` e o bind de entrada do executor usa `source=..`, resolvido a partir do diretório atual do terminal: o comando deve ser executado dentro de `infra` nos dois sistemas. Em produção, acrescentar `--force` para autorizar migrations. Os trechos gerados usam binds relativos ao diretório do Compose; caminhos em outra unidade no Windows permanecem absolutos quando não existe caminho relativo possível.
 
-Imagem `pwa-foundation-bootstrap:0.1.0`, construída de `scripts/bootstrap/Dockerfile`, executada por docker run --rm com bind dos projetos, socket Docker e rede existente. Sem serviço de bootstrap no Compose, atalhos foundation.cmd/sh, dockerd interno ou runtime no host. O executor usa suas próprias dependências em /opt/foundation.
+Imagem `my-framework-bootstrap:0.1.0`, construída de `scripts/bootstrap/Dockerfile`, executada por docker run --rm com bind dos projetos, socket Docker e rede existente. Sem serviço de bootstrap no Compose, atalhos foundation.cmd/sh, dockerd interno ou runtime no host. O executor usa suas próprias dependências em /opt/foundation.
 
 Descoberta por labels Compose e mounts reais; preservar projeto/diretório/arquivos Compose e mapear caminhos host↔contêiner, inclusive Docker Desktop. Compose no executor valida a infraestrutura; a única ativação automática autorizada é o serviço website após build, sem dependências. PHP usa docker exec; instalações frontend e verificação real de portas usam contêineres temporários. Alterações na infraestrutura são aplicadas manualmente pelo responsável, sem substituir recursos de outros sites.
 
@@ -40,7 +40,7 @@ Códigos: **0** backend/build/HTTP verificados; **1** erro; **2** integração m
 
 ## Acesso e build
 
-Nginx serve `pwa/dist`; /api, /sanctum, /up e /status seguem Laravel, sem fallback SPA. PHP externo/dotfiles bloqueados; HTML/manifest/worker sem cache imutável e assets com hash/cache longo. Vite dev tem HMR, proxy técnico e nenhum worker; prévia usa PREVIEW_PORT. ADB encaminha a porta do host ao Android; só o build oferece instalação/offline. Produção exige HTTPS público e certificado válido.
+Nginx serve `pwa/dist`; /api, /sanctum, /up e /status seguem Laravel, sem fallback SPA. PHP externo/dotfiles bloqueados; HTML/manifest/worker sem cache imutável e assets com hash/cache longo. Vite dev tem HMR, proxy técnico e nenhum worker; prévia usa PWA_PREVIEW_PORT. ADB encaminha a porta do host ao Android; só o build oferece instalação/offline. Produção exige HTTPS público e certificado válido.
 
 ## Testes
 
@@ -80,7 +80,7 @@ Website inclui IMask 7.6.1, JustValidate 4.3.0 e VueUse 15.0.0 no próprio manif
 
 ## Sessão integrada website/PWA
 
-`CLIENT_SESSION_DOMAIN` opcional no central: vazio deriva o ancestral comum validado pela PSL. Local: meu-projeto.localhost e website.meu-projeto.localhost compartilham meu-projeto.localhost. Produção: https://app.exemplo.com.br e https://exemplo.com.br compartilham exemplo.com.br; configurar as URLs explicitamente. Domínios não relacionados/sufixos públicos são bloqueados antes de escrever ambientes. HTTPS obrigatório em produção e cookies Secure; SameSite=Lax, sessão HttpOnly e CSRF legível pelo cliente. Não compartilhar com subdomínios não confiáveis.
+`CLIENT_SESSION_DOMAIN` opcional no central: vazio deriva o ancestral comum validado pela PSL. Local: my-framework.localhost e website.my-framework.localhost compartilham my-framework.localhost. Produção: https://app.exemplo.com.br e https://exemplo.com.br compartilham exemplo.com.br; configurar as URLs explicitamente. Domínios não relacionados/sufixos públicos são bloqueados antes de escrever ambientes. HTTPS obrigatório em produção e cookies Secure; SameSite=Lax, sessão HttpOnly e CSRF legível pelo cliente. Não compartilhar com subdomínios não confiáveis.
 
 Atualização exige reconstruir a imagem do executor (tldts 6.1.86 adicionado ao runtime fixado), executar o bootstrap e aceitar o novo build PWA. Não altera banco/contas; clientes entram novamente por mudança do nome do cookie. A sessão administrativa conserva nome/escopo. Não editar derivados. O bootstrap faz até 30 verificações do website com intervalo de 1s e timeout HTTP individual de 7s, cobrindo a validade de 10s do DNS Nginx, sem reiniciar outros serviços. Cold start PHP-FPM/healthcheck compartilhado continua fora desta alteração.
 
@@ -92,4 +92,4 @@ Bootstrap confere HTML SSR/buildId/no-store e o JSON de /_content (HTTP 200, rec
 
 Na VPS, o Node SSR consulta o Laravel pela origem HTTPS configurada do website, inclusive sessão e conteúdo público. DNS, saída HTTPS e certificado válido devem funcionar também dentro do contêiner. Em local, permanece o acesso interno por NGINX_INTERNAL_URL. Não desabilitar TLS nem liberar API/sessão no listener HTTP para contornar redirects. Bootstrap regenera a configuração privada e reconstrói/ativa o website quando o modo/alvo muda.
 
-Documentos derivados: `.foundation-installation.md` é uma cópia regenerável do guia com blocos efetivos e resumo, ignorada pelo Git e excluída da distribuição. README e instalacao-pwa-framework.md são somente leitura para o bootstrap. Atualização de instalações antigas pode exigir stash único das mudanças automáticas anteriores, sem reaplicação. Isso não elimina conflitos legítimos de edições próprias. Atalhos vite.cmd também são ignorados.
+Documentos derivados: `.foundation-installation.md` é uma cópia regenerável do guia com blocos efetivos e resumo, ignorada pelo Git e excluída da distribuição. README e instalacao-my-framework.md são somente leitura para o bootstrap. Atualização de instalações antigas pode exigir stash único das mudanças automáticas anteriores, sem reaplicação. Isso não elimina conflitos legítimos de edições próprias. Atalhos vite.cmd também são ignorados.

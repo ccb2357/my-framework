@@ -111,7 +111,7 @@ class FoundationVerify extends Command
     private function capture(string $root, array $central, string $main, string $test, array $state): array
     {
         $id = $state['identity'] ?? [];
-        $identity = ['root' => $root, 'slug' => $central['PROJECT_SLUG'], 'domain' => $central['LOCAL_DOMAIN'] ?? $central['PROJECT_SLUG'].'.localhost', 'ports' => [(int) $central['DEV_PORT'], (int) $central['PREVIEW_PORT']], 'databases' => [$main, $test], 'volumes' => [$id['vendor'] ?? '', $id['modules'] ?? ''], 'appKey' => hash('sha256', (string) config('app.key'))];
+        $identity = ['root' => $root, 'slug' => $central['PROJECT_SLUG'], 'domain' => $central['PWA_LOCAL_DOMAIN'] ?? $central['PROJECT_SLUG'].'.localhost', 'ports' => [(int) $central['PWA_DEV_PORT'], (int) $central['PWA_PREVIEW_PORT']], 'databases' => [$main, $test], 'volumes' => [$id['vendor'] ?? '', $id['modules'] ?? ''], 'appKey' => hash('sha256', (string) config('app.key'))];
         if (empty(config('app.key')) || in_array('', $identity['volumes'], true)) {
             throw new RuntimeException('identity-incomplete');
         }

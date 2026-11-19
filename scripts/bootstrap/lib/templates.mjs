@@ -7,16 +7,22 @@ const yamlPath = value => {
   const normalized = value.replaceAll('\\', '/');
   return /^[A-Za-z0-9_./: -]+$/.test(normalized) ? normalized : q(normalized);
 };
+const bindSource = (directory, d) => {
+  const host = d.mapping.toHost(directory), base = d.mapping.toHost(d.directory);
+  const paths = /^[a-z]:[\\/]/i.test(host) ? path.win32 : path.posix;
+  const relative = paths.relative(base, host).replaceAll('\\', '/');
+  return yamlPath(paths.isAbsolute(relative) ? host : (relative.startsWith('.') ? relative : './' + relative));
+};
 export function composeSnippet(c, d) {
   const service = (name, directory, volume, port) => `    ${name}:
         image: node:22-alpine
         working_dir: /app
         volumes:
             - type: bind
-              source: ${yamlPath(d.mapping.toHost(directory))}
+              source: ${bindSource(directory, d)}
               target: /app
             - type: bind
-              source: ${yamlPath(d.mapping.toHost(c.shared))}
+              source: ${bindSource(c.shared, d)}
               target: /shared
               read_only: true
             - ${volume}:/app/node_modules
@@ -29,7 +35,7 @@ export function composeSnippet(c, d) {
 `;
   return `# Mesclar no Compose existente.
 services:
-${service(c.nodeService, c.frontend, c.modulesVolume, c.DEV_PORT)}${service(c.adminNodeService, c.admin, c.adminModulesVolume, c.ADMIN_DEV_PORT)}${websiteServiceSnippet(c, d)}    ${c.PHP_SERVICE}:
+${service(c.nodeService, c.frontend, c.modulesVolume, c.PWA_DEV_PORT)}${service(c.adminNodeService, c.admin, c.adminModulesVolume, c.ADMIN_DEV_PORT)}${websiteServiceSnippet(c, d)}    ${c.PHP_SERVICE}:
         volumes:
             # Acrescentar aos mounts existentes:
             - ${c.vendorVolume}:${c.backend}/vendor
@@ -50,10 +56,10 @@ export function websiteServiceSnippet(c, d) {
             NITRO_PORT: 3000
         volumes:
             - type: bind
-              source: ${yamlPath(d.mapping.toHost(c.website))}
+              source: ${bindSource(c.website, d)}
               target: /app
             - type: bind
-              source: ${yamlPath(d.mapping.toHost(c.shared))}
+              source: ${bindSource(c.shared, d)}
               target: /shared
               read_only: true
             - ${c.websiteModulesVolume}:/app/node_modules
@@ -150,7 +156,7 @@ export function viteCmd(c, d, administrative = false) {
 export function publicConfiguration(c) {
   return {
     app: { name: c.PROJECT_NAME, slug: c.PROJECT_SLUG, locale: c.APP_LOCALE.replace('_', '-'), displayTimezone: c.DISPLAY_TIMEZONE, appUrl: c.appUrl, apiBase: '/api/v1', themeColor: c.PWA_THEME_COLOR, shortName: c.PWA_SHORT_NAME, description: c.PWA_DESCRIPTION, backgroundColor: c.PWA_BACKGROUND_COLOR },
-    vite: { proxyTarget: c.NGINX_INTERNAL_URL, proxyHost: new URL(c.appUrl).host, devPort: c.DEV_PORT, previewPort: c.PREVIEW_PORT },
+    vite: { proxyTarget: c.NGINX_INTERNAL_URL, proxyHost: new URL(c.appUrl).host, devPort: c.PWA_DEV_PORT, previewPort: c.PWA_PREVIEW_PORT },
   };
 }
 export function adminPublicConfiguration(c) {
@@ -170,14 +176,14 @@ export async function generate(c, d) {
   await writeAtomic(path.join(c.admin, '.foundation.public.json'), JSON.stringify(adminPublicConfiguration(c), null, 2) + '\n');
   await writeAtomic(path.join(c.admin, 'vite.cmd'), viteCmd(c, d, true));
   await writeAtomic(path.join(c.frontend, '.foundation.public.json'), JSON.stringify(publicConfiguration(c), null, 2) + '\n');
-  const guidePath = path.join(c.root, 'instalacao-pwa-framework.md');
+  const guidePath = path.join(c.root, 'instalacao-my-framework.md');
   const guide = await readOptional(guidePath);
   const infraBlock = /<!-- BEGIN FOUNDATION INSTALL INFRA -->[\s\S]*?<!-- END FOUNDATION INSTALL INFRA -->/;
-  requireThat(infraBlock.test(guide), 'instalacao-pwa-framework.md ausente ou sem bloco gerenciado. Restaure o guia da entrega antes de executar o bootstrap.');
+  requireThat(infraBlock.test(guide), 'instalacao-my-framework.md ausente ou sem bloco gerenciado. Restaure o guia da entrega antes de executar o bootstrap.');
   const renderedGuide = guide.replace(infraBlock, () => installationInfra(c, d));
   const file = path.join(c.frontend, 'vite.cmd');
   await writeAtomic(file, viteCmd(c, d));
-  const summary = `<!-- BEGIN FOUNDATION IDENTITY -->\n| Campo | Valor |\n| --- | --- |\n| Projeto | ${c.PROJECT_NAME.replaceAll('|', '\\|')} |\n| Slug | ${c.PROJECT_SLUG} |\n| Ambiente | ${c.APP_ENV} |\n| URL | ${c.appUrl} |\n| Dev / preview | ${c.DEV_PORT} / ${c.PREVIEW_PORT} |\n| Serviço / Compose | ${c.nodeService} / ${d.project} |\n| Volumes | ${c.vendorVolume}, ${c.modulesVolume} |\n| Bancos | ${c.DB_DATABASE}, ${c.DB_TEST_DATABASE} |\n| Admin | ${c.adminUrl} |\n| Admin dev / preview | ${c.ADMIN_DEV_PORT} / ${c.ADMIN_PREVIEW_PORT} |\n| Website | ${c.websiteUrl} |\n| Website dev | ${c.WEBSITE_DEV_PORT} |\n| Fundação | 1.1.0-website.4 |\n<!-- END FOUNDATION IDENTITY -->`;
+  const summary = `<!-- BEGIN FOUNDATION IDENTITY -->\n| Campo | Valor |\n| --- | --- |\n| Projeto | ${c.PROJECT_NAME.replaceAll('|', '\\|')} |\n| Slug | ${c.PROJECT_SLUG} |\n| Ambiente | ${c.APP_ENV} |\n| URL | ${c.appUrl} |\n| Dev / preview | ${c.PWA_DEV_PORT} / ${c.PWA_PREVIEW_PORT} |\n| Serviço / Compose | ${c.nodeService} / ${d.project} |\n| Volumes | ${c.vendorVolume}, ${c.modulesVolume} |\n| Bancos | ${c.DB_DATABASE}, ${c.DB_TEST_DATABASE} |\n| Admin | ${c.adminUrl} |\n| Admin dev / preview | ${c.ADMIN_DEV_PORT} / ${c.ADMIN_PREVIEW_PORT} |\n| Website | ${c.websiteUrl} |\n| Website dev | ${c.WEBSITE_DEV_PORT} |\n| Fundação | 2.0.0 |\n<!-- END FOUNDATION IDENTITY -->`;
   await writeAtomic(path.join(c.root, '.foundation-installation.md'), renderedGuide.trimEnd() + '\n\n' + summary + '\n');
 }
 export function installationInfra(c, d) {

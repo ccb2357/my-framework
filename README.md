@@ -1,4 +1,4 @@
-# PWA Framework
+# My Framework
 
 Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, website Nuxt, Laravel e MySQL**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
 
@@ -13,9 +13,9 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, w
 [![MySQL 8](https://img.shields.io/badge/MySQL-8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://dev.mysql.com/doc/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/)
 
-**[Instalação e operação](instalacao-pwa-framework.md)** · **[Especificação técnica](docs/sdd/00-visao.md)** · **[Regras de desenvolvimento](RULES.md)**
+**[Instalação e operação](instalacao-my-framework.md)** · **[Especificação técnica](docs/sdd/00-visao.md)** · **[Regras de desenvolvimento](RULES.md)**
 
-Versão: **1.1.0-website.4**. Website SSR, conteúdo dinâmico e autenticação integrada à PWA; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
+Versão: **2.0.0**. Website SSR, conteúdo dinâmico e autenticação integrada à PWA. Evidências em [MEMORY.md](MEMORY.md).
 
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/)
 
@@ -56,7 +56,7 @@ Manifests, lockfiles e [foundation.json](foundation.json) identificam as versõe
 
 1. Clone a base na pasta do novo aplicativo, com repositório e histórico próprios.
 2. Copie `.env.foundation.example` para `.env.foundation` e preencha a configuração do ambiente. `PROJECT_SLUG` deve coincidir com o nome da pasta.
-3. Siga o [manual de instalação](instalacao-pwa-framework.md): construa o executor, prepare os trechos Compose/Nginx e aplique as alterações manualmente.
+3. Siga o [manual de instalação](instalacao-my-framework.md): construa o executor, prepare os trechos Compose/Nginx e aplique as alterações manualmente.
 4. Execute o bootstrap. Corrija qualquer pendência indicada e repita até concluir; então confira os endereços do aplicativo e os testes aplicáveis.
 
 Cada aplicação recebe código pronto; não recrie Laravel/Vite. Preserve os arquivos privados, dados, volumes, chaves e personalizações nas atualizações.
@@ -67,9 +67,9 @@ Os exemplos Compose usam binds relativos, com `infra` e projeto lado a lado, par
 
 | Grupo | Campos principais |
 | --- | --- |
-| Identidade e ambiente | PROJECT_SLUG, PROJECT_NAME, APP_ENV, LOCAL_DOMAIN, PRODUCTION_URL, ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL, WEBSITE_LOCAL_DOMAIN, WEBSITE_PRODUCTION_URL |
+| Identidade e ambiente | PROJECT_SLUG, PROJECT_NAME, APP_ENV, PWA_LOCAL_DOMAIN, PWA_PRODUCTION_URL, ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL, WEBSITE_LOCAL_DOMAIN, WEBSITE_PRODUCTION_URL |
 | Infraestrutura | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT, DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL |
-| Acesso e dados | DEV_PORT, PREVIEW_PORT, ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT, WEBSITE_DEV_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
+| Acesso e dados | PWA_DEV_PORT, PWA_PREVIEW_PORT, ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT, WEBSITE_DEV_PORT, DB_HOST/PORT/DATABASE/TEST_DATABASE/USERNAME/PASSWORD |
 | Regionalização e sessão | APP_LOCALE, APP_TIMEZONE, DISPLAY_TIMEZONE, SESSION_LIFETIME, CLIENT_SESSION_DOMAIN |
 | PWA | PWA_SHORT_NAME/DESCRIPTION/THEME_COLOR/BACKGROUND_COLOR |
 
@@ -81,15 +81,15 @@ Serviço Node, volumes, bancos, cookie e manifest têm identidade própria por p
 
 | Modo | Uso |
 | --- | --- |
-| Desenvolvimento | `pwa/vite.cmd dev`: Vite/HMR via Docker, na DEV_PORT do host → 5173 interno. Worker desativado; sem instalação da PWA. |
+| Desenvolvimento | `pwa/vite.cmd dev`: Vite/HMR via Docker, na PWA_DEV_PORT do host → 5173 interno. Worker desativado; sem instalação da PWA. |
 | Build | `pwa/vite.cmd build`: publica `pwa/dist` após validar artefatos; não instala npm automaticamente. |
-| Prévia | Build na PREVIEW_PORT do host → 4173 interno; instalação/offline em localhost, inclusive Android por USB/ADB. |
+| Prévia | Build na PWA_PREVIEW_PORT do host → 4173 interno; instalação/offline em localhost, inclusive Android por USB/ADB. |
 | Produção | Nginx serve dist e encaminha API/Laravel ao PHP-FPM, na mesma origem HTTPS. PWA/admin usam Node para build; website mantém servidor Nuxt/Nitro atrás do Nginx. |
 | Admin | `admin/vite.cmd dev` ou `build`: serviço e dist próprios; subdomínio administrativo, sem PWA. |
 | Website | `website/nuxt.cmd dev` ou `build`; runtime SSR no serviço `<slug>-website-node`, porta interna 3000. O bootstrap ativa a versão compilada quando necessário. |
 | Backend | `app:sync`: limpa caches e aplica migrations pendentes, com propagação de falhas; --force obrigatório em produção. |
 
-Comandos completos de CMD/Linux, integração Docker, Android/ADB e testes ficam no [manual](instalacao-pwa-framework.md). Frontend e API usam proxy técnico no Vite/prévia; Nginx encaminha `/api`, `/sanctum`, `/up` e `/status` ao Laravel, sem responder HTML da SPA para essas rotas.
+Comandos completos de CMD/Linux, integração Docker, Android/ADB e testes ficam no [manual](instalacao-my-framework.md). Frontend e API usam proxy técnico no Vite/prévia; Nginx encaminha `/api`, `/sanctum`, `/up` e `/status` ao Laravel, sem responder HTML da SPA para essas rotas.
 
 ### Diagnósticos
 
@@ -108,7 +108,7 @@ O website SSR usa a própria origem HTTPS para consultar o backend em produção
 
 Em produção, `NGINX_CERT_NAME` no central permite usar um certificado cobrindo as três interfaces; vazio mantém caminhos por host. Os blocos gerados devem ser aplicados manualmente no Nginx.
 
-Executor temporário `pwa-foundation-bootstrap:0.1.0`, construído de `scripts/bootstrap/Dockerfile` e executado com docker run --rm. Acessa o Engine existente, com dependências próprias; sem Docker-in-Docker, outro Compose, serviço de bootstrap ou atalhos no host.
+Executor temporário `my-framework-bootstrap:0.1.0`, construído de `scripts/bootstrap/Dockerfile` e executado com docker run --rm. Acessa o Engine existente, com dependências próprias; sem Docker-in-Docker, outro Compose, serviço de bootstrap ou atalhos no host.
 
 Descobre serviços por labels/mounts reais, preserva a identidade Compose e mapeia caminhos host↔contêiner. Verifica recursos e portas efetivos; gera `.foundation-installation.md` ignorado pelo Git com os trechos e resumo do ambiente, sem editar README/manual versionados nem a infraestrutura compartilhada; inicia/recria exclusivamente o website quando o build esperado ainda não estiver acessível. Código **0**: backend/build/HTTP verificados; **1**: erro; **2**: integração manual pendente.
 
@@ -155,7 +155,7 @@ O website não reutiliza componentes/CSS do admin ou da PWA. As três interfaces
 
 | Documento | Conteúdo |
 | --- | --- |
-| [Instalação](instalacao-pwa-framework.md) | Configuração, Compose/Nginx, bootstrap, desenvolvimento, PWA/USB, testes e VPS |
+| [Instalação](instalacao-my-framework.md) | Configuração, Compose/Nginx, bootstrap, desenvolvimento, PWA/USB, testes e VPS |
 | [00 — Visão](docs/sdd/00-visao.md) | Escopo da base e do produto |
 | [01 — Telas](docs/sdd/01-telas.md) | Hello, navegação, estados e interação |
 | [02 — Design system](docs/sdd/02-design-system.md) | Tokens, layout, componentes e acessibilidade |
@@ -178,6 +178,6 @@ Cada aplicativo tem versão/histórico próprios. Registrar versão e commit de 
 
 Para incorporar atualizações, comparar a base de origem com a desejada, selecionar mudanças, resolver conflitos e validar personalizações; não sobrescrever o produto. Manter código, lockfiles, scripts e referências aprovadas juntos. Não distribuir configurações privadas, chaves, bancos, sessões, dependências ou estado de outro ambiente.
 
-Produção usa `.env.foundation` próprio (`APP_ENV=production`, PRODUCTION_URL HTTPS), certificado real e bootstrap com --force para migrations; --force não autoriza alteração automática de infraestrutura ou operações destrutivas. Preservar APP_KEY/dados/volumes. Validar as jornadas; evidência local não homologa a VPS.
+Produção usa `.env.foundation` próprio (`APP_ENV=production`, PWA_PRODUCTION_URL HTTPS), certificado real e bootstrap com --force para migrations; --force não autoriza alteração automática de infraestrutura ou operações destrutivas. Preservar APP_KEY/dados/volumes. Validar as jornadas; evidência local não homologa a VPS.
 
-Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, retenção/acesso e recuperação testados. Publicar assets antes do HTML/worker, manter clientes antigos compatíveis com API/banco e separar rollback de código de recuperação de dados. Não presumir migration reversa segura. Procedimentos concretos no [manual](instalacao-pwa-framework.md#vps-e-atualizações).
+Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, retenção/acesso e recuperação testados. Publicar assets antes do HTML/worker, manter clientes antigos compatíveis com API/banco e separar rollback de código de recuperação de dados. Não presumir migration reversa segura. Procedimentos concretos no [manual](instalacao-my-framework.md#vps).

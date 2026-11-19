@@ -1,6 +1,6 @@
 # Arquitetura
 
-PWA em `pwa/`, admin em `admin/`, website Nuxt em `website/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-pwa-framework.md).
+PWA em `pwa/`, admin em `admin/`, website Nuxt em `website/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-my-framework.md).
 
 ## Organização
 
