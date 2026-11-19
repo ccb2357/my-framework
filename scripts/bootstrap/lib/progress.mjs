@@ -15,7 +15,7 @@ export function createProgress(output = process.stdout, errors = process.stderr)
     info(message) { clear(); output.write(`  ${message}\n`); spin(); },
     success({ pwa, admin, website, build }) {
       done();
-      output.write(`\nPreparação concluída\n\n  PWA       ${pwa}\n  Admin     ${admin}\n  Website   ${website}\n\n  Build PWA: ${build}\n  Administrador: crie com admin:create, conforme o manual.\n  Website e PWA compartilham a conta de cliente.\n\nCódigo de saída: 0\nValidação em aparelhos pendente: instalação, offline e atualização.\nAceite final exige validação própria.\n`);
+      output.write(`\nPreparação concluída\n\n  PWA       ${pwa}\n  Admin     ${admin}\n  Website   ${website}\n\n  Build PWA: ${build}\n  Administrador: crie com admin:create, conforme o manual.\n  Website e PWA compartilham a conta de cliente.\n\nCódigo de saída: 0\n`);
     },
     failure(message, code) {
       clear();

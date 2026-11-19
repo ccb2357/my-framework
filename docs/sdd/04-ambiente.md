@@ -118,7 +118,7 @@ A verificação faz até 30 tentativas após ativar, com intervalo de 1s e timeo
 | `1` | Falha de configuração, instalação, compilação, ativação ou verificação. |
 | `2` | Integração/recurso manual pendente. |
 
-O estado registra fase e hashes; `completeFoundation` permanece false no bootstrap atual e `manualChecks` lista conferências humanas. Código zero e esse estado são distintos do aceite do produto: não comprovam jornadas interativas, SMTP real, instalação/offline/atualização em aparelho ou produção.
+O estado registra fases, hashes e resultados das verificações do bootstrap.
 
 ## SMTP e contas
 

@@ -188,7 +188,7 @@ Manter os sete documentos SDD enxutos; contratos no SDD, procedimentos no manual
 
 Testes unitários/HTTP e builds verificam as três interfaces e o bootstrap. A suíte Laravel separa integrações com MySQL testing; o guard de isolamento roda antes de qualquer preparação destrutiva. Resultados e limitações atuais ficam em [MEMORY.md](MEMORY.md).
 
-Engine/Compose simulados não comprovam Docker real. Testes DOM não homologam navegador/aparelho; instalação, offline, atualização e VPS exigem validação no ambiente correspondente. Playwright e referências visuais complementam os testes e dependem de aceite humano.
+A suíte inclui simulações de Engine/Compose e testes DOM. Playwright e referências visuais complementam a cobertura.
 
 ## Versões e publicação
 

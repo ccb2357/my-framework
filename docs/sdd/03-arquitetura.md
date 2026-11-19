@@ -129,7 +129,7 @@ Nuxt `node-server` cria releases em `.releases/` e publica o ponteiro somente ap
 
 Valores são preenchidos somente em `.env.foundation`. Executor `my-framework-bootstrap:0.1.0` descobre e valida a infraestrutura existente, gera configurações/atalhos e `.foundation-installation.md` ignorado; README/manual versionados permanecem inalterados. Integração Compose/Nginx é aplicada manualmente.
 
-Instala pelos lockfiles quando necessário, preserva chaves/dados/volumes e exige `--force` para migrations em produção. `app:sync` limita-se a optimize:clear e migrations, propagando falhas; não instala dependências, compila ou regenera chaves. `TestingDatabaseGuard` confere ambiente/banco exclusivo antes de operações destrutivas nos testes. Código zero exige verificações de backend, builds e HTTP das três interfaces; não substitui aceite em navegador/aparelho ou validação na VPS.
+Instala pelos lockfiles quando necessário, preserva chaves/dados/volumes e exige `--force` para migrations em produção. `app:sync` limita-se a optimize:clear e migrations, propagando falhas; não instala dependências, compila ou regenera chaves. `TestingDatabaseGuard` confere ambiente/banco exclusivo antes de operações destrutivas nos testes. Código zero exige verificações de backend, builds e HTTP das três interfaces.
 
 ## Limites desta etapa
 
