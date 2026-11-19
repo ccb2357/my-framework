@@ -1,98 +1,141 @@
 # Arquitetura
 
-PWA em `pwa/`, admin em `admin/`, website Nuxt em `website/`, Laravel em `backend/` e infraestrutura compartilhada externa. Versões efetivas nos manifests/lockfiles; instalação e comandos no [guia da raiz](../../instalacao-my-framework.md).
+My Framework reúne PWA, website e admin independentes, com Laravel/MySQL compartilhados e infraestrutura Docker externa ao repositório. Versões efetivas ficam nos manifests/lockfiles; instalação e comandos no [manual da raiz](../../instalacao-my-framework.md).
 
 ## Organização
 
-Rotas HTTP do backend:
-
-| Arquivo | Responsabilidade |
-| --- | --- |
-| `backend/routes/pwa.php` | APIs de autenticação e demais rotas da PWA. |
-| `backend/routes/admin.php` | Rotas administrativas, com sessão e CSRF próprios. |
-| `backend/routes/website.php` | GET público demonstrativo do website, sem sessão; endpoints do produto devem declarar seu pipeline próprio. |
-
-`bootstrap/app.php` registra os três arquivos. `website.php` registra o conteúdo público demonstrativo; páginas Nuxt, catálogo, checkout e demais recursos pertencem ao produto. Evitar caminhos duplicados entre os arquivos; separar arquivos não cria domínio, interface ou autorização automaticamente. APIs protegidas de clientes usam ClientSession; administrativas, AdminSession.
-
 | Área | Responsabilidade |
 | --- | --- |
-| `pwa/src/main.js`, `App.vue`, `routes.js` | Inicialização Vue/Framework7, componentes, estilos e roteamento oficial F7. JavaScript/script setup; sem roteador paralelo dentro da PWA. |
-| `src/pages/`, `components/` | Páginas e composições reutilizáveis; APIs Core quando necessárias ao componente oficial. |
-| `src/services/`, `forms/`, `css/` | HTTP/CSRF/erros, máscaras/validação e tokens/layout compartilhados. Destruir instâncias/listeners sem duplicação. |
-| `admin/` | Vue/shadcn-vue/Tailwind; componentes locais JavaScript, configuração pública própria, Vite/lockfile/volume/build isolados. Login e Hello Dashboard protegida; sem PWA. |
-| `backend/app/` | Diagnóstico, comandos, APIs/sessão, serviços. Regras de negócio são acrescentadas pelo produto. |
-| `scripts/bootstrap/` | Executor Node/Docker; configuração, descoberta do Engine, arquivos derivados e verificações PHP/HTTP. |
+| `pwa/` | Vue/Framework7 e Vite. `src/main.js`, `App.vue` e `routes.js` inicializam a aplicação; páginas, componentes, serviços, formulários e CSS ficam em `src/`. Roteamento oficial Framework7. |
+| `website/` | Nuxt SSR: páginas em `app/pages/`, layouts/componentes/formulários em `app/`, bridges e integrações de servidor em `server/`. Runtime Node permanente. |
+| `admin/` | Vue/shadcn-vue/Tailwind e Vite; entrada, componentes, serviços, dependências e build próprios. Login e Dashboard protegida. |
+| `backend/` | Laravel: rotas, middlewares, autenticação, APIs, serviços, comandos, migrations e testes. MySQL é a conexão comum às interfaces. |
+| `shared/forms/` | Lógica neutra de mensagens, máscaras, regras e integração dos formulários. |
+| `scripts/bootstrap/` | Executor Node/Docker: validação central, descoberta da infraestrutura, arquivos derivados, instalação, compilação e verificações HTTP. |
+| Nginx — infraestrutura externa | Seleção por host, HTTPS, arquivos estáticos PWA/admin, proxy Nuxt e encaminhamento das rotas técnicas ao PHP-FPM. |
+| Docker/Compose — infraestrutura externa | Rede e serviços existentes de Nginx, PHP-FPM e MySQL; Nodes de desenvolvimento/build e serviço SSR. Dependências em volumes exclusivos. |
 
-`HealthCheck` faz consulta MySQL real; um serviço alimenta HTML/JSON. Rotas de diagnóstico são independentes de sessão para reportar falha do banco sem erro indireto de autenticação. `app:sync` executa optimize:clear e depois migrations; propaga falhas e exige --force em produção. Não instala/builda/semeia/regenera chaves.
+A escolha da interface depende do endereço, nunca do tamanho da tela. As fronteiras visuais e de componentes são definidas uma única vez no [design system](02-design-system.md#fronteiras).
 
-Sessão Laravel/Sanctum com nome por projeto, CSRF e origens/portas derivadas; clientes compartilham cookie entre os hosts PWA/website e o admin mantém cookie host-only. Em produção: HTTPS/cookies seguros. Clientes usam o guard web e o modelo User. `TestingDatabaseGuard` verifica o banco testing antes de traits destrutivas.
+### Rotas HTTP do Laravel
 
-## PWA e publicação
+`backend/bootstrap/app.php` registra os arquivos e pipelines abaixo. A organização em arquivos não concede autorização nem cria domínio ou interface automaticamente; evitar caminhos duplicados.
 
-Fonte única `pwa/src/sw.js`, Workbox injectManifest e registro `virtual:pwa-register` em modo prompt, desativado no Vite dev. Precache somente público; API/sessão/CSRF/status nunca recebem cache ou fallback HTML. Shell offline para rotas conhecidas; demais navegações públicas recebem offline.html. Cache isolado por origem/escopo.
+| Arquivo | Responsabilidade e pipeline |
+| --- | --- |
+| `backend/routes/pwa.php` | Endpoints de cliente usados pela PWA e pelo website, em `/api/v1/auth/*`; grupo web com `ClientAuthContext`, sessão e `ClientCsrf`. A inspeção/saída da conta exige `ClientSession`. |
+| `backend/routes/admin.php` | `/api/v1/admin/auth/*`; `AdminContext` → EncryptCookies → AddQueuedCookiesToResponse → `AdminStartSession` → `AdminCsrf` → bindings. Endpoints protegidos exigem `AdminSession`. |
+| `backend/routes/website.php` | Leitura pública demonstrativa com `WebsitePublicContext`, registrada fora do grupo web e sem sessão. APIs privadas futuras devem declarar o contexto completo de cliente ou admin. |
 
-`pwa/manager.js` controla instalação, conexão e atualização. Novos formulários integram `draftGuard`: aba alterada não recarrega por ativação externa. Confirmação salva campos conhecidos da Hello em sessionStorage por projeto/aba, por até 24h; falha de armazenamento mantém a aba. Isso não implementa persistência/sincronização de registros offline.
+As páginas Nuxt são atendidas pelo Nuxt Router. `/status`, `/api/v1/status` e `/up` são registrados pelo bootstrap Laravel; diagnósticos não dependem de sessão. `HealthCheck` faz consulta MySQL real e alimenta HTML/JSON; `/up` verifica a aplicação sem consultar o banco. Contratos em [05-api.md](05-api.md).
 
-Build com staging validado por `check-pwa.mjs`; `publish-build.mjs` publica assets antes do HTML/worker e conserva assets antigos. Falha de compilação não substitui entradas; falha de I/O exige correção/reexecução. Limpeza de assets e recuperação pertencem ao plano de publicação do produto.
+## Formulários compartilhados
 
-## Fronteira PWA/admin
+Mensagens, máscaras e regras ficam em `shared/forms/`. Os adaptadores locais fornecem IMask/JustValidate das próprias dependências, sem resolver pacotes pelo `node_modules` de outra aplicação. O bind somente leitura em `/shared`, ao lado de `/app`, preserva `../shared`; os Vites e o Nuxt usam alias `@shared`.
 
-PWA/admin possuem dois projetos Vite, serviços Node e dist próprios. Seus dois server_name no Nginx servem as interfaces e encaminham rotas técnicas ao mesmo Laravel/MySQL. A escolha depende do domínio, nunca do tamanho da tela. Nenhum import cruza admin/ e pwa/; ambos importam apenas a lógica neutra em shared/forms/. O admin bloqueia sw.js/manifest/offline com 404 e seu build rejeita recursos Framework7/Workbox. Bootstrap só retorna 0 após compilar e conferir as três interfaces.
-
-Clientes possuem cadastro imediato e sessão web. Admin tem área protegida e conta única criada por comando, com guard/provider e sessão próprios. Não ampliar SESSION_DOMAIN para compartilhar cookies. Nenhuma compra, assinatura integra este ciclo.
-
-`shared/forms/` não importa pacotes dos node_modules das aplicações; os adaptadores fornecem IMask/JustValidate de suas dependências próprias, fixadas na mesma versão. Mensagens/máscaras/regras são fonte única. O bind monta a pasta em /shared somente leitura, ao lado de /app, preservando o caminho relativo ../shared. Alias @shared nos dois Vites e no Nuxt. Identificadores de build das três interfaces incluem shared/forms para que alterações dos textos participem da publicação de cada uma.
+Os hashes das três interfaces incluem essas fontes para que alterações participem da publicação. Desmontagem cancela inicializações pendentes e descarta máscaras, validadores e listeners. No website, imports de bibliotecas DOM e vinculação aos campos ocorrem após `onMounted`; SSR entrega a marcação sem executar essas APIs. Apresentação e acessibilidade seguem o design system.
 
 ## Autenticação dos clientes
 
-Rotas da PWA em `backend/routes/pwa.php`, carregadas pelo parâmetro web de `bootstrap/app.php` com sessão e CSRF. Rotas administrativas permanecem em `backend/routes/admin.php`, com pipeline próprio. Os caminhos HTTP continuam iguais.
+PWA e website usam a mesma conta e sessão; admin usa identidade independente. Nesta seção, `<base>` é `PROJECT_SLUG` com hífens convertidos em sublinhados. O bootstrap gera `SESSION_COOKIE=<base>_session` como nome-base; os contextos aplicam os nomes efetivos da tabela.
 
-`ClientAuthContext`, antes dos middlewares web, restringe `/api/v1/auth/*` e `/sanctum/csrf-cookie` aos hosts da PWA/website e às origens/portas configuradas. A ausência de Origin não dispensa sessão/CSRF; diagnóstico permanece independente. `ClientCredentials` valida uma lista explícita de campos; cadastro grava senha com o cast hashed existente. Login/cadastro regeneram sessão e CSRF. `ClientSession` exige usuário web real; Bearer isolado não autentica clientes. Respostas são privadas/no-store e erros não expõem exceções.
+| Contrato | PWA | Website | Admin |
+| --- | --- | --- | --- |
+| Modelo / tabela | `User` / `users` | Mesmo cliente da PWA | `Administrator` / `administrators` |
+| Guard / provider | `web` / `users` | `web` / `users` | `admin` / `administrators` |
+| Cookie de sessão | `<base>_session_client` | Mesmo cookie da PWA | `<base>_session_admin` |
+| Escopo do cookie | `CLIENT_SESSION_DOMAIN` | Mesmo escopo da PWA | Host-only, sem domínio pai |
+| Contexto / inspeção | `ClientAuthContext` / `ClientSession` | Mesmo pipeline da PWA | `AdminContext` / `AdminSession` |
+| Host autorizado | Host de `APP_URL` | Host de `WEBSITE_URL` | Host de `ADMIN_URL` |
+| Origens autorizadas | `SANCTUM_STATEFUL_DOMAINS` gerado | Mesma lista de cliente | `ADMIN_STATEFUL_DOMAINS` gerado |
+| CSRF | `XSRF-CLIENT-TOKEN` | Mesmo token da sessão de cliente | `XSRF-ADMIN-TOKEN` independente |
+| Broker de recuperação | `clients` | Mesmo broker da PWA | `administrators` |
+| Tokens de recuperação | `client_password_reset_tokens` | Mesma tabela da PWA | `admin_password_reset_tokens` |
+| Store da sessão | Laravel, driver `file` por padrão | Mesmo store de cliente | Manager/store dedicados; arquivos em `storage/framework/sessions/admin` ou tabela `admin_sessions` com driver database |
 
-Nas três interfaces, login/logout são serializados; consultas simultâneas não restauram identidade durante essas operações, e respostas antigas são descartadas. Logout invalida a sessão e limpa a identidade em memória. Rotas Framework7 usam asyncComponent e verificação de sessão; APIs continuam protegidas independentemente da tela. Guards de rascunho coexistem por página: credenciais nunca vão para sessionStorage.
+Os cookies de sessão são HTTP-only; cookies CSRF são legíveis pelo cliente e enviados no header `X-XSRF-TOKEN`. As duas áreas não aceitam tokens CSRF intercambiáveis. Em produção, as origens são HTTPS e os cookies seguros.
+
+### Domínios e contextos locais
+
+O bootstrap mantém o **`SESSION_DOMAIN` geral do Laravel em `null`**; não ampliá-lo para compartilhar a sessão administrativa. O admin força escopo host-only. O compartilhamento entre clientes usa a variável própria **`CLIENT_SESSION_DOMAIN`**, aplicada por `ClientAuthContext` durante a requisição e restaurada ao terminar.
+
+Quando vazia, essa variável deriva o ancestral comum dos hosts de cliente, validado com Public Suffix List via tldts. Rejeitar sufixo público, `localhost` genérico e domínios não relacionados. Todos os subdomínios do escopo devem ser controlados pelo produto: o navegador pode enviar o cookie de cliente ao host administrativo, mas o admin não o usa como autenticação.
+
+Em Vite/Nuxt dev/prévia/ADB via `localhost` ou `127.0.0.1`, o contexto usa cookie host-only e confere Origin/Referer contra as portas aprovadas. Esses endereços e os domínios nomeados são contextos distintos; validar compartilhamento entre hosts usando Nginx nas duas interfaces.
+
+### Fluxo e proteção
+
+`ClientAuthContext` roda antes de cookies/sessão/CSRF nos pontos de entrada de cliente, incluindo `/sanctum/csrf-cookie`. Confere hosts e origens conforme a tabela; produção rejeita Origin HTTP. Ausência de Origin não dispensa sessão ou CSRF.
+
+Cadastro é público, com acesso imediato e sem confirmação de e-mail. `ClientCredentials` valida campos explícitos; senha usa o cast hashed. Login/cadastro regeneram sessão e CSRF. `ClientSession` exige usuário web real e `auth_version` atual; Bearer isolado não autentica. Respostas privadas usam no-store e erros controlados.
+
+As regras do frontend não substituem validação/autorização Laravel. Login/logout são serializados nas três interfaces; respostas antigas não restauram identidade durante essas operações. Logout destrói a sessão compartilhada e limpa a identidade em memória. Framework7 verifica a sessão ao navegar para páginas protegidas; APIs mantêm sua própria proteção. Senhas não entram em rascunhos/sessionStorage.
 
 ## Autenticação administrativa
 
-`Administrator` usa administrators, hash de senha e ID único 1; `admin:create` solicita senha oculta/confirmada e recusa criação se já existe, sem alterar clientes. Guard admin/provider administrators separados de web/users. Mesma conexão MySQL, sem relacionamento que conceda privilégios por ID/e-mail coincidente.
+`admin:create` solicita senha oculta e confirmação, cria o administrador único ID 1 e recusa sobrescrever uma conta existente. Não há cadastro público. IDs ou e-mails coincidentes com clientes não concedem privilégios.
 
-Rotas administrativas têm pipeline próprio: AdminContext → EncryptCookies → AddQueuedCookiesToResponse → AdminStartSession → AdminCsrf → bindings/controle de sessão. Host e origens administrativas derivados do central são obrigatórios; host admin não acessa auth/CSRF de clientes. Sessão usa cookie `<cookie_cliente>_admin`, arquivos em storage/framework/sessions/admin (ou tabela admin_sessions no driver database), manager/store separados; configuração e bindings são restaurados ao terminar. Guard é resolvido novamente por requisição. Não compartilhar SESSION_DOMAIN.
+`AdminStartSession` prepara o store administrativo descrito na tabela, recria a resolução dos guards e restaura configuração/bindings ao terminar a requisição. Host administrativo rejeita acesso à autenticação e ao CSRF de cliente. Login rotaciona sessão/CSRF; logout invalida somente a sessão administrativa.
 
-CSRF administrativo usa XSRF-ADMIN-TOKEN, header X-XSRF-TOKEN e endpoint próprio; nenhum token de cliente é reutilizado. Login rotaciona sessão/CSRF; logout invalida somente a sessão administrativa. Respostas privadas/no-store. App.vue controla login/Dashboard com verificação no servidor, sem roteador Framework7, tokens persistidos ou cache offline. Novas APIs administrativas devem integrar o mesmo pipeline e AdminSession.
+`admin/src/App.vue` monta a Dashboard somente após inspeção no servidor. Novas APIs administrativas integram o pipeline e o middleware de sessão existentes; proteger a tela não substitui a autorização do endpoint.
 
 ## Recuperação e e-mail
 
-PasswordRecoveryController usa PasswordBroker Laravel: clients → EloquentUserProvider/users/client_password_reset_tokens; administrators → administrators/admin_password_reset_tokens. Tokens separados de password_reset_tokens legado; broker padrão é clients. Notification AccountPasswordReset constrói o link a partir de APP_URL/ADMIN_URL, nunca do Host/Origin recebido. Dados do link ficam no fragmento # (não enviados a Nginx/SW); a tela os lê em memória e remove do histórico, sem armazenamento persistente. Reload exige reabrir o link do e-mail.
+`PasswordRecoveryController` usa PasswordBroker Laravel conforme o mapeamento da tabela. As tabelas efetivas são distintas de `password_reset_tokens` legado; a recuperação de clientes usa provider dedicado `client_recovery` e mantém o mesmo modelo de cliente.
 
-Reset não cria sessão; altera somente a senha/hash, remember_token e auth_version da conta alvo. A versão é registrada no login e verificada nas APIs protegidas, preservando a outra área e rejeitando sessões antigas. Tokens expiram pela verificação do broker, sem worker adicional. SMTP envia de forma síncrona com timeout e TLS obrigatório; não há fallback para log. Testing deriva transporte array, recuperação desabilitada e senha SMTP vazia; testes explícitos usam notificações simuladas.
+`AccountPasswordReset` escolhe a origem configurada pela interface que solicitou o link: **`APP_URL` para PWA, `WEBSITE_URL` para website e `ADMIN_URL` para admin**. Nunca construir o destino a partir do Host/Origin recebido. Os dados ficam no fragmento `#`, não enviado a Nginx/service worker; o navegador consome/remove o fragmento e mantém o token somente em memória. Não registrar link/token em telemetria/logs, campo oculto persistente, armazenamento ou rascunho. Reload exige reabrir o link do e-mail.
 
-## Website SSR
+O link expira em 60 minutos, é de uso único e novo pedido para a mesma conta respeita 60 segundos. Reset não cria sessão; altera senha/hash, remember_token e `auth_version` somente da conta alvo. As APIs rejeitam suas sessões antigas; a outra área permanece independente. Solicitação usa mensagem genérica, que não comprova envio ou entrega.
 
-`website/` é uma terceira aplicação Nuxt, com dependências/lockfile próprios. Nuxt Router atende páginas públicas, enquanto `backend/routes/website.php` fornece a leitura pública demonstrativa e permite endpoints Laravel do produto; não renderiza as páginas Nuxt. Nginx encaminha `/` ao `<slug>-website-node:3000` e rotas técnicas ao PHP-FPM; resolver Docker dinâmico evita exigir que o website esteja ativo ao carregar o Nginx.
+SMTP envia de forma síncrona, com timeout e TLS obrigatório. Testing deriva transporte array, recuperação desabilitada e senha SMTP vazia; testes explícitos usam notificações simuladas. Expiração dos tokens é conferida pelo broker, sem worker adicional.
 
-Bootstrap gera configuração pública permitida: nome, slug, locale, URLs públicas e buildId. Nuxt nunca recebe `.env.foundation`, credenciais ou diretórios do backend. Build `node-server` cria release em `.releases/`, publica um ponteiro apenas após sucesso e conserva as anteriores. O runtime carrega uma release fixa ao iniciar; o bootstrap confere o build pelo Nginx e inicia/recria exclusivamente o website quando necessário, com --no-deps e sem build de imagens. A ativação preserva projeto/arquivos Compose e resolve seus binds no host por um override de volumes via stdin, sem arquivo Compose adicional. HTTP é consultado com espera limitada antes do sucesso. Rollback automático/limpeza de releases não implementados.
+## Integração HTTP e configuração SSR
 
-Website sem manifest/service worker. Cadastro/login/logout e recuperação usam os endpoints de cliente já registrados uma única vez em routes/pwa.php; routes/website.php fica disponível para APIs específicas do produto. ClientAuthContext admite somente hosts PWA/website e origens configuradas. ClientSession continua validando User/auth_version; User, tabelas e hashes existentes são preservados.
+Nginx serve os `dist` de PWA/admin e encaminha `/` do website ao serviço `<slug>-website-node:3000`. Rotas técnicas seguem para o mesmo PHP-FPM. Resolver Docker dinâmico permite carregar o Nginx antes de o SSR estar ativo. Admin e website não oferecem manifest/service worker.
 
-CLIENT_SESSION_DOMAIN vazio deriva o ancestral comum dos dois hosts, conferido com Public Suffix List (tldts fixado no executor). Não aceitar sufixo público, localhost genérico nem domínios não relacionados. O cookie `<base>_session_client` e XSRF-CLIENT-TOKEN usam esse escopo; o nome novo evita colisão com cookies host-only anteriores (clientes fazem login novamente). Admin conserva `<base>_session_admin`, XSRF-ADMIN-TOKEN, domínio host-only, store/guard/provider próprios. Um cookie de cliente com domínio pai também pode ser enviado pelo navegador a outros subdomínios; o admin nunca o usa como autenticação e rejeita as APIs de cliente. Todos os subdomínios desse escopo devem ser controlados pelo produto.
+O bootstrap gera configuração pública por whitelist: identidade, localidade, URLs e buildId. `website/.foundation.server.json` contém somente alvo/Host do backend, URL do website, porta dev e nome do cookie, incorporados no runtimeConfig privado. Central, credenciais, APP_KEY e diretórios do backend não são disponibilizados ao Nuxt/navegador; os arquivos derivados não entram no Git/pacote.
 
-Em Vite/Nuxt dev/prévia/ADB via localhost ou 127.0.0.1, cookies de cliente ficam host-only; Origin ou Referer é conferido contra portas aprovadas. localhost e domínios nomeados são contextos distintos. Para validar integração entre os domínios, usar Nginx nos dois. Logout destrói a sessão compartilhada; recuperação incrementa auth_version, encerrando as sessões da conta em ambas as interfaces. Broker clients é único; link solicitado no website usa WEBSITE_URL configurada, na PWA usa APP_URL. Admin permanece no seu broker/domínio.
+Em produção, o alvo fixo do backend é a origem `WEBSITE_PRODUCTION_URL` via HTTPS, com validação TLS e sem seguir redirects. Em local, usa `NGINX_INTERNAL_URL` e Host configurado. Isso evita o redirecionamento do listener HTTP em produção. Node precisa resolver/alcançar a origem HTTPS; parâmetros da requisição do usuário nunca escolhem o destino. Modo/alvo e configuração relevante participam do hash do build.
 
-Nuxt mantém estado por requisição via useState/useNuxtApp, nunca singleton de usuário no servidor. Middleware confere /conta antes de renderizar; o endpoint GET /_session encaminha exclusivamente o cookie de cliente para GET /api/v1/auth/me em alvo/Host fixos, com timeout, sem redirecionamentos e sem cache. Transporte Node HTTP preserva o Host do virtual host; não confiar em override Host do Fetch. Resposta expõe somente id/name/email, não cookies nem cabeçalhos administrativos. Falha 401 leva ao login; transporte/contrato inválido retorna 503. Nenhuma mutação é repetida automaticamente. O proxy de desenvolvimento encaminha somente endpoints de cliente; produção usa Nginx diretamente.
+### Inspeção de sessão no Nuxt
 
-Bootstrap gera website/.foundation.server.json com whitelist técnica (alvo do backend, host público, porta dev e nome do cookie), incorporada em runtimeConfig privado; nunca serializada ao navegador. Não contém central privado, APP_KEY ou credenciais e não é distribuída. Mudanças nessa configuração afetam o hash de build. Configuração pública permanece sem proxy/segredos.
+Estado de usuário usa `useState`/`useNuxtApp` por requisição, nunca singleton no servidor. Middleware verifica `/conta` antes de renderizar HTML privado. `GET /_session` encaminha exclusivamente o cookie de cliente a `GET /api/v1/auth/me`, em destino/Host fixos, com timeout e sem cache.
 
-Website: `app/forms/demo.js` injeta suas próprias IMask/JustValidate no bindContactForm comum. Imports dessas bibliotecas e vínculo ao DOM ocorrem após onMounted; desmontagem durante o carregamento cancela a inicialização e remove listeners/máscara/validador já criados. Não mover layout/CSS/componentes para shared. SSR entrega campos/labels sem executar validação; Vue e IMask mantêm o celular formatado após mudanças reativas. O formulário demonstra validação local e não substitui validação Laravel de futuros endpoints.
+O transporte Node preserva Host do virtual host; não depender do override de Host do Fetch. A resposta expõe somente id/name/email, sem cookies ou cabeçalhos administrativos. `401` direciona ao login; falha de transporte/contrato retorna `503`. Nenhuma mutação é repetida automaticamente. O proxy de desenvolvimento encaminha somente os endpoints de cliente; produção usa o roteamento Nginx.
 
 ## Conteúdo público dinâmico
 
-WebsiteContent lê somente id=1 de website_demo_content e seleciona title/body/updated_at. Migration cria a tabela vazia; sem seeder ou alteração de contas. website:content valida título (1–160 caracteres) e corpo (1–2000), publica por upsert e atualiza updated_at; --clear remove somente esse registro. Comandos não compilam nem reiniciam serviços. Não há escrita HTTP pública ou editor comercial nesta etapa.
+`WebsiteContent` lê somente id=1 de `website_demo_content`, selecionando title/body/updated_at. O comando `website:content` valida título de 1–160 caracteres e corpo de 1–2000, faz upsert e atualiza updated_at; `--clear` remove somente esse registro. Não compila nem reinicia serviços.
 
-GET /api/v1/website/content pertence a routes/website.php, registrado separadamente em bootstrap/app.php com WebsitePublicContext, sem web/StartSession/Sanctum stateful. Admite somente o host configurado do website e valida Origin, se houver; não lê identidade, não emite cookies e retorna apenas o recurso público. Falha MySQL retorna 503 controlado, não conteúdo vazio. Endpoints privados futuros precisam do contexto completo de sessão/autorização de clientes ou admin; nunca reutilizar esse pipeline anônimo.
+`GET /api/v1/website/content` usa o contexto público registrado na organização de rotas: host do website e Origin, se presente, são conferidos; nenhuma identidade ou cookie de sessão é lido/emitido. Falha MySQL retorna `503` controlado, nunca conteúdo vazio.
 
-Nuxt GET /_content consulta o endpoint fixo via transporte Node HTTP/Host configurado. Não encaminha cookies, Authorization, destino do usuário ou Set-Cookie. Valida envelope, tipos, limites e timestamp; remove propriedades extras. Erros HTTP/HTML/JSON/timeout não entram na página como dados. Alvo técnico continua no runtimeConfig privado existente.
+Nuxt `GET /_content` consulta esse endpoint em alvo fixo, sem encaminhar Cookie, Authorization ou Set-Cookie. Valida envelope, tipos, limites e timestamp e elimina propriedades extras. HTTP inválido, HTML, JSON malformado e timeout não entram na página como dados. O pipeline é anônimo; endpoints privados não podem reutilizá-lo.
 
-DynamicContent usa useFetch com SSR, no-store, credentials=omit, retry=0, timeout e whitelist transform. getCachedData reutiliza somente o payload durante hidratação; navegações/atualizações fazem nova consulta. Sem prerender, cache Nitro, memoização global ou cache HTTP para esse fluxo. O bridge é anônimo e não mistura dados de cliente/admin. /_session e /conta mantêm sua proteção e no-store. O payload público não é um repositório de dados privados.
+`DynamicContent.vue` usa `useFetch` SSR com no-store, credentials omit, retry zero, timeout e transformação por whitelist. `getCachedData` reaproveita somente o payload na hidratação; navegações e atualizações consultam novamente. Sem prerender, cache Nitro, memoização global ou cache HTTP nesse fluxo. `/_session` e `/conta` mantêm proteção/no-store.
 
-SSR recebe o estado atual do MySQL a cada nova requisição; aba já aberta se atualiza por botão, navegação ou retorno do foco/conexão. Dados mudam sem build; código e configuração compilada continuam no processo de publicação. Bootstrap exige o build SSR correto e GET /_content válido; falha de conteúdo impede anunciar sucesso.
+SSR lê o estado atual a cada requisição; uma aba aberta consulta por botão, navegação ou retorno do foco/conexão. Dados mudam sem build; mudanças no código/configuração compilada seguem a publicação. O bootstrap exige HTML/buildId esperado e resposta válida de `/_content` antes de anunciar sucesso.
 
-Transporte SSR do backend: em produção, o alvo fixo é WEBSITE_PRODUCTION_URL via HTTPS, com validação TLS normal e sem seguir redirects; evita o redirecionamento da porta HTTP do Nginx. Em local, usa NGINX_INTERNAL_URL com Host configurado. O modo/alvo participa do hash para reconstruir a release ao mudar o transporte. O serviço Node precisa resolver e alcançar o domínio HTTPS; nenhuma URL da requisição do usuário define o destino.
+## PWA e publicação
+
+Fonte única `pwa/src/sw.js`, Workbox injectManifest e registro `virtual:pwa-register` em modo prompt, desativado no Vite dev. Precache somente público; API/sessão/CSRF/status nunca recebem cache ou fallback HTML. Shell offline para rotas conhecidas; outras navegações públicas recebem offline.html. Cache isolado por origem/escopo.
+
+`pwa/src/pwa/manager.js` controla instalação, conexão e atualização. Novos formulários integram `draftGuard`: aba alterada não recarrega por ativação externa. Confirmação salva campos conhecidos da Hello em sessionStorage por projeto/aba por até 24h; falha de armazenamento mantém a aba.
+
+PWA usa staging validado por `check-pwa.mjs`; publicação coloca assets antes do HTML/worker e conserva assets anteriores. Admin também valida staging antes de publicar. Falha de compilação não substitui entradas; falha de I/O exige correção/reexecução.
+
+Nuxt `node-server` cria releases em `.releases/` e publica o ponteiro somente após sucesso; runtime fixa a release ao iniciar. O bootstrap verifica o build pelo Nginx e inicia/recria somente o website quando necessário, com espera limitada, `--no-deps` e sem build de imagens. Preserva projeto/arquivos Compose e resolve binds no host via override de volumes por stdin, sem outro Compose persistente.
+
+## Bootstrap e dados
+
+Valores são preenchidos somente em `.env.foundation`. Executor `my-framework-bootstrap:0.1.0` descobre e valida a infraestrutura existente, gera configurações/atalhos e `.foundation-installation.md` ignorado; README/manual versionados permanecem inalterados. Integração Compose/Nginx é aplicada manualmente.
+
+Instala pelos lockfiles quando necessário, preserva chaves/dados/volumes e exige `--force` para migrations em produção. `app:sync` limita-se a optimize:clear e migrations, propagando falhas; não instala dependências, compila ou regenera chaves. `TestingDatabaseGuard` confere ambiente/banco exclusivo antes de operações destrutivas nos testes. Código zero exige verificações de backend, builds e HTTP das três interfaces; não substitui aceite em navegador/aparelho ou validação na VPS.
+
+## Limites desta etapa
+
+- Catálogo, checkout, compras, assinaturas, editor e integrações comerciais pertencem ao produto; a base contém somente exemplos públicos/demonstrativos.
+- A migration de conteúdo cria tabela vazia, sem seeder. O comando altera somente o exemplo; não há escrita HTTP pública nem alteração de contas por esse fluxo. Bootstrap não executa fresh/reset/seeders.
+- Offline cobre a interface PWA e o rascunho temporário conhecido; não implementa persistência/sincronização de registros. Admin e website não têm cache offline privado.
+- Atualização entre domínios acontece na próxima inspeção/navegação/foco, sem canal de sincronização em tempo real.
+- Rollback automático e limpeza de releases Nuxt não estão implementados. Retenção/limpeza de assets antigos e recuperação são decisões do plano de publicação do produto.
+- A única ativação automática de infraestrutura é o serviço website já declarado e validado. PHP-FPM, Nginx, MySQL e outros serviços não são reiniciados pelo bootstrap.

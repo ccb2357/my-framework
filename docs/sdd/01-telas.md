@@ -1,58 +1,86 @@
 # Telas
 
-## Hello
+A interface depende do domínio configurado: PWA, website e admin têm entradas, navegação, componentes e estilos próprios. As telas de autenticação podem ser reutilizadas no produto; as páginas Hello demonstram a base e podem ser substituídas.
 
-Rota `/`, arquivo `pwa/src/pages/hello.vue`. Demonstra a base instalada e pode ser substituída pela página inicial do produto. Nome/identidade vêm da configuração central; os dados do formulário são apenas demonstrativos.
+## PWA
+
+Framework7 Vue em `pwa/`.
+
+| Rota | Arquivo em `pwa/src/pages/` | Finalidade |
+| --- | --- | --- |
+| `/` | `hello.vue` | Hello pública, componentes, formulário, diagnóstico e acesso à conta. |
+| `/entrar/`, `/cadastro/` | `access.vue` | Login e cadastro de clientes. |
+| `/conta/` | `account.vue` | Nome/e-mail e Sair; exige sessão verificada. |
+| `/esqueci-senha/`, `/redefinir-senha/` | `recovery.vue` | Solicitar recuperação e definir nova senha. |
+| `/transition/cover-v/`, `/transition/dive/`, `/transition/fade/`, `/transition/parallax/` | `transition.vue` | Transições oficiais com retorno preservando o estado da Hello. |
+
+### Hello demonstrativa
+
+Nome e identidade vêm da configuração central. A Hello reúne os seguintes recursos, sem gravar dados de negócio:
 
 | Recurso | Comportamento |
 | --- | --- |
-| Accordion, botões, checkbox e diálogo | Componentes oficiais Framework7, ações e estado reativo. |
-| Autocomplete | Input Framework7 com sugestões locais e seleção funcional. |
+| Accordion, botões, checkbox e diálogo | Componentes oficiais, ações e estado reativo. |
+| Autocomplete | Sugestões locais e seleção funcional. |
 | Calendar | Calendário oficial em sheet, inclusive no desktop. |
 | FAB | Speed Dial com três ações para cima, +/×, fechamento por ação/Escape e feedback por toast. |
-| Ícones | Seção com 20 Lucide identificados; Framework7 Icons nos demais controles. |
-| Notification, sheet, Smart Select e toast | APIs oficiais; Smart Select em popup. Notification é interna do Framework7. |
-| Formulário | E-mail/celular obrigatórios, máscara brasileira, validação e erros acessíveis; sem gravação. |
-| Navegação | cover-v, dive, fade e parallax, com retorno preservando o estado da Hello. |
+| Ícones | Vinte Lucide identificados; Framework7 Icons nos demais controles. |
+| Notification, sheet, Smart Select e toast | APIs oficiais; Smart Select em popup. Notification é um aviso interno do Framework7. |
+| Formulário | E-mail/celular obrigatórios, máscara brasileira e erros acessíveis; sem envio ou gravação. |
+| Transições | `f7-cover-v`, `f7-dive`, `f7-fade` e `f7-parallax`. |
 
-`BackendStatus.vue` consulta `/api/v1/status` sem cache: carregando, OK, indisponível, erro ou não verificado. Offline/falha descartam o OK anterior; retorno da conexão consulta novamente.
+`PwaStatus.vue` mostra conexão, versão, instalação/menu e atualização. Vite dev não registra service worker nem oferece instalação. No build, atualizar exige confirmação; campos da Hello são preservados por aba. Formulário alterado bloqueia recarga por outra aba, e falha de armazenamento mantém a página. Novos formulários integram a proteção de rascunho descrita na [arquitetura](03-arquitetura.md). Dados de autenticação e tokens não entram nesse rascunho; campos preenchidos ou recuperação pendente bloqueiam a atualização da PWA.
 
-`PwaStatus.vue` informa conexão, versão, instalação/menu, offline e atualização. Vite dev não registra worker nem oferece instalação. O build usa confirmação para atualizar; campos da Hello são preservados por aba. Formulário alterado impede recarga por outra aba; falha de armazenamento mantém a página. Novos formulários devem integrar a proteção de rascunho descrita na arquitetura.
+## Website
 
-## Outras rotas
+Nuxt SSR em `website/`, com Tailwind/shadcn-vue e Lucide próprios. Não oferece instalação ou offline PWA. Layout em `website/app/layouts/default.vue`; rotas desconhecidas retornam 404.
 
-`pwa/src/pages/transition.vue` atende `/transition/cover-v/`, `/transition/dive/`, `/transition/fade/` e `/transition/parallax/`, com retorno nativo. Identificadores Framework7: `f7-cover-v`, `f7-dive`, `f7-fade` e `f7-parallax`.
+| Rota | Arquivo em `website/app/pages/` | Finalidade |
+| --- | --- | --- |
+| `/` | `index.vue` | Hello pública SSR, conteúdo dinâmico, formulário e link para a PWA. |
+| `/entrar/`, `/cadastro/` | `entrar.vue`, `cadastro.vue` | Login e cadastro da mesma conta de cliente da PWA. |
+| `/conta/` | `conta.vue` | Minha conta; visitante é redirecionado antes de receber HTML privado. |
+| `/esqueci-senha/`, `/redefinir-senha/` | `esqueci-senha.vue`, `redefinir-senha.vue` | Recuperação de senha do cliente. |
 
-`/status` é HTML técnico independente do Vite; `/api/v1/status` fornece o mesmo diagnóstico em JSON e `/up` verifica a aplicação. Contratos em [05-api.md](05-api.md).
+### Hello demonstrativa
+
+Título, descrição, botão shadcn-vue e ícone Lucide SVG são renderizados no servidor e no cliente. `DemoForm.vue` demonstra e-mail/celular obrigatórios, máscara `(00) 00000-0000`, erros pt-BR e confirmação local. Os campos aparecem no SSR, mas permanecem desabilitados até inicializar as bibliotecas no navegador; falha mantém o formulário desabilitado. A demonstração não envia nem persiste dados.
+
+`DynamicContent.vue` exibe título/texto público do Laravel/MySQL. SSR entrega o conteúdo no HTML e a hidratação reutiliza esse payload. Atualização manual, nova navegação ou retorno de foco/conexão consultam o dado atual sem rebuild; mudanças no código Vue/CSS exigem build fora do dev.
+
+Carregamento, vazio, erro e sucesso são distintos. Durante carregamento, erro ou offline, o texto anterior não permanece como atual. O botão Atualizar conteúdo respeita disabled/busy, `aria-live` anuncia transições e falhas permitem tentar novamente. Texto usa interpolação escapada, nunca `v-html`. O exemplo nasce vazio e é alterado somente por comando explícito; não é um editor comercial.
+
+O estado SSR da conta pertence à requisição. Falha de verificação não exibe identidade anterior. Entrar/sair reflete na PWA ao abrir, navegar ou recuperar foco; não há sincronização em tempo real entre domínios.
+
+## Admin
+
+Vue/shadcn-vue/Tailwind em `admin/`, no domínio administrativo configurado. Não carrega Framework7, manifest, service worker ou offline PWA.
+
+| Rota | Arquivo em `admin/src/pages/` | Finalidade |
+| --- | --- | --- |
+| `/` | `Login.vue` ou `HelloDashboard.vue` | Login para visitante; Dashboard somente após verificar a sessão administrativa. Entrar/sair mantém a mesma URL. |
+| `/esqueci-senha/`, `/redefinir-senha/` | `Recovery.vue` | Recuperação exclusiva da conta administrativa. |
+
+O login usa Input/Label/Button/Card oficiais. A Hello Dashboard mostra nome/e-mail, Sair, cabeçalho, cards e diagnóstico real com nova consulta. Inclui formulário demonstrativo de e-mail/celular com mensagens e máscaras comuns, sem envio/gravação nem dados comerciais simulados. Não há cadastro público de administradores; a conta é criada por comando.
+
+## Acesso e formulários
+
+PWA e website compartilham conta e sessão do cliente; admin tem conta e sessão independentes. Cadastro do cliente pede nome, e-mail, senha e confirmação, com acesso imediato, sem confirmação por e-mail. Cliente já autenticado é encaminhado dos formulários de login/cadastro para a conta.
+
+O Laravel mantém a sessão no servidor, identificada por cookie HTTP-only. O frontend mantém em memória apenas o estado de verificação e a identidade exibida. Entrada, retorno de foco/visibilidade e conexão renovam a consulta; falha ou offline não mantêm a identidade como verificada e ocultam dados protegidos.
+
+Mensagens, máscaras e regras vêm de `shared/forms/`, com apresentação própria por interface. Validadores DOM inicializam após montagem e são descartados ao sair. Formulários têm labels/erros associados, teclado, disabled/busy e mensagens controladas, sem respostas técnicas. Senhas ficam somente na memória do componente, sem persistência. O Laravel valida novamente os dados recebidos.
+
+### Recuperação de senha
+
+O login das três interfaces oferece Esqueci minha senha. A solicitação retorna mensagem genérica; novo pedido para a mesma conta deve aguardar 60 segundos. O link expira em 60 minutos e é de uso único. Redefinir pede senha e confirmação; sucesso orienta voltar ao login, sem autenticar automaticamente. Link inválido permite solicitar outro.
+
+O token vem no fragmento do link e é consumido/removido no navegador, sem entrar em SSR, query, armazenamento, rascunho ou telemetria. A redefinição encerra sessões antigas da conta afetada; a outra área de autenticação permanece independente.
+
+## Diagnósticos e apresentação
+
+`BackendStatus.vue` consulta `/api/v1/status` sem cache: carregando, OK, indisponível, erro ou não verificado. As interfaces descartam o OK anterior em offline/falha e consultam novamente ao reconectar.
+
+`/status` é o diagnóstico HTML, `/api/v1/status` sua representação JSON e `/up` a verificação da aplicação. São endpoints técnicos do Laravel; contratos em [05-api.md](05-api.md).
 
 Toda tela segue [02-design-system.md](02-design-system.md). Novas telas de negócio precisam de aprovação visual; referências aprovadas ficam em `docs/telas/`. Não criar outro aplicativo de demonstração.
-
-## Hello Dashboard administrativa
-
-Rota `/` do domínio `admin.<domínio>`, arquivo `admin/src/pages/HelloDashboard.vue`. Exibe Login enquanto visitante; a Hello Dashboard só é montada após verificar a sessão administrativa. Inclui formulário demonstrativo de e-mail/celular com as mesmas máscaras e mensagens da PWA, sem envio ou gravação de dados. Usa somente Vue/shadcn-vue/Tailwind: cabeçalho, cards, badge de diagnóstico real e botão de nova consulta. Loading/falha/offline descartam o OK anterior. Sem dados comerciais simulados. Não carrega Framework7 nem recursos PWA. Login.vue usa Input/Label/Button/Card oficiais e mensagens compartilhadas. Dashboard mostra nome/e-mail e Sair. Sessão só em memória; foco/conexão consultam novamente, falhas/offline ocultam dados. Senha não é persistida; não há cadastro administrativo público.
-
-## Acesso dos clientes
-
-A Hello pública oferece Entrar e Criar conta. `/entrar/` e `/cadastro/` usam `access.vue`; `/conta/` usa `account.vue` e exige sessão verificada no servidor. Cadastro pede nome, e-mail, senha e confirmação; libera acesso imediato, sem confirmação por e-mail. A conta mostra nome/e-mail e Sair. Usuário autenticado é redirecionado dos formulários para a conta.
-
-Sessão é consultada ao entrar e ao recuperar foco/conexão. Falha ou offline não mantêm identidade como verificada. Senhas e formulários de acesso não são persistidos; campos preenchidos bloqueiam atualização da PWA. Erros são acessíveis e controlados, sem exibir respostas técnicas.
-
-## Esqueci minha senha
-
-Nas três interfaces, o login oferece Esqueci minha senha. `/esqueci-senha/` recebe e-mail e retorna mensagem genérica; `/redefinir-senha/` recebe o fragmento do e-mail e pede nova senha/confirmar. PWA usa rotas e campos Framework7; admin usa Card/Input/Label/Button shadcn e navegação por links próprios, sem Framework7. Sucesso orienta voltar ao login; não autentica automaticamente. Link inválido permite solicitar outro. Credenciais/token não entram no rascunho; PWA bloqueia atualização enquanto o fluxo estiver pendente.
-
-## Hello Website
-
-`website/app/pages/index.vue`, rota `/` no domínio do website. Layout em `app/layouts/default.vue`, página pública SSR com título, descrição e link para a PWA. Botão shadcn-vue local e ícone Lucide renderizado em SVG tanto no servidor quanto no cliente. Inclui DemoForm.vue com e-mail e celular obrigatórios, máscara (00) 00000-0000, erros pt-BR acessíveis e confirmação local. Campos são renderizados em SSR, desabilitados até inicializar as bibliotecas no navegador; falha mantém o formulário desabilitado. A demonstração não envia nem persiste dados; sem indicadores comerciais ou recursos PWA. Rotas desconhecidas retornam 404.
-
-## Conta no website
-
-`/entrar/`, `/cadastro/`, `/esqueci-senha/`, `/redefinir-senha/` e `/conta/` são páginas Nuxt com Input/Label/Button shadcn próprios. Cadastro abre a conta imediatamente, sem confirmar e-mail. Cliente autenticado é redirecionado dos formulários para Minha conta; visitante em /conta recebe redirecionamento antes do HTML privado. Falha de verificação retorna erro controlado, sem exibir identidade anterior. Estado SSR pertence à requisição; foco/visibilidade/conexão renovam a inspeção no navegador. Entrar/sair reflete na PWA ao abrir, navegar ou recuperar foco; não há canal de sincronização em tempo real entre domínios.
-
-Formulários de acesso usam mensagens/regras comuns e validadores locais carregados após montagem; disabled/busy, erros associados aos campos, teclado e limpeza ao sair. Senhas ficam somente na memória do componente. Fragmento de recuperação é consumido e removido no navegador, sem token em SSR, URL de query, armazenamento ou telemetria. Dados só são enviados ao Laravel após validação; servidor valida novamente. Recuperação não autentica automaticamente.
-
-## Conteúdo dinâmico do website
-
-A Hello inclui DynamicContent.vue: título/texto público fornecidos pelo Laravel/MySQL. SSR entrega o conteúdo já no HTML; Vue reutiliza esse payload na hidratação. Carregamento, conteúdo vazio, erro e sucesso são estados distintos. Ao atualizar, navegar novamente ou recuperar foco/conexão, uma nova consulta obtém o dado atual, sem rebuild; mudanças no código Vue/CSS continuam exigindo build fora do dev.
-
-Atualizar conteúdo é um Button oficial com disabled/busy; aria-live anuncia as transições. Durante carregamento, erro ou offline, o texto anterior não permanece como atual. Falha permite tentar novamente; não exibir mensagens técnicas do backend. Título/texto usam interpolação escapada, nunca v-html. O exemplo nasce vazio e só é persistido por comando explícito; o formulário de demonstração continua sem gravar dados.

@@ -1,54 +1,71 @@
 # Design system
 
-**PWA (`pwa/`):** usar a aparência nativa do Framework7 Vue; a Hello é a referência de composição. Controles oficiais diretamente, sem biblioteca de estilos adicional ou wrappers equivalentes. Novas variações globais exigem aprovação e atualização deste contrato.
+## Fronteiras
 
-## Estilos e layout
+PWA, admin e website têm componentes, tokens, CSS e dependências próprios. Nunca importar componentes ou estilos de uma interface em outra, nem misturar Framework7 e shadcn-vue na mesma tela. Somente a lógica neutra de `shared/forms/` é compartilhada.
 
-Importação única em `pwa/src/main.js`: CSS Framework7 → Framework7 Icons → `css/tokens.css` → `css/app.css`. Fonte Nunito variável local em `public/fonts/`, com licença e fallback de sistema. Cor do manifest não altera a identidade CSS.
+As versões efetivas ficam nos manifests e lockfiles de cada aplicação. Admin e website declaram Lucide como dependência própria, na mesma versão da PWA; importar somente os ícones usados.
 
-| Base compartilhada | Regra |
+## Base compartilhada
+
+`shared/forms/` define mensagens pt-BR (`messages.pt-BR.json`), máscaras (`masks.js`), regras JustValidate (`rules.js`) e política de acesso (`auth-policy.json`). `contact-form.js` e `recovery.js` fornecem integração neutra; os adaptadores de cada interface injetam suas próprias IMask/JustValidate e definem a apresentação.
+
+IMask formata o celular com DDD e 11 dígitos; JustValidate apresenta os erros. A máscara não confirma existência do telefone. Instâncias mantêm `aria-invalid`/`aria-describedby`, preservam textos de ajuda e removem descrições obsoletas ao corrigir. Destruir validadores, máscaras e listeners ao desmontar a página.
+
+Contratos de autenticação, sessão, recuperação e validação no servidor pertencem à [arquitetura](03-arquitetura.md#autenticação-dos-clientes) e à [API](05-api.md); este documento define sua apresentação.
+
+## PWA
+
+Usar a aparência nativa e os controles oficiais do Framework7 Vue diretamente, sem biblioteca de estilos adicional ou wrappers equivalentes. Referência de composição: `pwa/src/pages/hello.vue`.
+
+### Estilos e layout
+
+Importação única em `pwa/src/main.js`, nesta ordem: CSS Framework7 → Framework7 Icons → `css/tokens.css` → `css/app.css`. Fonte Nunito variável local em `pwa/public/fonts/`, com licença e fallback de sistema. Cor do manifest não altera a identidade CSS.
+
+| Base | Contrato |
 | --- | --- |
 | Tokens `--app-*` | Referenciam variáveis Framework7 para fonte, cores, superfícies e estados, inclusive tema escuro; não duplicar paletas. |
 | Espaçamento | `--app-space-1/2/3/4/5`: 4/8/16/24/32px; grid usa space-3. |
-| Conteúdo | `app-content`, máximo 960px; `app-heading`, `app-note`, `app-actions`, `app-choice`, `app-grid-cell`. Reutilizar antes de criar CSS. |
-| Grid | Framework7 `grid-cols-1 medium-grid-cols-2 grid-gap`, breakpoint 768px. Ícones usam grid compartilhado. |
-| Ícones | Tamanho base 24px; Lucide decorativo com aria-hidden, ações por ícone com nome acessível. |
-| FAB | Reservar espaço inferior e safe area; não cobrir o último conteúdo. |
+| Conteúdo | `app-content`, máximo 960px; reutilizar `app-heading`, `app-note`, `app-actions`, `app-choice` e `app-grid-cell`. |
+| Grid | Framework7 `grid-cols-1 medium-grid-cols-2 grid-gap`, breakpoint 768px; ícones usam o mesmo grid da PWA. |
+| Ícones | Tamanho base 24px. |
+| FAB | Reservar espaço inferior e safe area para não cobrir o último conteúdo. |
 
-Não criar tokens sem uso real nem estilos locais repetidos. Temas e redução de movimento seguem Framework7/preferências do navegador.
+Temas e redução de movimento seguem Framework7/preferências do navegador. `pwa/public/offline.html` é a exceção técnica mínima em HTML, com fonte local e link nativo.
 
-## Controles e acessibilidade
+### Controles
 
-- Ações: `f7-button type=button`; submit só no formulário. fill principal, outline secundário; navegação usa link/roteador oficial.
-- Assíncrono: loading/disabled, aria-busy/aria-disabled, tabindex adequado e guarda contra reentrada. Na versão fixada, f7-button desabilitado usa classe CSS; manter os atributos acessíveis complementares.
-- Inputs: rótulo nativo associado ao input-id; IMask sincronizado com Vue e JustValidate com erros associados por aria-invalid/aria-describedby. Focar o primeiro inválido e remover descrições obsoletas ao corrigir.
-- **Inputs, selects e textareas nunca recebem outline retangular**, em focus/focus-visible. Preservar a regra global e o foco próprio Framework7. Botões/links mantêm foco visível; checkbox realça o rótulo.
-- Status com texto/role=status; não depender apenas da cor nem manter OK antigo em falha/offline.
-- FAB oficial com aria-expanded/aria-controls; ações fechadas inert e fora da tabulação. Espaço aciona, Escape fecha e devolve o foco.
-- Diálogos/sheets com identificação, fechamento e foco; feedback por notification/toast oficiais. Limpar instâncias/listeners ao remover páginas.
+- Ações usam `f7-button type=button`; submit somente no formulário. Fill é principal, outline é secundário; navegação usa link/roteador oficial.
+- Operações assíncronas usam loading/disabled, `aria-busy`/`aria-disabled`, tabulação adequada e guarda contra reentrada. Na versão fixada, f7-button desabilitado usa classe CSS; manter os atributos acessíveis complementares.
+- Inputs usam rótulo nativo associado por `input-id`, valor IMask sincronizado com Vue e erros JustValidate associados ao campo.
+- FAB oficial usa `aria-expanded`/`aria-controls`; ações fechadas ficam `inert` e fora da tabulação. Espaço aciona; Escape fecha e devolve o foco.
+- Diálogos/sheets têm identificação, fechamento e foco. Feedback usa notification/toast oficiais. Descartar instâncias e listeners ao remover páginas.
 
-A página `offline.html` é a exceção técnica mínima em HTML, com fonte local e link nativo. Contraste, teclado e aparência exigem navegador real; DOM simulado não certifica acessibilidade. Imagens de regressão visual só se tornam referências após aprovação humana.
+Formulários de acesso: ListInput/Button Framework7 e adaptador `pwa/src/forms/auth.js`. Erros aparecem junto aos campos; foco vai para o primeiro inválido.
 
-## Administrativo
+## Admin
 
-Lucide 1.72.0 está disponível como dependência própria do admin, na mesma versão da PWA. Importar somente os ícones usados de `lucide`; não importar componentes/estilos de pwa/. Ícones decorativos usam aria-hidden; ações por ícone exigem nome acessível.
+Vue/shadcn-vue, Reka UI e Tailwind com Preflight. Componentes locais em `admin/src/components/ui/`; aliases e gerador JavaScript em `admin/components.json` e `admin/jsconfig.json`.
 
-`admin/` usa shadcn-vue (componentes locais em src/components/ui), Reka UI e Tailwind 4 com Preflight. Importação somente em admin/src/main.js → style.css; aliases e gerador JavaScript em components.json/jsconfig.json. Tema neutral/new-york com variáveis CSS próprias, fonte de sistema e layout desktop com adaptação básica. Botões têm foco visível, estados disabled/loading e status com texto. Incorporar componentes oficiais conforme uso real. Nunca importar tokens, CSS ou componentes entre as duas interfaces. Regras visuais Framework7 acima pertencem exclusivamente à PWA.
+Importação única em `admin/src/main.js` → `admin/src/style.css`. Tema neutral/new-york, variáveis CSS próprias e fonte de sistema. Layout prioriza desktop com adaptação básica.
 
-## Máscaras e validação
+Referências: `admin/src/pages/Login.vue`, `admin/src/pages/HelloDashboard.vue` e `admin/src/components/DemoForm.vue`. Login usa Input/Label/Button/Card, rótulos e erros abaixo dos campos, senha com `autocomplete=current-password` e botão indisponível durante envio. A Dashboard organiza cabeçalho, identificação/Sair, cards, badge de diagnóstico e nova consulta; estados incluem texto, sem depender somente da cor.
 
-Mensagens pt-BR em `shared/forms/messages.pt-BR.json`, máscaras em `masks.js` e regras JustValidate em `rules.js`. `contact-form.js` reúne o ciclo neutro da demonstração: instâncias próprias, aria-invalid/aria-describedby, preservação de ajuda e limpeza. Bibliotecas são injetadas pelos adaptadores locais. PWA mantém classes/controles Framework7; admin usa Input/Label/Button shadcn e containers próprios. Nenhum CSS cruza as interfaces. Máscara móvel usa DDD e 11 dígitos; IMask formata, JustValidate informa erros. Não comprova existência do telefone. Regras do servidor continuam obrigatórias.
+## Website
 
-Os formulários de acesso usam ListInput/Button oficiais Framework7 e `pwa/src/forms/auth.js`. Mensagens e limites vêm de `shared/forms/messages.pt-BR.json` e `auth-policy.json`; `rules.js` valida sem definir layout. Adaptadores mantêm aria-invalid/aria-describedby e destroem validadores ao sair. O admin não importa esses componentes.
+Nuxt com Tailwind e shadcn-vue JavaScript. Estilos/tokens em `website/app/assets/css/main.css`, registrado no array `css` de `website/nuxt.config.js`. Componentes locais em `website/app/components/ui/`. Descoberta automática considera apenas `.vue`; `index.js` fornece exports explícitos.
 
-Login administrativo usa componentes existentes shadcn-vue Input/Label/Button/Card, rótulos e erros sob os campos, aria-invalid/aria-describedby, senha autocomplete=current-password e envio protegido contra reentrada. Regras/mensagens JustValidate vêm de shared/forms; componentes e adaptador permanecem no admin. Dashboard mantém o visual existente e acrescenta identificação/Sair; não carregar dados antes de conferir a sessão.
+Referências: `website/app/pages/index.vue`, `website/app/layouts/default.vue` e `website/app/components/DemoForm.vue`. Layout responsivo simples, link de salto, HTML semântico e foco visível em links/botões. Lucide renderiza SVG no servidor e cliente sem modificar o DOM gerenciado pelo Vue.
 
-Recuperação reutiliza mensagens/regras em shared/forms e recovery.js (adaptador recebe JustValidate local, sem CSS/componente compartilhado). Erros ficam abaixo dos inputs, com aria-invalid/aria-describedby e role=status; botão de envio fica indisponível durante a operação. Token é somente memória; não preencher campo oculto persistente nem capturar o link em telemetria.
+Formulários usam Input/Label/Button locais, card de largura limitada, links Nuxt, erro associado ao campo e confirmação por status. Adaptador de acesso em `website/app/forms/auth.js`; bibliotecas DOM inicializam após `onMounted`. Campos SSR permanecem desabilitados até concluir a inicialização; desmontagem durante carregamento cancela a integração.
 
-## Website Nuxt
+`website/app/components/DynamicContent.vue` usa card e Button locais, título h2/h3 e texto com quebras preservadas. Vazio, carregamento e erro têm texto acessível; botão indisponível durante consulta/offline. Não apresentar conteúdo anterior como atual enquanto a leitura estiver pendente ou falhar.
 
-`website/app/assets/css/main.css` contém os tokens/Tailwind próprios; componentes shadcn-vue JavaScript em `website/app/components/ui/`. A descoberta automática Nuxt considera somente `.vue`; arquivos `index.js` são exports explícitos. Não importar CSS/componentes de `admin/` ou `pwa/`. Hello usa layout responsivo simples, link de salto, HTML semântico e foco visível nos links/botões. Lucide 1.72.0 renderiza SVG sem alterar DOM gerenciado pelo Vue. Formulários reutilizam somente lógica neutra de `shared/forms/`; DemoForm.vue usa Input/Label/Button shadcn locais, erro no próprio campo e confirmação por status. Inputs sem outline/anel retangular; links e botões mantêm foco visível.
+## Regras gerais
 
-Formulários de autenticação do website usam os mesmos controles locais Input/Label/Button, card de largura limitada e links Nuxt. `app/forms/auth.js` aplica regras neutras; recuperação reutiliza recovery.js com JustValidate próprio após onMounted. Sem importações visuais entre aplicações. Minha conta só mostra nome/e-mail com sessão confirmada; falha/offline oculta a identidade.
-
-Conteúdo dinâmico usa o card e Button locais já existentes, título h2/h3 e texto com quebras preservadas. Estados vazio/carregando/erro têm texto acessível; botão indisponível durante consulta/offline, foco visível e nenhum CSS compartilhado entre interfaces. Não apresentar conteúdo anterior enquanto a nova leitura estiver pendente ou falhar.
+- **Foco dos campos:** inputs, selects e textareas não recebem outline retangular em `focus`/`focus-visible`. Na PWA e no website, também não aplicar anel retangular; preservar os indicadores próprios do componente e as regras locais aprovadas. Botões/links mantêm foco visível; checkbox realça o rótulo.
+- **Formulários:** labels associados, `aria-invalid`/`aria-describedby`, foco no primeiro inválido e erros junto aos campos. Recuperação usa a mesma apresentação; mensagens de retorno têm `role=status`, e envio respeita disabled/busy.
+- **Feedback:** status com texto e `role=status`/`aria-live`; descartar OK anterior em falha/offline. Ícones decorativos usam `aria-hidden`; ações somente por ícone exigem nome acessível.
+- **Reutilização:** procurar primeiro controles/componentes existentes. Quando uma tela aprovada exigir um componente ausente, incorporar o componente oficial correspondente na própria interface, sem gerar catálogo antecipadamente.
+- **Evolução:** não criar token sem uso real nem repetir estilos locais. Mudanças visuais globais ou novas variações devem ser propostas ao responsável pelo projeto na conversa/demanda, com referência visual; após aprovação, atualizar este contrato junto da implementação. Ajustes que já seguem o contrato não exigem nova aprovação global.
+- **Validação:** contraste, teclado e aparência exigem navegador real; testes DOM não certificam acessibilidade. Imagens de regressão só se tornam referências após aprovação do responsável pelo projeto.

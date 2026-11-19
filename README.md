@@ -1,6 +1,6 @@
 # My Framework
 
-Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, website Nuxt, Laravel e MySQL**. Inclui instalação automatizada via Docker, configuração centralizada, interface demonstrativa e documentação para evoluir cada produto em seu próprio repositório.
+Base reutilizável para criar **websites, aplicativos PWA e painéis administrativos** em um único projeto, com interfaces independentes. Combina **Nuxt, Framework7 Vue e shadcn-vue**, com **Laravel e MySQL** no backend, configuração centralizada e instalação automatizada via Docker.
 
 **PWA**
 

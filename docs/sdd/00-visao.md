@@ -1,11 +1,25 @@
 # Visão
 
-My Framework é uma base reutilizável para iniciar aplicações independentes com Vue 3, Framework7 Vue, Vite, Laravel, MySQL, PWA e um admin Vue/shadcn-vue/Tailwind independente. Cada novo projeto recebe o código pronto e configura seu próprio `.env.foundation`.
+My Framework é uma base reutilizável para criar **websites, aplicativos PWA e painéis administrativos** em um único projeto. As três interfaces têm entradas, domínios, componentes, estilos e builds próprios, com Laravel e MySQL compartilhados.
 
-Inclui bootstrap Docker, backend/status, Hello demonstrativa, design system, build/offline/atualização e testes. Clientes têm cadastro/login/logout e acesso imediato à área protegida, sem confirmação de e-mail. Admin tem login/logout, Hello Dashboard protegida e uma conta criada por comando. Sessões e contas são independentes; ambos têm recuperação de senha por SMTP com tokens separados e sem login automático. Regras de negócio, dados do formulário, sincronização offline de registros e integrações comerciais pertencem ao produto criado sobre a base.
+| Interface | Stack e finalidade |
+| --- | --- |
+| PWA — `pwa/` | Vue 3, Framework7 Vue e Vite; aplicativo instalável, shell offline e atualização confirmada pelo usuário. |
+| Website — `website/` | Nuxt SSR, Vue, Tailwind e shadcn-vue; páginas públicas com HTML renderizado no servidor e área do cliente. Usa um serviço Node permanente atrás do Nginx, sem instalação PWA. |
+| Admin — `admin/` | Vue, Vite, Tailwind e shadcn-vue; painel administrativo protegido, sem recursos PWA. |
 
-Instalação e operação: [guia da raiz](../../instalacao-my-framework.md). Versões: manifests/lockfiles e `foundation.json`. Aceite e limites comprovados: [MEMORY.md](../../MEMORY.md). Os documentos SDD descrevem os contratos atuais, sem histórico de construção.
+A interface é definida pelo endereço acessado. Framework7 e shadcn-vue não se misturam na mesma tela. Mensagens, máscaras e regras de formulários são compartilhadas em `shared/forms/`, sem compartilhar layouts ou CSS. Cada interface mantém suas próprias dependências.
 
-## Website
+## Contas e acesso
 
-Website independente em `website/`: Nuxt 4.6.4, Vue, Tailwind, shadcn-vue e Lucide; Hello pública com SSR, sem instalação/offline. Compartilha Laravel/MySQL, não componentes/CSS. O website usa domínio próprio e servidor Node permanente; PWA/admin mantêm seus builds atuais. Formulários reutilizam `shared/forms/` com visuais próprios. Cadastro/login/logout, recuperação e área protegida estão disponíveis no website com a mesma conta/sessão da PWA; admin permanece separado. Inclui exemplo público dinâmico no MySQL, consultado por SSR e atualizado sem build. Loja e conteúdo comercial pertencem ao produto.
+PWA e website compartilham a conta e a sessão do cliente: cadastro público com acesso imediato, login/logout, recuperação de senha e área protegida. Não exigem confirmação de e-mail.
+
+O admin usa conta, sessão e autenticação independentes. A base entrega um administrador criado por comando e uma Hello Dashboard protegida, sem cadastro administrativo público. A recuperação de senha usa SMTP, com tokens separados entre clientes e administrador, sem login automático após redefinir a senha.
+
+## Entrega e limites
+
+Inclui bootstrap Docker, configuração central em `.env.foundation`, diagnóstico do backend/banco, telas Hello, formulários demonstrativos, conteúdo público dinâmico no website e testes. O exemplo de conteúdo usa MySQL e aparece na próxima consulta sem reconstruir o website. O offline da PWA cobre a interface estática; API, sessão e banco exigem conexão.
+
+Catálogo, carrinho, checkout, pedidos, assinaturas, editor de conteúdo, integrações comerciais e sincronização offline de registros pertencem ao produto construído sobre a base. Os formulários demonstrativos não gravam dados de negócio.
+
+Instalação e operação: [manual da raiz](../../instalacao-my-framework.md). Versões efetivas: manifests, lockfiles e `foundation.json`. Os documentos SDD descrevem os contratos atuais; validação em Docker, navegador, aparelho e produção depende do ambiente correspondente.
