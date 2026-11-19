@@ -401,51 +401,49 @@ Pressione **Ctrl+C** no terminal do Vite/prévia e remova somente o túnel utili
 
 ## Verificações e testes
 
-No CMD, execute um comando por vez. Os testes usam o banco exclusivo de testes.
+No **CMD**, abra a pasta `infra` e execute um comando por vez:
 
 ```cmd
 cd /d C:\var\www\infra
 ```
 
-Testes do backend:
+### Backend
+
+Testes:
 
 ```cmd
 docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan test --env=testing
 ```
 
-Formatação PHP:
+Conferir formatação PHP:
 
 ```cmd
 docker compose exec -T -w /var/www/my-framework/backend php-fpm php vendor/bin/pint --test
 ```
 
-Testes do bootstrap (execute dentro da pasta `infra`):
+### Bootstrap
 
 ```cmd
 docker run --rm --workdir /var/www/infra --mount type=bind,source=..,target=/var/www --entrypoint node my-framework-bootstrap:0.1.0 --test /var/www/my-framework/scripts/bootstrap/tests/contracts.test.mjs /var/www/my-framework/scripts/bootstrap/tests/orchestration.test.mjs
 ```
 
-Testes da PWA, na pasta infra:
+### PWA
 
 ```cmd
 docker compose --profile dev run --rm --no-deps my-framework-node npm test
 ```
 
-Testes e build do admin:
+### Admin — testes e build
 
 ```cmd
 docker compose --profile dev run --rm --no-deps my-framework-admin-node npm run check
 ```
 
-Website — build e testes SSR:
+### Website — build e testes SSR
 
 ```cmd
 docker compose --profile website run --rm --no-deps my-framework-website-node npm run check
 ```
-
-Após esse build, repita o bootstrap para ativar e conferir o website.
-
-Esperado: todos os testes passando e nenhuma falha de formatação.
 
 ## app:sync
 
