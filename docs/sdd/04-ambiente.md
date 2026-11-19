@@ -69,7 +69,7 @@ Serviço `<slug>-website-node`, perfil `website`, `node:22-bookworm-slim` atuali
 
 Bootstrap exige integração Compose/Nginx, instala via lockfile e compila Nuxt. Website inativo/desatualizado é iniciado/recriado automaticamente na mesma execução, preservando a identidade Compose e os volumes. Só esse serviço é alvo de up --no-deps --no-build --force-recreate; PHP, Nginx, MySQL e demais serviços não são reiniciados. Falha de ativação/HTTP encerra com código 1. O bootstrap aguarda HTML SSR/buildId/no-store pelo Nginx (HTTPS público validado em produção); versão já acessível não sofre reinício. Configuração Compose/Nginx ausente continua pendência manual com código 2. Artefatos e releases são gerados por ambiente e não entram no Git/pacote. Após `nuxt.cmd build`, repetir bootstrap para ativar/conferir; o dev usa HMR.
 
-A versão deste ciclo é preliminar; `completeFoundation=false` enquanto faltarem as etapas do website. Código 0 verifica os contratos entregues, não declara a loja ou autenticação integrada prontas.
+A versão deste ciclo é preliminar; `completeFoundation=false` enquanto faltarem as etapas do website. Código 0 verifica os contratos entregues; não homologa a loja, navegador ou produção.
 
 Desenvolvimento do website: watchers Nuxt/Vite usam polling de 300 ms para detectar edições no host Windows com Docker Desktop. Vite ignora releases e saídas geradas; fs.allow continua restrito ao website. Mudanças nessa configuração exigem reiniciar somente nuxt.cmd dev.
 
@@ -79,4 +79,10 @@ Website inclui IMask 7.6.1, JustValidate 4.3.0 e VueUse 15.0.0 no próprio manif
 
 `CLIENT_SESSION_DOMAIN` opcional no central: vazio deriva o ancestral comum validado pela PSL. Local: meu-projeto.localhost e website.meu-projeto.localhost compartilham meu-projeto.localhost. Produção: https://app.exemplo.com.br e https://exemplo.com.br compartilham exemplo.com.br; configurar as URLs explicitamente. Domínios não relacionados/sufixos públicos são bloqueados antes de escrever ambientes. HTTPS obrigatório em produção e cookies Secure; SameSite=Lax, sessão HttpOnly e CSRF legível pelo cliente. Não compartilhar com subdomínios não confiáveis.
 
-Atualização exige reconstruir a imagem do executor (tldts 6.1.86 adicionado ao runtime fixado), executar o bootstrap e aceitar o novo build PWA. Não altera banco/contas; clientes entram novamente por mudança do nome do cookie. A sessão administrativa conserva nome/escopo. Não editar derivados. O bootstrap faz até 30 verificações do website com intervalo de 1s e timeout HTTP individual de 5s, cobrindo a validade de 10s do DNS Nginx, sem reiniciar outros serviços. Cold start PHP-FPM/healthcheck compartilhado continua fora desta alteração.
+Atualização exige reconstruir a imagem do executor (tldts 6.1.86 adicionado ao runtime fixado), executar o bootstrap e aceitar o novo build PWA. Não altera banco/contas; clientes entram novamente por mudança do nome do cookie. A sessão administrativa conserva nome/escopo. Não editar derivados. O bootstrap faz até 30 verificações do website com intervalo de 1s e timeout HTTP individual de 7s, cobrindo a validade de 10s do DNS Nginx, sem reiniciar outros serviços. Cold start PHP-FPM/healthcheck compartilhado continua fora desta alteração.
+
+## Conteúdo dinâmico
+
+Atualização: executar bootstrap para aplicar migration e publicar website; não há novo campo central, dependência, volume, serviço ou mudança de Nginx. Imagem do executor não mudou. website_demo_content começa vazia e não altera bancos/contas existentes além da nova tabela. O comando website:content é executado no PHP-FPM e mantém apenas o exemplo público; --clear não apaga a tabela nem dados de outras áreas.
+
+Bootstrap confere HTML SSR/buildId/no-store e o JSON de /_content (HTTP 200, recurso válido ou vazio, sem Set-Cookie). A consulta não depende de sessão. Verificador usa timeout individual de 7s; status/erro não divulga resposta ou credenciais. Sessão, recuperação e cache privado mantêm os contratos anteriores. Conteúdo comercial, editor no admin e cache público com invalidação ficam para o produto.

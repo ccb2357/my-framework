@@ -15,4 +15,4 @@ Toda sprint atualiza README, SDD pertinente, manual conciso e MEMORY. Catálogo,
 
 ## Estado
 
-Sprints 1 e 2 validadas pelo responsável no Windows. Sprint 3 implementada: cadastro/login/logout/recuperação e conta SSR, sessão integrada website/PWA, admin isolado; aceite Windows pendente. Sprints 4–6 pendentes. Evidências e limites em MEMORY.md.
+Sprints 1–3 validadas pelo responsável no Windows, incluindo sessão nos dois sentidos, recuperação por e-mail e isolamento administrativo. Sprint 4 implementada: conteúdo público Laravel/MySQL, SSR e atualização sem build, estados de leitura e cache restrito; aceite Windows/MySQL pendente. Sprints 5–6 pendentes. Evidências e limites em MEMORY.md.

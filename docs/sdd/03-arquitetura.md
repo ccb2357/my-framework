@@ -10,9 +10,9 @@ Rotas HTTP do backend:
 | --- | --- |
 | `backend/routes/pwa.php` | APIs de autenticação e demais rotas da PWA. |
 | `backend/routes/admin.php` | Rotas administrativas, com sessão e CSRF próprios. |
-| `backend/routes/website.php` | Rotas do site institucional e do e-commerce, com o grupo web (sessão e CSRF). |
+| `backend/routes/website.php` | GET público demonstrativo do website, sem sessão; endpoints do produto devem declarar seu pipeline próprio. |
 
-`bootstrap/app.php` registra os três arquivos. `website.php` começa vazio; páginas, catálogo, checkout e demais recursos pertencem ao produto. Evitar caminhos duplicados entre os arquivos; separar arquivos não cria domínio, interface ou autorização automaticamente. APIs protegidas de clientes usam ClientSession; administrativas, AdminSession.
+`bootstrap/app.php` registra os três arquivos. `website.php` registra o conteúdo público demonstrativo; páginas Nuxt, catálogo, checkout e demais recursos pertencem ao produto. Evitar caminhos duplicados entre os arquivos; separar arquivos não cria domínio, interface ou autorização automaticamente. APIs protegidas de clientes usam ClientSession; administrativas, AdminSession.
 
 | Área | Responsabilidade |
 | --- | --- |
@@ -67,7 +67,7 @@ Reset não cria sessão; altera somente a senha/hash, remember_token e auth_vers
 
 ## Website SSR
 
-`website/` é uma terceira aplicação Nuxt, com dependências/lockfile próprios. Nuxt Router atende páginas públicas, enquanto `backend/routes/website.php` permanece reservado a futuros endpoints Laravel; não renderiza as páginas Nuxt. Nginx encaminha `/` ao `<slug>-website-node:3000` e rotas técnicas ao PHP-FPM; resolver Docker dinâmico evita exigir que o website esteja ativo ao carregar o Nginx.
+`website/` é uma terceira aplicação Nuxt, com dependências/lockfile próprios. Nuxt Router atende páginas públicas, enquanto `backend/routes/website.php` fornece a leitura pública demonstrativa e permite endpoints Laravel do produto; não renderiza as páginas Nuxt. Nginx encaminha `/` ao `<slug>-website-node:3000` e rotas técnicas ao PHP-FPM; resolver Docker dinâmico evita exigir que o website esteja ativo ao carregar o Nginx.
 
 Bootstrap gera configuração pública permitida: nome, slug, locale, URLs públicas e buildId. Nuxt nunca recebe `.env.foundation`, credenciais ou diretórios do backend. Build `node-server` cria release em `.releases/`, publica um ponteiro apenas após sucesso e conserva as anteriores. O runtime carrega uma release fixa ao iniciar; o bootstrap confere o build pelo Nginx e inicia/recria exclusivamente o website quando necessário, com --no-deps e sem build de imagens. A ativação preserva projeto/arquivos Compose e resolve seus binds no host por um override de volumes via stdin, sem arquivo Compose adicional. HTTP é consultado com espera limitada antes do sucesso. Rollback automático/limpeza de releases não implementados.
 
@@ -82,3 +82,15 @@ Nuxt mantém estado por requisição via useState/useNuxtApp, nunca singleton de
 Bootstrap gera website/.foundation.server.json com whitelist técnica (alvo interno, host público, porta dev e nome do cookie), incorporada em runtimeConfig privado; nunca serializada ao navegador. Não contém central privado, APP_KEY ou credenciais e não é distribuída. Mudanças nessa configuração afetam o hash de build. Configuração pública permanece sem proxy/segredos.
 
 Website: `app/forms/demo.js` injeta suas próprias IMask/JustValidate no bindContactForm comum. Imports dessas bibliotecas e vínculo ao DOM ocorrem após onMounted; desmontagem durante o carregamento cancela a inicialização e remove listeners/máscara/validador já criados. Não mover layout/CSS/componentes para shared. SSR entrega campos/labels sem executar validação; Vue e IMask mantêm o celular formatado após mudanças reativas. O formulário demonstra validação local e não substitui validação Laravel de futuros endpoints.
+
+## Conteúdo público dinâmico
+
+WebsiteContent lê somente id=1 de website_demo_content e seleciona title/body/updated_at. Migration cria a tabela vazia; sem seeder ou alteração de contas. website:content valida título (1–160 caracteres) e corpo (1–2000), publica por upsert e atualiza updated_at; --clear remove somente esse registro. Comandos não compilam nem reiniciam serviços. Não há escrita HTTP pública ou editor comercial nesta etapa.
+
+GET /api/v1/website/content pertence a routes/website.php, registrado separadamente em bootstrap/app.php com WebsitePublicContext, sem web/StartSession/Sanctum stateful. Admite somente o host configurado do website e valida Origin, se houver; não lê identidade, não emite cookies e retorna apenas o recurso público. Falha MySQL retorna 503 controlado, não conteúdo vazio. Endpoints privados futuros precisam do contexto completo de sessão/autorização de clientes ou admin; nunca reutilizar esse pipeline anônimo.
+
+Nuxt GET /_content consulta o endpoint fixo via transporte Node HTTP/Host configurado. Não encaminha cookies, Authorization, destino do usuário ou Set-Cookie. Valida envelope, tipos, limites e timestamp; remove propriedades extras. Erros HTTP/HTML/JSON/timeout não entram na página como dados. Alvo técnico continua no runtimeConfig privado existente.
+
+DynamicContent usa useFetch com SSR, no-store, credentials=omit, retry=0, timeout e whitelist transform. getCachedData reutiliza somente o payload durante hidratação; navegações/atualizações fazem nova consulta. Sem prerender, cache Nitro, memoização global ou cache HTTP para esse fluxo. O bridge é anônimo e não mistura dados de cliente/admin. /_session e /conta mantêm sua proteção e no-store. O payload público não é um repositório de dados privados.
+
+SSR recebe o estado atual do MySQL a cada nova requisição; aba já aberta se atualiza por botão, navegação ou retorno do foco/conexão. Dados mudam sem build; código e configuração compilada continuam no processo de publicação. Bootstrap exige o build SSR correto e GET /_content válido; falha de conteúdo impede anunciar sucesso.

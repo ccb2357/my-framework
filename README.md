@@ -15,13 +15,14 @@ Base reutilizável para construir PWAs com **Framework7 Vue, admin shadcn-vue, w
 
 **[Instalação e operação](instalacao-pwa-framework.md)** · **[Especificação técnica](docs/sdd/00-visao.md)** · **[Regras de desenvolvimento](RULES.md)**
 
-Versão: **1.1.0-website.3**. Website SSR, formulários e autenticação integrada à PWA; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
+Versão: **1.1.0-website.4**. Website SSR, conteúdo dinâmico e autenticação integrada à PWA; evolução em [sprints-website.md](sprints-website.md). Evidências em [MEMORY.md](MEMORY.md).
 
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?style=for-the-badge&logo=nuxt&logoColor=white)](https://nuxt.com/)
 
 ## Recursos
 
 - **Website independente:** Nuxt SSR em `website/`, Tailwind/shadcn-vue e Lucide próprios; serviço Node permanente, sem PWA. Hello pública, formulários, cadastro/login/logout, recuperação e Minha conta; sem regras de loja.
+- **Conteúdo dinâmico:** exemplo público Laravel/MySQL renderizado em SSR, atualizado na consulta seguinte sem build, com estados de carregamento/erro e sem cache de sessão.
 - **Admin independente:** Vue/shadcn-vue/Tailwind em `admin/`, subdomínio e build próprios; sem misturar componentes ou estilos com a PWA.
 
 - **Bootstrap Docker:** verifica infraestrutura, configura ambientes, instala pelos lockfiles, prepara bancos, aplica migrations, publica os builds PWA/admin e compila/ativa o website automaticamente.
@@ -190,5 +191,5 @@ Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, reten�
 | Admin dev / preview | 5182 / 5183 |
 | Website | http://website.pwa-framework.localhost |
 | Website dev | 5184 |
-| Fundação | 1.1.0-website.3 |
+| Fundação | 1.1.0-website.4 |
 <!-- END FOUNDATION IDENTITY -->

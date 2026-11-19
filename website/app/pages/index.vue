@@ -12,5 +12,6 @@ useSeoMeta({ title: () => `Hello Website · ${config.name}`, description: 'Base 
     <p class="mt-4 max-w-2xl leading-7 text-muted-foreground">Uma base para construir seu site institucional e sua loja.</p>
     <div class="mt-7"><Button as="a" :href="config.pwaUrl"><SiteIcon class="size-4" />Abrir aplicativo</Button></div>
   </section>
+  <DynamicContent />
   <DemoForm />
 </template>

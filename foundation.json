@@ -1,6 +1,6 @@
 {
-  "foundationVersion": "1.1.0-website.3",
-  "stage": "website-client-auth",
+  "foundationVersion": "1.1.0-website.4",
+  "stage": "website-dynamic-content",
   "completeFoundation": false,
   "skeleton": {
     "package": "laravel/laravel",
@@ -92,11 +92,17 @@
     "node": ">=22.22.3 <23",
     "ssr": true,
     "pwa": false,
-    "authentication": "pending",
+    "authentication": "shared-client-session",
     "image": "node:22-bookworm-slim",
     "imask": "7.6.1",
     "just-validate": "4.3.0",
     "@vueuse/core": "15.0.0",
-    "sharedForms": true
+    "sharedForms": true,
+    "dynamicContent": {
+      "storage": "MySQL",
+      "endpoint": "/api/v1/website/content",
+      "bridge": "/_content",
+      "cache": "no-store"
+    }
   }
 }

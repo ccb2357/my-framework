@@ -154,7 +154,7 @@ test('initialized flow preserves keys and skips unchanged dependencies on reexec
     const runs = data.calls.filter(a => a[0] === 'run' && (a.includes('build') || a.includes('ci')));
     assert.ok(runs.every(a => a.some(x => x.includes('target=/shared,readonly'))));
     assert.ok(data.calls.some(a => a[0] === 'run' && a.includes('--publish') && a.includes('infra_network')));
-    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '1.1.0-website.3'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
+    const state = JSON.parse(await fs.readFile(f.root + '/.foundation-state.json', 'utf8')); assert.equal(state.completeFoundation, false); assert.equal(state.release, '1.1.0-website.4'); assert.deepEqual(state.pending, []); assert.equal(state.manualChecks.length, 3); assert.equal(state.phase, 'interfaces-ready'); assert.equal(state.frontendBuild, '0.4.0-fixture'); assert.equal(data.builds, 2);
     assert.equal(data.websiteActivations, 1);
     assert.ok(data.calls.filter(a => a[0] === 'compose' && ['up', 'run', 'down'].some(x => a.includes(x))).every(a => a.includes('up') && a.includes('--no-deps') && a.includes('--no-build') && a.at(-1) === 'product-a-website-node'));
     assert.ok(data.websiteActivationInputs.every(x => Object.keys(x.services).join() === 'product-a-website-node'));

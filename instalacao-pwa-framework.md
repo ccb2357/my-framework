@@ -374,7 +374,7 @@ nuxt.cmd dev
 
 **Desenvolvimento:** [http://localhost:5184](http://localhost:5184) (`WEBSITE_DEV_PORT`); alterações aparecem ao salvar. Mantenha o terminal aberto; encerre com **Ctrl+C**.
 
-**Domínio do website:** mostra o build publicado e não muda ao salvar. Para atualizá-lo, repita o bootstrap da etapa 5; ele recompila e ativa a nova versão.
+**Domínio do website:** alterações no código Vue/JS/CSS dependem do build publicado. Dados consultados no Laravel atualizam sem build. Para atualizá-lo, repita o bootstrap da etapa 5; ele recompila e ativa a nova versão.
 
 Build manual (opcional):
 
@@ -385,6 +385,20 @@ nuxt.cmd build
 ### Atualizar o website com formulários
 
 Acrescente o bind `shared` ao serviço website, se ausente, conforme a etapa 2.1 e repita o bootstrap da etapa 5. Na Hello, teste **Validar formulário** vazio e depois com e-mail/celular válidos; nenhum dado é enviado ou salvo.
+
+### Conteúdo dinâmico do website
+
+Após o bootstrap, execute na pasta infra:
+
+```cmd
+docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan website:content "Conteudo publicado" --body="Texto vindo do Laravel."
+```
+
+Na Hello do website, clique **Atualizar conteúdo** ou recarregue. Altere os textos no comando e repita: o resultado muda sem build. Para remover somente o exemplo:
+
+```cmd
+docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan website:content --clear
+```
 
 ### Mensagens e máscaras
 

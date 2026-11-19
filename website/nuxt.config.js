@@ -26,6 +26,6 @@ export default defineNuxtConfig({
       watch: { usePolling: true, interval: 300, ignored: ['**/.releases/**', '**/.nuxt/**', '**/.output/**'] },
     },
   },
-  routeRules: { '/**': { headers: { 'cache-control': 'no-store' } } },
+  routeRules: { '/**': { cache: false, headers: { 'cache-control': 'no-store' } } },
   telemetry: false,
 });

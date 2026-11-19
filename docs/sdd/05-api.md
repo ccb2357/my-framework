@@ -58,6 +58,15 @@ SMTP vazio desabilita envio; nenhuma recuperação usa transporte log ou grava t
 
 ## Website
 
-O website usa os mesmos contratos /api/v1/auth e /sanctum/csrf-cookie da PWA, sem duplicar contas, brokers ou quotas. Administração continua proibida nesses hosts. `/api`, `/sanctum`, `/up` e `/status` permanecem no Laravel; routes/website.php reserva APIs específicas do produto e não substitui páginas Nuxt.
+O website usa os mesmos contratos /api/v1/auth e /sanctum/csrf-cookie da PWA, sem duplicar contas, brokers ou quotas. Administração continua proibida nesses hosts. `/api`, `/sanctum`, `/up` e `/status` permanecem no Laravel; routes/website.php fornece o conteúdo público demonstrativo e permite APIs específicas do produto; não substitui páginas Nuxt.
 
 GET /_session pertence ao Nuxt: 200 com user {id,name,email}, 401 sem cookie/sessão, 503 quando Laravel/contrato não puder ser confirmado; no-store/private. Não aceita destino, bearer token ou parâmetros de identidade, não encaminha cookie administrativo e não devolve Set-Cookie. Não é uma segunda sessão nem API de negócio. Demais endpoints de autenticação continuam autorizando e validando exclusivamente no Laravel.
+
+### Conteúdo público do website
+
+| Método/rota | Contrato |
+| --- | --- |
+| GET /api/v1/website/content | Laravel; somente no host website. 200 com data null (vazio) ou data {title,body,updatedAt}; falha de banco 503 genérico. Sem sessão/cookie. |
+| GET /_content | Nuxt; mesmo recurso público validado. 503 para transporte/contrato inválido; 429 se o upstream limitar as leituras. Sem encaminhar credenciais ou Set-Cookie. |
+
+Ambos usam no-store. title: texto não vazio, até 160 caracteres; body: texto não vazio, até 2000; updatedAt: ISO 8601 UTC, formato YYYY-MM-DDTHH:mm:ssZ. HTML inserido no texto é exibido de forma escapada. Nenhum campo de conta, segredo ou dado administrativo participa do recurso. Leitura no host PWA/admin ou Origin proibido retorna 403; mutações HTTP não existem (405). --clear e alterações ocorrem somente pelo comando website:content, sem build, preservando outros registros.

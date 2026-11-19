@@ -16,9 +16,16 @@ test('production server renders Hello, styles and icons without JavaScript and h
   await new Promise(resolve => listener.listen(0, '127.0.0.1', resolve));
   const port = listener.address().port;
   await new Promise(resolve => listener.close(resolve));
+  const pointer = fs.readFileSync(new URL('../.foundation-build.json', import.meta.url), 'utf8');
+  let content = { title: 'First public title', body: 'First public body', updatedAt: '2026-11-19T12:00:00Z' }, contentFailure = false;
   const backend = http.createServer((req, res) => {
     assert.equal(req.headers.host, 'website.example.test');
     res.setHeader('content-type', 'application/json');
+    if (req.url === '/api/v1/website/content') {
+      assert.equal(req.headers.cookie, undefined); assert.equal(req.headers.authorization, undefined);
+      res.statusCode = contentFailure ? 503 : 200;
+      return res.end(JSON.stringify(contentFailure ? {message:'PRIVATE-BACKEND-ERROR'} : {data:content}));
+    }
     const name = req.headers.cookie === 'fixture_client=signed-a' ? 'Client A' : req.headers.cookie === 'fixture_client=signed-b' ? 'Client B' : null;
     res.statusCode = name ? 200 : 401;
     res.end(JSON.stringify(name ? { user: { id: 1, name, email: 'client@example.test' } } : {message:'expired'}));
@@ -44,6 +51,8 @@ test('production server renders Hello, styles and icons without JavaScript and h
     assert.doesNotMatch(html, /document is not defined|window is not defined/);
     assert.match(html, /<svg[^>]*[\s\S]*<circle/);
     assert.ok(html.includes(buildId));
+    assert.ok(html.includes('First public title'));
+    assert.ok(html.includes('First public body'));
     assert.ok(html.includes(config.pwaUrl));
     assert.doesNotMatch(html, /serviceWorker|rel="manifest"|DB_PASSWORD|SMTP_PASS/);
     for (const route of ['/entrar/', '/cadastro/', '/esqueci-senha/', '/redefinir-senha/']) {
@@ -51,6 +60,16 @@ test('production server renders Hello, styles and icons without JavaScript and h
       assert.equal(page.status, 200);
       assert.match(await page.text(), /<fieldset[^>]*disabled/);
     }
+    content = {...content, title: 'Second public title'};
+    const changed = await fetch(`http://127.0.0.1:${port}/`, {headers:{Cookie:'fixture_client=signed-a; fixture_admin=PRIVATE'}});
+    const changedHtml = await changed.text(); assert.ok(changedHtml.includes('Second public title')); assert.ok(!changedHtml.includes('First public title')); assert.ok(!changedHtml.includes('Client A'));
+    const publicJson = await fetch(`http://127.0.0.1:${port}/_content`); assert.match(publicJson.headers.get('cache-control'), /no-store/); assert.equal(publicJson.headers.get('set-cookie'), null); assert.equal((await publicJson.json()).data.title, 'Second public title');
+    contentFailure = true;
+    const failedHtml = await (await fetch(`http://127.0.0.1:${port}/`)).text(); assert.ok(failedHtml.includes('Não foi possível carregar')); assert.ok(!failedHtml.includes('Second public title')); assert.ok(!failedHtml.includes('PRIVATE-BACKEND-ERROR'));
+    assert.equal((await fetch(`http://127.0.0.1:${port}/_content`)).status, 503);
+    contentFailure = false; content = null;
+    const empty = await (await fetch(`http://127.0.0.1:${port}/`)).text(); assert.ok(empty.includes('Nenhum conteúdo publicado.'));
+    assert.equal(fs.readFileSync(new URL('../.foundation-build.json', import.meta.url), 'utf8'), pointer);
     const account = () => fetch(`http://127.0.0.1:${port}/conta/`, { redirect: 'manual' });
     assert.equal((await account()).status, 302);
     for (const [cookie, name, absent] of [['signed-a', 'Client A', 'Client B'], ['signed-b', 'Client B', 'Client A']]) {
