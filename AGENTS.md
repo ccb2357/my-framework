@@ -1,37 +1,118 @@
 # My Framework — instruções de trabalho
 
+## Objetivo e fontes
+
 Construir uma fundação reutilizável; o checkout de referência é my-framework. Ler [RULES.md](RULES.md), [MEMORY.md](MEMORY.md) e os documentos pertinentes em [docs/sdd/](docs/sdd/), antes de alterar código. O [README.md](README.md) contém o contrato da fundação.
 
 **REGRA OBRIGATÓRIA — NÃO ADIVINHAR O FUNCIONAMENTO DA STACK. Ao menor sinal de dúvida sobre qualquer ferramenta, SEMPRE consultar sua documentação oficial antes de escrever código ou responder.**
 
-Stack: Framework7 Vue 9.2.0, Vue 3.5.45, JavaScript com script setup, Vite 8.3.4, Laravel 12.70.0/PHP 8.2, MySQL 8 e Docker compartilhado. Sem React ou TypeScript. A PWA usa o roteador Framework7; o admin tem entrada independente. Branch master.
+## Stack e linguagem
 
-Toda tela e todo componente devem seguir o design system em [02-design-system.md](docs/sdd/02-design-system.md). Usar controles oficiais e criar componentes próprios somente por necessidade real. Hello nativa está autorizada; novas telas de negócio e mudanças visuais globais exigem aprovação.
+- Stack: Framework7 Vue 9.2.0, Vue 3.5.45, JavaScript com script setup, Vite 8.3.4, Laravel 12.70.0/PHP 8.2, MySQL 8 e Docker compartilhado.
+- Sem React ou TypeScript.
+- A PWA usa o roteador Framework7; o admin tem entrada independente.
+- Branch master.
 
-Instalação, comandos e trechos de infraestrutura: [instalacao-my-framework.md](instalacao-my-framework.md). Contrato técnico do ambiente: [04-ambiente.md](docs/sdd/04-ambiente.md). Não instalar Node/npm no Windows. Não criar outro Compose. Preparar trechos para aplicação manual, sem alterar infraestrutura compartilhada automaticamente. Ao assumir ou retomar uma análise de infraestrutura, pedir ao responsável os arquivos atuais de Compose, Dockerfile PHP-FPM, Nginx e php.ini necessários à tarefa. O histórico e o SDD não comprovam o conteúdo atual. Não manter cópias desses arquivos no projeto; reutilizar apenas arquivos atuais já fornecidos na mesma sessão, enquanto não houver indicação de mudança.
+## Infraestrutura compartilhada
 
-Executor temporário por docker run --rm, imagem construída com docker build; sem serviço de bootstrap no Compose e sem novos atalhos de bootstrap no host. Clones recebem código pronto e executam o bootstrap Node/Docker a partir do arquivo central; não repetem sprints. Não criar usuários MySQL, senhas ou grants. Preservar APP_KEY, dados, volumes e personalizações. Nunca registrar segredos ou copiar credenciais dos arquivos enviados.
+- Instalação, comandos e trechos de infraestrutura: [instalacao-my-framework.md](instalacao-my-framework.md).
+- Contrato técnico do ambiente: [04-ambiente.md](docs/sdd/04-ambiente.md).
+- Não instalar Node/npm no Windows.
+- Não criar outro Compose.
+- Preparar trechos para aplicação manual, sem alterar infraestrutura compartilhada automaticamente.
+- Ao assumir ou retomar uma análise de infraestrutura, pedir ao responsável os arquivos atuais de Compose, Dockerfile PHP-FPM, Nginx e php.ini necessários à tarefa.
+- O histórico e o SDD não comprovam o conteúdo atual.
+- Não manter cópias desses arquivos no projeto; reutilizar apenas arquivos atuais já fornecidos na mesma sessão, enquanto não houver indicação de mudança.
 
-Atualizar a especificação responsável e MEMORY.md em cada entrega relevante. SDD descreve o sistema, MEMORY registra estado/evidências e próximo passo. Distinguir entregue, instalado e validado. Não declarar funcionamento no Windows ou VPS sem evidência real.
+## Bootstrap, dados e segurança
 
-PWA em pwa/: grid/CSS Framework7 + tokens compartilhados; main.js/App.vue/rotas F7, sem Tailwind nem estilos do admin. O bootstrap gera pwa/.foundation.public.json com whitelist e instala npm pelo lockfile no volume node_modules. Não ler o central privado no Vite. PWA/worker injectManifest; autenticações seguem os contratos do SDD.
+- Executor temporário por docker run --rm, imagem construída com docker build; sem serviço de bootstrap no Compose e sem novos atalhos de bootstrap no host.
+- Clones recebem código pronto e executam o bootstrap Node/Docker a partir do arquivo central; não repetem sprints.
+- Não criar usuários MySQL, senhas ou grants.
+- Preservar APP_KEY, dados, volumes e personalizações.
+- Nunca registrar segredos ou copiar credenciais dos arquivos enviados.
 
-Consistência: usar classes app-content/app-heading/app-note/app-actions e tokens existentes antes de criar CSS local. Conferir label/input, nomes acessíveis, foco visível, disabled/loading, mensagens e teclado (inclusive FAB). Não substituir controles oficiais por wrappers. Aceite visual e de teclado depende de navegador real; registrar separadamente simulações.
+- Bootstrap autorizado a iniciar/recriar exclusivamente o serviço website já declarado/validado no Compose, depois de compilar e apenas quando o HTTP não mostrar o build esperado.
+- Preservar identidade Compose, binds do host e volumes; usar --no-deps, sem build de imagens, sem alterar PHP/Nginx/MySQL ou subir perfis inteiros.
+- Conferir HTTP com espera limitada antes de anunciar sucesso.
+- Configuração da infraestrutura continua manual.
 
-Regra visual aprovada: inputs, selects e textareas sem outline retangular de foco. Usar a regra global de app.css e o estado próprio do Framework7; não reintroduzir anéis/contornos nesses campos em CSS local ou compartilhado.
+## Documentação e estado do trabalho
 
-PWA: usar somente src/sw.js e virtual:pwa-register. Não cachear API/sessão/CSRF/diagnósticos nem recarregar formulário alterado por atualização automática. Novos formulários integram draftGuard explicitamente. Build usa staging/publicação validada; preservar assets antigos até política de limpeza. Comandos e aplicação manual do Nginx no guia; não confundir testes simulados com instalação real.
+- Atualizar a especificação responsável e MEMORY.md em cada entrega relevante.
+- SDD descreve o sistema, MEMORY registra estado/evidências e próximo passo.
+- Distinguir entregue, instalado e validado.
+- Não declarar funcionamento no Windows ou VPS sem evidência real.
 
-Admin obrigatório em admin/: Vue + shadcn-vue + Tailwind, JavaScript, componentes locais oficiais em src/components/ui e build/dependências próprios. NUNCA misturar Framework7 e shadcn-vue na mesma tela ou bundle. Não importar CSS/componentes entre admin/ e pwa/. Admin não tem manifest, worker, offline. O mesmo Laravel/MySQL atende ambos por blocos Nginx separados. PWA tem cadastro/login/logout de clientes; admin usa Administrator/guard admin, conta única criada por admin:create e Dashboard protegida, com sessão/CSRF próprios. Um administrador por comando, sem cadastro público, e clientes com cadastro público sem confirmação de e-mail. Recuperação por SMTP central, brokers/tabelas separados, token de uso único/60 minutos, sem login automático. Nunca registrar link, token ou credenciais SMTP; após reset invalidar sessões apenas da conta/área afetada.
+- Documentação por ambiente: bootstrap nunca escreve README.md ou instalacao-my-framework.md versionados.
+- Gera somente .foundation-installation.md ignorado, derivado do manual e da configuração; não distribuir esse arquivo nem tratar como nova fonte editorial.
 
-Validação: instalação do zero pelo guia e testes correspondentes. Não confundir mocks/DOM com navegador, Engine, aparelho ou produção. Registrar separadamente código entregue e instalação real.
+## Design system e acessibilidade
 
-Formulários: shared/forms/ concentra mensagens pt-BR JSON, máscaras, regras e integração DOM neutra, sem CSS nem import de framework visual. Cada aplicação declara/injeta suas próprias bibliotecas; não resolver dependências pelo node_modules da outra interface. O mount /shared é somente leitura nos três Nodes e no executor temporário. Manter fs.allow restrito à aplicação e shared, incluir as fontes compartilhadas no hash do build e usar adaptadores locais para apresentação. IMask não fornece mensagens de erro; Laravel continua validando no servidor. Novas dependências npm com versão exata e lockfile coerente; não atualizar automaticamente versões já aprovadas.
+- Toda tela e todo componente devem seguir o design system em [02-design-system.md](docs/sdd/02-design-system.md).
+- Usar controles oficiais e criar componentes próprios somente por necessidade real.
+- Hello nativa está autorizada; novas telas de negócio e mudanças visuais globais exigem aprovação.
 
-Website autorizado em website/: Nuxt SSR + Tailwind + shadcn-vue JavaScript e Lucide, dependências/componentes/CSS próprios, sem Framework7 nem recursos PWA. Serviço Node permanente atrás do Nginx. Configuração somente por whitelist gerada pelo bootstrap; nunca ler o central privado no Nuxt. Não alterar domínios/sessões existentes automaticamente. Formulários das três interfaces reutilizam shared/forms com dependências próprias. Bibliotecas DOM do website inicializam somente após onMounted e são descartadas ao desmontar. Website/PWA compartilham sessão de cliente e broker de recuperação, mantendo admin isolado; cookie e CSRF próprios, whitelist de hosts/origens e verificação SSR sem cache privado.
+- Consistência: usar classes app-content/app-heading/app-note/app-actions e tokens existentes antes de criar CSS local.
+- Conferir label/input, nomes acessíveis, foco visível, disabled/loading, mensagens e teclado (inclusive FAB).
+- Não substituir controles oficiais por wrappers.
+- Aceite visual e de teclado depende de navegador real; registrar separadamente simulações.
 
-Bootstrap autorizado a iniciar/recriar exclusivamente o serviço website já declarado/validado no Compose, depois de compilar e apenas quando o HTTP não mostrar o build esperado. Preservar identidade Compose, binds do host e volumes; usar --no-deps, sem build de imagens, sem alterar PHP/Nginx/MySQL ou subir perfis inteiros. Conferir HTTP com espera limitada antes de anunciar sucesso. Configuração da infraestrutura continua manual.
+- Regra visual aprovada: inputs, selects e textareas sem outline retangular de foco.
+- Usar a regra global de app.css e o estado próprio do Framework7; não reintroduzir anéis/contornos nesses campos em CSS local ou compartilhado.
 
-Conteúdo público do website: endpoint explícito e anônimo em routes/website.php/WebsitePublicContext, sem sessão/cookies. Bridge Nuxt encaminha somente a URL/Host fixos, sem credenciais ou Set-Cookie, e aplica whitelist/validação ao recurso. SSR/useFetch reutiliza apenas o payload de hidratação; manter no-store, ocultar dado anterior durante erro/carregamento e não cachear sessão/conta. O comando website:content altera somente o exemplo público, sem build. Não transformar o exemplo em catálogo/editor de negócio neste ciclo.
+## PWA
 
-Documentação por ambiente: bootstrap nunca escreve README.md ou instalacao-my-framework.md versionados. Gera somente .foundation-installation.md ignorado, derivado do manual e da configuração; não distribuir esse arquivo nem tratar como nova fonte editorial.
+- PWA em pwa/: grid/CSS Framework7 + tokens compartilhados; main.js/App.vue/rotas F7, sem Tailwind nem estilos do admin.
+- O bootstrap gera pwa/.foundation.public.json com whitelist e instala npm pelo lockfile no volume node_modules.
+- Não ler o central privado no Vite.
+- PWA/worker injectManifest; autenticações seguem os contratos do SDD.
+
+- PWA: usar somente src/sw.js e virtual:pwa-register.
+- Não cachear API/sessão/CSRF/diagnósticos nem recarregar formulário alterado por atualização automática.
+- Novos formulários integram draftGuard explicitamente.
+- Build usa staging/publicação validada; preservar assets antigos até política de limpeza.
+- Comandos e aplicação manual do Nginx no guia; não confundir testes simulados com instalação real.
+
+## Admin
+
+- Admin obrigatório em admin/: Vue + shadcn-vue + Tailwind, JavaScript, componentes locais oficiais em src/components/ui e build/dependências próprios.
+- NUNCA misturar Framework7 e shadcn-vue na mesma tela ou bundle.
+- Não importar CSS/componentes entre admin/ e pwa/.
+- Admin não tem manifest, worker, offline.
+- O mesmo Laravel/MySQL atende ambos por blocos Nginx separados.
+- PWA tem cadastro/login/logout de clientes; admin usa Administrator/guard admin, conta única criada por admin:create e Dashboard protegida, com sessão/CSRF próprios.
+- Um administrador por comando, sem cadastro público, e clientes com cadastro público sem confirmação de e-mail.
+- Recuperação por SMTP central, brokers/tabelas separados, token de uso único/60 minutos, sem login automático.
+- Nunca registrar link, token ou credenciais SMTP; após reset invalidar sessões apenas da conta/área afetada.
+
+## Website e conteúdo público
+
+- Website autorizado em website/: Nuxt SSR + Tailwind + shadcn-vue JavaScript e Lucide, dependências/componentes/CSS próprios, sem Framework7 nem recursos PWA.
+- Serviço Node permanente atrás do Nginx.
+- Configuração somente por whitelist gerada pelo bootstrap; nunca ler o central privado no Nuxt.
+- Não alterar domínios/sessões existentes automaticamente.
+- Formulários das três interfaces reutilizam shared/forms com dependências próprias.
+- Bibliotecas DOM do website inicializam somente após onMounted e são descartadas ao desmontar.
+- Website/PWA compartilham sessão de cliente e broker de recuperação, mantendo admin isolado; cookie e CSRF próprios, whitelist de hosts/origens e verificação SSR sem cache privado.
+
+- Conteúdo público do website: endpoint explícito e anônimo em routes/website.php/WebsitePublicContext, sem sessão/cookies.
+- Bridge Nuxt encaminha somente a URL/Host fixos, sem credenciais ou Set-Cookie, e aplica whitelist/validação ao recurso.
+- SSR/useFetch reutiliza apenas o payload de hidratação; manter no-store, ocultar dado anterior durante erro/carregamento e não cachear sessão/conta.
+- O comando website:content altera somente o exemplo público, sem build.
+- Não transformar o exemplo em catálogo/editor de negócio neste ciclo.
+
+## Formulários compartilhados e dependências
+
+- Formulários: shared/forms/ concentra mensagens pt-BR JSON, máscaras, regras e integração DOM neutra, sem CSS nem import de framework visual.
+- Cada aplicação declara/injeta suas próprias bibliotecas; não resolver dependências pelo node_modules da outra interface.
+- O mount /shared é somente leitura nos três Nodes e no executor temporário.
+- Manter fs.allow restrito à aplicação e shared, incluir as fontes compartilhadas no hash do build e usar adaptadores locais para apresentação.
+- IMask não fornece mensagens de erro; Laravel continua validando no servidor.
+- Novas dependências npm com versão exata e lockfile coerente; não atualizar automaticamente versões já aprovadas.
+
+## Validação e evidências
+
+- Validação: instalação do zero pelo guia e testes correspondentes.
+- Não confundir mocks/DOM com navegador, Engine, aparelho ou produção.
+- Registrar separadamente código entregue e instalação real.
