@@ -1,3 +1,4 @@
+import { progress } from './lib/progress.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { args, load, schema } from './lib/config.mjs';
@@ -20,7 +21,8 @@ try {
   try { state = JSON.parse(saved); } catch { throw new FoundationError('Estado local inválido. Preserve-o para diagnóstico; não reinicialize identidade automaticamente.'); }
   checkIdentity(state, c);
   state = { ...state, schema, identity: identity(c), release: '2.0.0', completeFoundation: false, startedAt: new Date().toISOString() };
-  console.log(`Preparação de ${c.PROJECT_SLUG} (${c.APP_ENV}).`);
+  progress.title(c.PROJECT_SLUG, c.APP_ENV);
+  progress.step("Infraestrutura e configuração");
   const d = await discover(c);
   if (state.composeProject) requireThat(state.composeProject === d.project, 'Identidade da infraestrutura Compose mudou; revisar explicitamente.');
   state.composeProject = d.project;
@@ -31,9 +33,10 @@ try {
   if (!siteApplied(nginx.stdout + nginx.stderr, c)) problems.push('Aplicar/recarregar o bloco de site gerado no Nginx.');
   if (problems.length) {
     state.phase = 'infra-pending'; state.pending = problems; await save();
-    console.log(problems.map(x => '- ' + x).join('\n'));
+    progress.info(problems.map(x => '- ' + x).join('\n'));
     throw new FoundationError('Trechos deste ambiente em .foundation-installation.md, na raiz do projeto. Manual geral: instalacao-my-framework.md. Aplique manualmente, valide/recrie somente os serviços necessários e repita o comando.', 2);
   }
+  progress.step('[1/5] Backend');
   if (c.APP_ENV === 'production') requireThat(options.force, 'Produção: migrations exigem --force explícito. Nenhuma instalação/configuração backend foi alterada.');
   state.phase = 'backend-install'; state.pending = []; await save();
   const version = (await phpExec(c, d, ['php', '-r', 'echo PHP_VERSION;'], undefined, 'Versão PHP')).stdout.trim();
@@ -50,10 +53,10 @@ try {
   const actualVendor = jsonOutput(await phpExec(c, d, ['php', '-r', "echo json_encode(['marker'=>is_file('vendor/.foundation-lock')?trim(file_get_contents('vendor/.foundation-lock')):'','metadata'=>is_file('vendor/composer/installed.json')&&is_file('vendor/autoload.php')]);"], undefined, 'Estado efetivo do volume vendor'), 'Estado vendor');
   const installed = actualVendor.marker, metadata = actualVendor.metadata;
   if (installed !== fingerprint || !metadata) {
-    console.log('Instalando dependências PHP pelo composer.lock.');
+    progress.info('Instalando dependências PHP pelo composer.lock.');
     await phpExec(c, d, ['composer', 'install', '--no-interaction', '--prefer-dist', '--no-progress', '--optimize-autoloader', ...(c.APP_ENV === 'production' ? ['--no-dev'] : [])], undefined, 'Instalação Composer');
     await phpExec(c, d, ['php', '-r', "if(file_put_contents('vendor/.foundation-lock',stream_get_contents(STDIN))===false){exit(1);}"], fingerprint + '\n', 'Marcador de dependências no volume vendor');
-  } else console.log('Dependências PHP inalteradas; instalação preservada.');
+  } else progress.info('Dependências PHP inalteradas; instalação preservada.');
   await phpExec(c, d, ['composer', 'check-platform-reqs', ...(c.APP_ENV === 'production' ? ['--no-dev'] : [])], undefined, 'Plataforma PHP/Composer');
   const databases = await docker(['exec', '-i', '--workdir', c.backend, d.php.Id, 'php', path.join(c.root, 'scripts/bootstrap/php/databases.php')], {
     input: JSON.stringify({ host: c.DB_HOST, port: c.DB_PORT, username: c.DB_USERNAME, password: c.DB_PASSWORD, database: c.DB_DATABASE, testDatabase: c.DB_TEST_DATABASE }), label: 'Conexão/criação de bancos com a conta existente', allowFailure: true,
@@ -62,7 +65,7 @@ try {
   jsonOutput(databases, 'Verificação dos bancos');
   await phpExec(c, d, ['php', 'artisan', 'config:clear', '--no-interaction'], undefined, 'Limpeza de configuração em processo separado');
   await phpExec(c, d, ['php', path.join(c.root, 'scripts/bootstrap/php/verify-runtime.php')], JSON.stringify({ environment: c.APP_ENV, name: c.PROJECT_NAME, url: c.appUrl, timezone: c.APP_TIMEZONE, host: c.DB_HOST, port: c.DB_PORT, database: c.DB_DATABASE, username: c.DB_USERNAME, password: c.DB_PASSWORD, queue: 'database', cookie: c.sessionCookie, stateful: c.stateful, website: c.websiteUrl, clientCookie: c.clientSessionCookie, clientDomain: c.CLIENT_SESSION_DOMAIN }), 'Conferência da configuração efetiva antes de migrations');
-  console.log('Sincronizando caches e migrations pendentes.');
+  progress.info('Sincronizando caches e migrations pendentes.');
   await phpExec(c, d, ['php', 'artisan', 'app:sync', '--no-interaction', ...(options.force ? ['--force'] : [])], undefined, 'app:sync');
   await phpExec(c, d, ['php', path.join(c.root, 'scripts/bootstrap/php/permissions.php')], undefined, 'Permissões finais');
   const verify = await docker(['exec', '-i', '--workdir', c.backend, d.php.Id, 'php', path.join(c.root, 'scripts/bootstrap/php/verify-http.php')], {
@@ -72,6 +75,7 @@ try {
   if (verify.code !== 0) throw new FoundationError(httpFailure(verify.stdout));
   const evidence = jsonOutput(verify, 'Verificação HTTP');
   requireThat(evidence.status === 'ok', 'Integração HTTP não foi validada.');
+  progress.step('[2/5] PWA');
   state.phase = 'frontend-install'; await save();
   const frontendLock = await installFrontend(c, d);
   state.frontendLock = frontendLock;
@@ -83,6 +87,7 @@ try {
   const pwaEvidence = jsonOutput(verifyPwa, 'HTTP PWA');
   const reasons = ['http', 'html', 'cache', 'manifest', 'worker', 'offline', 'asset-path', 'asset-cache', 'api-route'];
   requireThat(verifyPwa.code === 0 && pwaEvidence.status === 'ok', 'PWA HTTP: ' + (reasons.includes(pwaEvidence.reason) ? pwaEvidence.reason : 'verificação falhou') + '. Confira build/Nginx no guia.');
+  progress.step('[3/5] Administrativo');
   state.phase = 'admin-install'; await save();
   state.adminLock = await installAdmin(c, d);
   state.phase = 'admin-build'; await save();
@@ -93,20 +98,20 @@ try {
   const adminEvidence = jsonOutput(verifyAdmin, 'HTTP admin');
   requireThat(verifyAdmin.code === 0 && adminEvidence.status === 'ok', 'Admin HTTP: confira build e bloco Nginx administrativo no guia.');
   state.adminBuild = adminBuild.buildId;
+  progress.step('[4/5] Website');
   state.phase = 'website-build'; await save();
   const websiteBuild = await prepareWebsite(c, d);
   state.websiteBuild = websiteBuild.buildId; state.websiteLock = websiteBuild.lock;
   state.phase = 'website-activation'; await save();
   const websiteEvidence = await activateWebsite(c, d, websiteBuild.buildId);
   state.websiteChecks = websiteEvidence.checks;
+  progress.step('[5/5] Conclusão');
+  progress.info('Backend, PWA, admin e website verificados via Nginx.');
   state.phase = 'interfaces-ready'; state.lastExitCode = 0; state.phpVersion = version; state.composerLock = hash(lockfile); state.frontendBuild = build.buildId; state.verifiedAt = new Date().toISOString(); state.checks = { ...evidence.checks, pwa: pwaEvidence.checks, admin: adminEvidence.checks };
   state.completeFoundation = false; state.pending = []; state.manualChecks = ['Conferir instalação e acesso nas três interfaces', 'Conferir SMTP e recuperação das duas contas', 'Concluir as sprints restantes do website']; await save();
-  console.log(`Backend, PWA, admin e website verificados via Nginx. Abra ${c.appUrl}. Build: ${build.buildId}.`);
-  console.log(`Admin: ${c.adminUrl}. Crie o administrador com admin:create conforme o manual.`);
-  console.log(`Website: ${c.websiteUrl}. Conta de cliente integrada à PWA.`);
-  console.log('Código 0 não atesta instalação, offline ou atualização em aparelhos. Aceite final exige validação própria.');
+  progress.success({ pwa: c.appUrl, admin: c.adminUrl, website: c.websiteUrl, build: build.buildId });
 } catch (error) {
   if (state) { state.phase = error.code === 2 ? 'manual-pending' : 'failed'; state.lastExitCode = error.code === 2 ? 2 : 1; await save().catch(() => {}); }
-  console.error(error instanceof FoundationError ? error.message : 'Bootstrap interrompido. Confira configuração, caminhos e acesso aos arquivos; detalhes privados não são exibidos.');
+  progress.failure(error instanceof FoundationError ? error.message : 'Confira configuração, caminhos e acesso aos arquivos; detalhes privados não são exibidos.', error.code === 2 ? 2 : 1);
   process.exitCode = error.code === 2 ? 2 : 1;
-} finally { if (lock) await fs.rmdir(lock).catch(() => {}); }
+} finally { progress.stop(); if (lock) await fs.rmdir(lock).catch(() => {}); }

@@ -5,8 +5,8 @@ if /I "%~1"=="build" goto build
 echo Use: vite dev ou vite build
 exit /b 1
 :dev
-docker compose -p infra --project-directory "%~dp0..\..\infra" -f "%~dp0..\..\infra\docker-compose.yml" --profile dev run --rm --no-deps --service-ports pwa-framework-node npm run dev
+docker compose -p infra --project-directory "%~dp0..\..\infra" -f "%~dp0..\..\infra\docker-compose.yml" --profile dev run --rm --no-deps --service-ports my-framework-node npm run dev
 exit /b %errorlevel%
 :build
-docker compose -p infra --project-directory "%~dp0..\..\infra" -f "%~dp0..\..\infra\docker-compose.yml" --profile dev run --rm --no-deps pwa-framework-node npm run build
+docker compose -p infra --project-directory "%~dp0..\..\infra" -f "%~dp0..\..\infra\docker-compose.yml" --profile dev run --rm --no-deps my-framework-node npm run build
 exit /b %errorlevel%

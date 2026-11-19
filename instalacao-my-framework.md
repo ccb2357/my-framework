@@ -267,8 +267,10 @@ docker build -t my-framework-bootstrap:0.1.0 ../my-framework/scripts/bootstrap
 Com os três serviços Node, volumes, mount PHP-FPM e sites Nginx configurados, execute **dentro da pasta `infra`**. O comando usa `source=..` e é o mesmo no CMD do Windows e no terminal Linux; em produção, acrescente `--force` ao final:
 
 ```cmd
-docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network my-framework-bootstrap:0.1.0 --project /var/www/my-framework
+docker run --rm -t --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network my-framework-bootstrap:0.1.0 --project /var/www/my-framework
 ```
+
+`-t` habilita o terminal interativo para exibir o spinner; omita ao redirecionar a saída ou executar em automações.
 
 Quando o comando terminar e o prompt voltar, execute separadamente:
 
@@ -546,5 +548,5 @@ Na pasta infra da VPS, com `.env.foundation` de produção, Compose, Nginx e HTT
 
 ```bash
 docker build -t my-framework-bootstrap:0.1.0 ../my-framework/scripts/bootstrap
-docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network my-framework-bootstrap:0.1.0 --project /var/www/my-framework --force
+docker run --rm -t --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network my-framework-bootstrap:0.1.0 --project /var/www/my-framework --force
 ```

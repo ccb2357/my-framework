@@ -104,6 +104,8 @@ A conta MySQL pode criar bancos ausentes somente se já possuir permissão. O ex
 
 **Produção exige `--force`**, que autoriza migrations pendentes, sem liberar alterações arbitrárias de infraestrutura. `app:sync` limpa caches e aplica migrations com falhas propagadas. Permissões são tratadas no projeto; não substituir essa rotina por chown recursivo da infraestrutura compartilhada.
 
+O console agrupa infraestrutura e cinco etapas, com URLs, build e código de saída separados no resumo. Spinner aparece somente em terminal TTY; saída redirecionada e o comando Docker sem `-t` usam linhas estáticas. Não exibe porcentagem nem saída privada dos processos. Uma etapa só recebe `[OK]` após concluir; falhas e pendências mantêm os códigos 1 e 2.
+
 ### Ativação do website
 
 Após compilar, o bootstrap verifica a versão acessível e inicia/recria somente o serviço website declarado/validado, com `up --no-deps --no-build --force-recreate`. Não reinicia PHP-FPM, Nginx, MySQL ou serviços de outros projetos. Serviço já respondendo com o build esperado não é recriado.

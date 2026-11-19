@@ -1,3 +1,4 @@
+import { progress } from './progress.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { frontendCommand, installFrontend } from './frontend.mjs';
@@ -28,7 +29,7 @@ export async function prepareWebsite(c, d) {
   const current = await docker(frontendCommand(context, d, ['node', 'scripts/check-build.mjs']), { label: 'Build website existente', allowFailure: true });
   let build; try { build = JSON.parse(current.stdout); } catch { /* Initial installation. */ }
   if (build?.buildId !== c.websiteBuildId) {
-    console.log('Compilando website Nuxt (SSR).');
+    progress.info('Compilando website Nuxt (SSR).');
     await docker(frontendCommand(context, d, ['npm', 'run', 'build']), { label: 'Build website', timeout: 900000 });
     build = jsonOutput(await docker(frontendCommand(context, d, ['node', 'scripts/check-build.mjs']), { label: 'Artefatos website' }), 'Artefatos website');
   }
@@ -60,7 +61,7 @@ async function websiteEvidence(c, d, buildId) {
 export async function activateWebsite(c, d, buildId) {
   const current = await websiteEvidence(c, d, buildId);
   if (current) return current;
-  console.log('Iniciando/atualizando somente o serviço website.');
+  progress.info('Iniciando/atualizando somente o serviço website.');
   const activation = websiteActivation(c, d);
   await docker(activation.argv, { input: activation.input, cwd: d.directory, label: 'Ativação do serviço website', timeout: 300000 });
   for (let attempt = 0; attempt < 30; attempt++) {
