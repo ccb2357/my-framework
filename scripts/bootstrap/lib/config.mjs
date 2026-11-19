@@ -55,6 +55,8 @@ export function validate(input, root) {
   c.composeFile = path.resolve(root, c.INFRA_COMPOSE_PATH || '../infra/docker-compose.yml');
   c.PHP_SERVICE ||= 'php-fpm'; c.NGINX_SERVICE ||= 'nginx'; c.DOCKER_NETWORK ||= 'infra_network';
   for (const key of ['PHP_SERVICE', 'NGINX_SERVICE', 'DOCKER_NETWORK']) requireThat(/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(c[key]), `${key} inválido.`);
+  c.NGINX_CERT_NAME = (c.NGINX_CERT_NAME || '').trim();
+  requireThat(!c.NGINX_CERT_NAME || /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,252}$/.test(c.NGINX_CERT_NAME), 'NGINX_CERT_NAME deve ser somente o nome do certificado, sem caminho ou espaços.');
   c.NGINX_INTERNAL_URL ||= 'http://nginx';
   let target; try { target = new URL(c.NGINX_INTERNAL_URL); } catch { throw new FoundationError('NGINX_INTERNAL_URL inválida.'); }
   requireThat(['http:', 'https:'].includes(target.protocol) && !target.username && !target.password && target.pathname === '/' && !target.search && !target.hash, 'NGINX_INTERNAL_URL deve ser HTTP(S), sem credenciais.');

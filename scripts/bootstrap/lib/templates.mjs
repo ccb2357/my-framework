@@ -92,7 +92,7 @@ export function websiteNginxSnippet(c) {
     }
 `;
   if (c.APP_ENV === 'local') return `# WEBSITE FOUNDATION: ${c.PROJECT_SLUG}\nserver {\n    listen 80;\n${common}}\n`;
-  return `# WEBSITE FOUNDATION: ${c.PROJECT_SLUG}\nserver {\n    listen 80;\n    server_name ${host};\n    location /.well-known/acme-challenge/ { root /var/www/certbot; }\n    location / { return 301 https://$host$request_uri; }\n}\nserver {\n    listen 443 ssl;\n    ssl_certificate /etc/letsencrypt/live/${host}/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/${host}/privkey.pem;\n${common}}\n`;
+  return `# WEBSITE FOUNDATION: ${c.PROJECT_SLUG}\nserver {\n    listen 80;\n    server_name ${host};\n    location /.well-known/acme-challenge/ { root /var/www/certbot; }\n    location / { return 301 https://$host$request_uri; }\n}\nserver {\n    listen 443 ssl;\n    ssl_certificate /etc/letsencrypt/live/${c.NGINX_CERT_NAME || host}/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/${c.NGINX_CERT_NAME || host}/privkey.pem;\n${common}}\n`;
 }
 export function websitePublicConfiguration(c) {
   return { name: c.PROJECT_NAME, slug: c.PROJECT_SLUG, locale: c.APP_LOCALE.replace('_', '-'), websiteUrl: c.websiteUrl, pwaUrl: c.appUrl, buildId: c.websiteBuildId };
@@ -134,7 +134,7 @@ export function nginxSnippet(c, administrative = false) {
 `;
   const marker = '# ' + (administrative ? 'ADMIN' : 'PWA') + ' FOUNDATION: ' + c.PROJECT_SLUG + '\n';
   if (c.APP_ENV === 'local') return marker + `server {\n    listen 80;\n${common}}\n`;
-  return marker + `# Conferir certificados reais antes de aplicar.\nserver {\n    listen 80;\n    server_name ${host};\n    location /.well-known/acme-challenge/ { root /var/www/certbot; }\n    location / { return 301 https://$host$request_uri; }\n}\nserver {\n    listen 443 ssl;\n    ssl_certificate /etc/letsencrypt/live/${host}/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/${host}/privkey.pem;\n${common}}\n`;
+  return marker + `# Conferir certificados reais antes de aplicar.\nserver {\n    listen 80;\n    server_name ${host};\n    location /.well-known/acme-challenge/ { root /var/www/certbot; }\n    location / { return 301 https://$host$request_uri; }\n}\nserver {\n    listen 443 ssl;\n    ssl_certificate /etc/letsencrypt/live/${c.NGINX_CERT_NAME || host}/fullchain.pem;\n    ssl_certificate_key /etc/letsencrypt/live/${c.NGINX_CERT_NAME || host}/privkey.pem;\n${common}}\n`;
 }
 export function viteCmd(c, d, administrative = false) {
   const directory = administrative ? c.admin : c.frontend;
@@ -198,7 +198,7 @@ export function installationInfra(c, d) {
     'No mesmo arquivo, mesclar estas declarações no bloco `volumes` de nível raiz, no mesmo nível de `services` e `networks`.',
     '```yaml\n' + volumes + '\n```',
     '### 2.4 Sites Nginx',
-    'No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\\var\\www\\infra\\nginx\\sites_local.conf`. Em produção, usar o arquivo realmente montado e conferir os certificados. PWA: `pwa/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.',
+    'No arquivo de sites ativo do Nginx, acrescentar o bloco abaixo preservando os outros sites. Nesta infraestrutura local, o destino é `C:\\var\\www\\infra\\nginx\\sites_local.conf`. Em produção, usar o arquivo realmente montado. NGINX_CERT_NAME define o certificado compartilhado das três interfaces; vazio usa o nome de cada host. O certificado escolhido deve cobrir os três domínios. PWA: `pwa/dist`; admin: `admin/dist`; website: proxy para Nuxt. Rotas técnicas seguem para Laravel. Substitua o bloco anterior deste projeto, sem duplicar o server_name.',
     '```nginx\n' + (nginxSnippet(c) + '\n' + nginxSnippet(c, true) + '\n' + websiteNginxSnippet(c)).trimEnd() + '\n```',
     '<!-- END FOUNDATION INSTALL INFRA -->',
   ].join('\n\n');

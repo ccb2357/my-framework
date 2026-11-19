@@ -290,3 +290,24 @@ test('client cookie scope rejects public suffixes and unrelated domains but supp
  for(const changes of [{WEBSITE_LOCAL_DOMAIN:'foreign.localhost'},{CLIENT_SESSION_DOMAIN:'localhost'},{APP_ENV:'production',PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://example.co.uk',CLIENT_SESSION_DOMAIN:'co.uk'},{APP_ENV:'production',PRODUCTION_URL:'https://app.example.com',WEBSITE_PRODUCTION_URL:'https://other.com'}])assert.throws(()=>config(changes));
  const prod=config({APP_ENV:'production',PRODUCTION_URL:'https://app.example.co.uk',WEBSITE_PRODUCTION_URL:'https://www.example.co.uk'});assert.equal(prod.CLIENT_SESSION_DOMAIN,'example.co.uk');assert.equal(prod.clientSessionCookie,'pwa_teste_session_client');
 });
+
+
+test('shared certificate is generated and checked for all production interfaces', () => {
+  const c = config({ APP_ENV: 'production', PRODUCTION_URL: 'https://www.app.example.com', ADMIN_PRODUCTION_URL: 'https://www.admin.example.com', WEBSITE_PRODUCTION_URL: 'https://www.website.example.com', NGINX_CERT_NAME: 'shared-example.com' });
+  const sites = [nginxSnippet(c), nginxSnippet(c, true), websiteNginxSnippet(c)];
+  for (const site of sites) {
+    assert.match(site, /ssl_certificate \/etc\/letsencrypt\/live\/shared-example.com\/fullchain.pem;/);
+    assert.match(site, /ssl_certificate_key \/etc\/letsencrypt\/live\/shared-example.com\/privkey.pem;/);
+  }
+  const output = sites.join('\n');
+  assert.equal(siteApplied(output, c), true);
+  assert.equal(siteApplied(output.replace('shared-example.com/fullchain.pem', 'wrong/fullchain.pem'), c), false);
+  assert.equal(siteApplied(output.replace('/backend/public/index.php', '/wrong/index.php'), c), false);
+  for (const site of [nginxSnippet(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' })), nginxSnippet(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' }), true), websiteNginxSnippet(config({ APP_ENV: 'production', PRODUCTION_URL: 'https://example.com' }))]) {
+    assert.doesNotMatch(site, /shared-example/);
+    assert.match(site, /ssl_certificate \/etc\/letsencrypt\/live\/(?:admin\.|website\.)?example.com\/fullchain.pem;/);
+  }
+  assert.doesNotMatch(nginxSnippet(config({ NGINX_CERT_NAME: 'shared-example.com' })), /ssl_certificate/);
+  assert.doesNotMatch(JSON.stringify(publicConfiguration(c)) + JSON.stringify(adminPublicConfiguration(c)) + JSON.stringify(websitePublicConfiguration(c)), /NGINX_CERT_NAME|shared-example.com/);
+  for (const name of ['../escape', '/tmp/cert', 'a/b', 'a\\b', 'a;return', 'a b', 'a\nssl']) assert.throws(() => config({ NGINX_CERT_NAME: name }));
+});

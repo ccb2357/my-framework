@@ -61,6 +61,8 @@ Manifests, lockfiles e [foundation.json](foundation.json) identificam as versõe
 
 Cada aplicação recebe código pronto; não recrie Laravel/Vite. Preserve os arquivos privados, dados, volumes, chaves e personalizações nas atualizações.
 
+Os exemplos Compose usam binds relativos, com `infra` e projeto lado a lado, para funcionar no Windows e Linux. PWA, admin e website mantêm volumes `node_modules` próprios e compartilham somente o bind `/shared` em leitura. O executor também usa `source=..`: execute o comando dentro de `infra` no Windows ou Linux, acrescentando `--force` em produção. Caminhos e comandos completos estão no manual.
+
 ### Configuração central
 
 | Grupo | Campos principais |
@@ -101,6 +103,8 @@ Comandos completos de CMD/Linux, integração Docker, Android/ADB e testes ficam
 Status faz consulta real, sem cache: HTTP 200 saudável ou 503 indisponível. Falha/offline não mantém um OK antigo. [Contrato da API](docs/sdd/05-api.md).
 
 ### Contrato do bootstrap
+
+Em produção, `NGINX_CERT_NAME` no central permite usar um certificado cobrindo as três interfaces; vazio mantém caminhos por host. Os blocos gerados devem ser aplicados manualmente no Nginx.
 
 Executor temporário `pwa-foundation-bootstrap:0.1.0`, construído de `scripts/bootstrap/Dockerfile` e executado com docker run --rm. Acessa o Engine existente, com dependências próprias; sem Docker-in-Docker, outro Compose, serviço de bootstrap ou atalhos no host.
 
@@ -175,21 +179,3 @@ Para incorporar atualizações, comparar a base de origem com a desejada, seleci
 Produção usa `.env.foundation` próprio (`APP_ENV=production`, PRODUCTION_URL HTTPS), certificado real e bootstrap com --force para migrations; --force não autoriza alteração automática de infraestrutura ou operações destrutivas. Preservar APP_KEY/dados/volumes. Validar as jornadas; evidência local não homologa a VPS.
 
 Antes de publicar: backup/restauração isolada de banco/arquivos/chaves, retenção/acesso e recuperação testados. Publicar assets antes do HTML/worker, manter clientes antigos compatíveis com API/banco e separar rollback de código de recuperação de dados. Não presumir migration reversa segura. Procedimentos concretos no [manual](instalacao-pwa-framework.md#vps-e-atualizações).
-
-<!-- BEGIN FOUNDATION IDENTITY -->
-| Campo | Valor |
-| --- | --- |
-| Projeto | PWA Framework |
-| Slug | pwa-framework |
-| Ambiente | local |
-| URL | http://pwa-framework.localhost |
-| Dev / preview | 5180 / 5181 |
-| Serviço / Compose | pwa-framework-node / infra |
-| Volumes | pwa_framework_vendor, pwa_framework_node_modules |
-| Bancos | pwa_framework, pwa_framework_test |
-| Admin | http://admin.pwa-framework.localhost |
-| Admin dev / preview | 5182 / 5183 |
-| Website | http://website.pwa-framework.localhost |
-| Website dev | 5184 |
-| Fundação | 1.1.0-website.4 |
-<!-- END FOUNDATION IDENTITY -->

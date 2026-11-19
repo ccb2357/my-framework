@@ -112,7 +112,7 @@ test('preparation exits 2 before dependencies/env writes when effective infra is
     assert.doesNotMatch(guide, /docker compose (?:run.*|build) pwa-foundation-bootstrap/);
     assert.doesNotMatch(guide, /services:\s+pwa-foundation-bootstrap:/);
     assert.match(guide, /docker build -t pwa-foundation-bootstrap:0\.1\.0/);
-    assert.match(guide, /source=C:\\var\\www,target=\/var\/www/);
+    assert.match(guide, /source=\.\.,target=\/var\/www/);
     assert.match(guide, /--network infra_network/);
     assert.doesNotMatch(guide, /não cadastrar serviço de bootstrap no Compose|aplique \*\*todos os quatro itens/);
     assert.ok(guide.indexOf('### 2.4 Sites Nginx') < guide.indexOf('## 3. Validar e aplicar a infraestrutura'));

@@ -12,6 +12,7 @@ A pessoa preenche somente `.env.foundation`, copiado do exemplo. Bootstrap gera 
 | APP_ENV, PRODUCTION_URL | local/production explícito; produção exige origem HTTPS e --force para o bootstrap. |
 | INFRA_COMPOSE_PATH, CONTAINER_PROJECTS_ROOT | Compose real e raiz interna permitida; validar caminhos/mounts e bloquear escapes por symlink. |
 | DOCKER_NETWORK, PHP_SERVICE, NGINX_SERVICE, NGINX_INTERNAL_URL | Recursos existentes; não presumir container_name. |
+| NGINX_CERT_NAME | Opcional: nome seguro do certificado compartilhado em /etc/letsencrypt/live/<nome>, usado por PWA/admin/website; vazio deriva cada host. Não é URL/caminho. Certificado deve cobrir todos os hosts; emissão e aplicação Nginx manuais. |
 | LOCAL_DOMAIN, DEV_PORT, PREVIEW_PORT | Domínio e portas disponíveis, distintas entre serviços/projetos. Dev: porta do host → 5173 interno; prévia: porta do host → 4173 interno. |
 | ADMIN_LOCAL_DOMAIN, ADMIN_PRODUCTION_URL | Opcionais: vazios derivam admin.<host da PWA>. Hosts diferentes; produção HTTPS sem caminho/porta. |
 | ADMIN_DEV_PORT, ADMIN_PREVIEW_PORT | Admin: 5182/5183 no exemplo. Quatro portas distintas entre PWA/admin; internamente 5173 dev/4173 preview. |
@@ -26,6 +27,8 @@ Derivar serviço `<slug>-node`, volumes `<slug_com_sublinhados>_vendor` e `<slug
 ## Infraestrutura e executor
 
 Reutilizar Compose/rede/PHP-FPM/Nginx/MySQL existentes. Antes de analisar ou alterar infraestrutura, solicitar os arquivos atuais necessários: Compose, Dockerfile PHP, Nginx principal/sites e php.ini, com segredos removidos. Não armazenar cópias em docs nem tratar histórico como configuração atual.
+
+Portabilidade dos exemplos Compose: com `infra/docker-compose.yml` e projeto lado a lado, os binds das aplicações usam `../<projeto>/pwa`, `../<projeto>/admin` e `../<projeto>/website` em `/app`; todos montam `../<projeto>/shared` em `/shared` somente leitura. Os caminhos são relativos à pasta do Compose (arquivo base quando há vários arquivos), não ao diretório do terminal. Preservar os três volumes `node_modules` exclusivos. Esse trecho é comum a Windows/Linux; os caminhos internos PHP/Nginx continuam `/var/www/...` e o bind de entrada do executor usa `source=..`, resolvido a partir do diretório atual do terminal: o comando deve ser executado dentro de `infra` nos dois sistemas. Em produção, acrescentar `--force` para autorizar migrations. Trechos gerados pelo bootstrap podem indicar caminhos absolutos descobertos no ambiente; ao reutilizá-los em outro sistema, adaptar os binds conforme o guia.
 
 Imagem `pwa-foundation-bootstrap:0.1.0`, construída de `scripts/bootstrap/Dockerfile`, executada por docker run --rm com bind dos projetos, socket Docker e rede existente. Sem serviço de bootstrap no Compose, atalhos foundation.cmd/sh, dockerd interno ou runtime no host. O executor usa suas próprias dependências em /opt/foundation.
 
