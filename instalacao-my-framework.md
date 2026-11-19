@@ -49,7 +49,7 @@ Os exemplos deste guia usam:
 - `NGINX_CERT_NAME`: nome do certificado compartilhado em `/etc/letsencrypt/live/<nome>`. Exemplo: `NGINX_CERT_NAME=my-framework.meu-dominio.com.br`. O certificado deve cobrir os três hosts. Vazio mantém um caminho por host.
 - Após definir o nome, execute o bootstrap e aplique os blocos Nginx gerados; ele não emite certificados nem edita o Nginx.
 
-**Trechos por ambiente:** o bootstrap gera `.foundation-installation.md` na raiz, com os blocos Compose/Nginx e resumo do ambiente. Use esse arquivo quando houver pendência de infraestrutura. Ele é ignorado pelo Git; README e este manual versionados não são editados pelo bootstrap.
+O bootstrap gera `.foundation-installation.md` na raiz, com os blocos Compose/Nginx e resumo do ambiente. Use esse arquivo quando houver pendência de infraestrutura.
 
 Você configura somente esse arquivo. O bootstrap gera os arquivos internos do Laravel/testing e as configurações públicas das três interfaces, preservando as chaves existentes; não é necessário criar ou preencher esses arquivos manualmente.
 
