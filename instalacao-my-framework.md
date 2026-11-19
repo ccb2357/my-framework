@@ -345,108 +345,59 @@ No **CMD**, abra a pasta indicada e execute o comando desejado:
 | Admin | `cd /d C:\var\www\my-framework\admin` | `vite dev` | `vite build` | [localhost:5182](http://localhost:5182) |
 | Website | `cd /d C:\var\www\my-framework\website` | `nuxt dev` | `nuxt build` | [localhost:5184](http://localhost:5184) |
 
-**Dev:** alterações aparecem ao salvar. Mantenha o terminal aberto; encerre com **Ctrl+C**.
-
-**Build:** gera a versão otimizada. Os domínios Nginx exibem o build publicado; para compilar, ativar e verificar o website, repita o bootstrap da etapa 5. Dados consultados no Laravel atualizam sem build.
-
-### Atualizar o website com formulários
-
-Acrescente o bind `shared` ao serviço website, se ausente, conforme a etapa 2.1 e repita o bootstrap da etapa 5. Na Hello, teste **Validar formulário** vazio e depois com e-mail/celular válidos; nenhum dado é enviado ou salvo.
-
 ### Conteúdo dinâmico do website
 
-Após o bootstrap, execute na pasta infra:
+Na pasta `infra`:
 
-```cmd
-docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan website:content "Conteudo publicado" --body="Texto vindo do Laravel."
-```
-
-Na Hello do website, clique **Atualizar conteúdo** ou recarregue. Altere os textos no comando e repita: o resultado muda sem build. Para remover somente o exemplo:
-
-```cmd
-docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan website:content --clear
-```
-
-### Mensagens e máscaras
-
-Arquivos compartilhados em `shared/forms/`:
-
-- `messages.pt-BR.json`: mensagens.
-- `masks.js`: máscaras.
-- `rules.js`: regras.
-
-Após alterar, repita o bootstrap da etapa 5 para publicar nas três interfaces. Em desenvolvimento, mantenha o dev aberto; na PWA instalada, aceite a atualização.
+| Ação | Comando |
+| --- | --- |
+| Publicar ou atualizar | `docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan website:content "Conteudo publicado" --body="Texto vindo do Laravel."` |
+| Remover exemplo | `docker compose exec -T -w /var/www/my-framework/backend php-fpm php artisan website:content --clear` |
 
 ## Android por USB
 
-Abra o projeto no Chrome do celular pelo cabo USB, sem depender do Wi-Fi.
+Acesse pelo Chrome do celular via cabo USB, sem depender do Wi-Fi.
 
 ### Preparação inicial — uma vez
 
-**No Windows:**
+| Onde | Preparação |
+| --- | --- |
+| Windows | Baixe [SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools) e extraia em `C:\tools\platform-tools`. Confira `adb.exe`; dispensa Android Studio e alteração do PATH. |
+| Android | Ative as opções do desenvolvedor e **Depuração USB**. Em Samsung: Configurações → Sobre o telefone → Informações do software → toque sete vezes em Número de compilação. |
+| Conexão | Conecte um cabo de dados, desbloqueie o celular e autorize a depuração USB. Autorização permanente somente em computador de confiança. |
 
-1. Baixe [SDK Platform-Tools for Windows](https://developer.android.com/tools/releases/platform-tools).
-2. Extraia para `C:\tools\platform-tools` e confira se existe `adb.exe` nessa pasta. Não precisa instalar Android Studio nem alterar o PATH.
+Exemplos: `PWA_DEV_PORT=5180`, `PWA_PREVIEW_PORT=5181` e serviço `my-framework-node`. Ajuste aos seus valores.
 
-**No Android:**
+### Desenvolvimento
 
-1. Ative as opções do desenvolvedor. Em Samsung: **Configurações → Sobre o telefone → Informações do software → Número de compilação**; toque sete vezes.
-2. Ative **Depuração USB**, conecte um cabo de dados e desbloqueie a tela.
-3. Autorize **Permitir depuração USB?**. Autorize permanentemente somente um computador de confiança.
+Sem service worker nem instalação da PWA; alterações aparecem ao salvar.
 
-Os exemplos abaixo usam `PWA_DEV_PORT=5180`, `PWA_PREVIEW_PORT=5181` e o serviço `my-framework-node`. Se seus valores forem outros, substitua-os nos comandos e endereços.
+| Passo | Comando ou acesso |
+| --- | --- |
+| No CMD, abrir a pasta | `cd /d C:\var\www\my-framework\pwa` |
+| Iniciar e manter aberto | `vite dev` |
+| Em outro CMD, criar túnel | `C:\tools\platform-tools\adb.exe reverse tcp:5180 tcp:5180` |
+| Chrome do celular | [localhost:5180](http://localhost:5180) |
 
-### Desenvolvimento — sem instalação da PWA
+### Instalação e offline
 
-`vite.cmd dev` usa a **PWA_DEV_PORT (5180)**. Nesse modo, o service worker fica desativado e **o botão de instalar a PWA não aparece**.
+O bootstrap já gera o build. Se alterou a PWA, execute `vite build` na pasta `pwa` antes de iniciar a prévia.
 
-1. Na pasta pwa, execute e mantenha o terminal aberto:
-
-```cmd
-vite.cmd dev
-```
-
-2. Em outro CMD:
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse tcp:5180 tcp:5180
-```
-
-3. Abra [http://localhost:5180](http://localhost:5180) no Chrome do celular para desenvolver com atualização automática das alterações.
-
-### Instalar a PWA e testar offline
-
-Use o **build na PWA_PREVIEW_PORT (5181)**. O bootstrap da etapa 5 já gera o build; se alterou a PWA depois, execute `vite.cmd build` na pasta pwa antes de continuar.
-
-1. Na pasta infra, execute e mantenha o terminal aberto:
-
-```cmd
-cd /d C:\var\www\infra
-```
-
-```cmd
-docker compose --profile dev run --rm --no-deps -p 127.0.0.1:5181:4173 my-framework-node npm run preview
-```
-
-2. Em outro CMD:
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse tcp:5181 tcp:5181
-```
-
-3. Abra [http://localhost:5181](http://localhost:5181) no Chrome do celular. Instale pelo botão **Instalar aplicativo** ou pelo menu do Chrome.
+| Passo | Comando ou acesso |
+| --- | --- |
+| No CMD, abrir a infraestrutura | `cd /d C:\var\www\infra` |
+| Iniciar prévia e manter aberto | `docker compose --profile dev run --rm --no-deps -p 127.0.0.1:5181:4173 my-framework-node npm run preview` |
+| Em outro CMD, criar túnel | `C:\tools\platform-tools\adb.exe reverse tcp:5181 tcp:5181` |
+| Chrome do celular | [localhost:5181](http://localhost:5181) → **Instalar aplicativo** ou menu do Chrome |
 
 ### Encerrar
 
-Pressione **Ctrl+C** no terminal do Vite/prévia. Para remover o túnel USB, execute somente a linha da porta utilizada:
+Pressione **Ctrl+C** no terminal do Vite/prévia e remova somente o túnel utilizado:
 
-```cmd
-C:\tools\platform-tools\adb.exe reverse --remove tcp:5180
-```
-
-```cmd
-C:\tools\platform-tools\adb.exe reverse --remove tcp:5181
-```
+| Modo | Comando |
+| --- | --- |
+| Desenvolvimento | `C:\tools\platform-tools\adb.exe reverse --remove tcp:5180` |
+| Prévia | `C:\tools\platform-tools\adb.exe reverse --remove tcp:5181` |
 
 ## Verificações e testes
 
