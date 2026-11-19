@@ -544,7 +544,7 @@ cd /d C:\var\www\infra
 docker compose exec -T -w /var/www/meu-projeto/backend php-fpm php artisan app:sync
 ```
 
-## VPS e atualizações
+## VPS
 
 Na pasta infra da VPS, com `.env.foundation` de produção, Compose, Nginx e HTTPS preparados:
 
@@ -552,15 +552,3 @@ Na pasta infra da VPS, com `.env.foundation` de produção, Compose, Nginx e HTT
 docker build -t pwa-foundation-bootstrap:0.1.0 ../meu-projeto/scripts/bootstrap
 docker run --rm --workdir /var/www/infra --env FOUNDATION_PROJECTS_ROOT=/var/www --mount type=bind,source=..,target=/var/www --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock --network infra_network pwa-foundation-bootstrap:0.1.0 --project /var/www/meu-projeto --force
 ```
-
-Para atualizar: faça backup, execute `git pull` na pasta do projeto e repita o comando acima na pasta infra. Mantenha `infra` e projeto lado a lado; `source=..` usa a pasta acima de `infra` no Windows e Linux. Ajuste a rede e os nomes ao ambiente real; `--force` é necessário em produção para permitir migrations. A imagem só precisa ser reconstruída quando seu conteúdo mudar.
-
-
-Se uma versão anterior do bootstrap alterou README/manual e bloqueou o pull, guarde somente esses dois arquivos antes de atualizar:
-
-```bash
-git stash push -m "Documentos gerados antes da atualização" -- README.md instalacao-pwa-framework.md
-git pull
-```
-
-Não reaplique esse stash: o próximo bootstrap gera `.foundation-installation.md`. Essa migração é necessária uma vez para limpar alterações do bootstrap antigo; modificações próprias em outros arquivos continuam exigindo revisão normal do Git. Preserve `.env.foundation`, estado e dados.
